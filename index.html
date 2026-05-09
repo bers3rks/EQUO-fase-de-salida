@@ -24,6 +24,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <!-- Firebase Init centralizado (expone window.db, window.auth, window.userRole) -->
+    <script src="js/firebase-init.js"></script>
 
     <style>
         /* MOTOR DE COLORES - Dark Theme Default */
@@ -622,9 +624,11 @@
             });
         });
 
-        /* FIREBASE & DATOS */
-        const firebaseConfig = { apiKey: "AIzaSyBjDnhux11n1FLrfdjQ7qwaBDsiTkYb-CU", authDomain: "equo-7ed4d.firebaseapp.com", projectId: "equo-7ed4d", storageBucket: "equo-7ed4d.firebasestorage.app", messagingSenderId: "1019870804475", appId: "1:1019870804475:web:963831fdad13a04569f35e" };
-        firebase.initializeApp(firebaseConfig); const auth = firebase.auth(); const db = firebase.firestore();
+        /* FIREBASE & DATOS — usa instancias de firebase-init.js (window.db, window.auth) */
+        // firebase-init.js ya llamó a firebase.initializeApp() con guard de doble init.
+        // Las variables locales 'auth' y 'db' son alias de las instancias globales.
+        const auth = window.auth;
+        const db   = window.db;
 
         const buildDefault = (yr = currentSystemYear) => ({ year: yr, goals:[], missions:[], globalDebts:[], globalLoans:[], months: Array.from({length: 12}, (_, i) => ({ id: i, incomes: {trabajo:0, inversiones:0, trading:0, pasivos:0}, savingsPercent:0, investPercent:0, expenses:[], debtPayments: {}, loanPayments: {} })) });
         let appData = buildDefault(); let sessionToastsShown = new Set(); let currM = new Date().getMonth(); let authReady = false, currentUser = null;
@@ -672,7 +676,9 @@
         const save = () => {
             if (currentUser) {
                 const docId = yearDocId(currentUser.uid, currYear);
-                db.collection("users").doc(docId).set(appData).catch(e => console.error(e));
+                // merge:true preserva los campos de Fase 2 (inventory, bizSales, etc.)
+                // que no existen en appData de Fase 1.
+                db.collection("users").doc(docId).set(appData, { merge: true }).catch(e => console.error(e));
             }
         };
 
@@ -1088,18 +1094,23 @@
             }
         }
 
-        /* GUARDAR EN LA NUBE */
+        /* GUARDAR EN LA NUBE — unificado con merge para proteger datos de Fase 2 */
         async function saveToCloud() {
             if (!currentUser) { showToast('error', 'Error', 'No hay sesión activa.'); return; }
             const btn = $('btn-save');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sky-400"></i>';
             btn.disabled = true;
             try {
-                await db.collection("users").doc(currentUser.uid).set(appData);
-                if (typeof window.saveAppDataFase2 === 'function') window.saveAppDataFase2();
-                showToast('success', 'Guardado', 'Datos sincronizados.');
+                const docId = yearDocId(currentUser.uid, currYear);
+                // merge:true es la clave: NUNCA sobreescribe campos de Fase 2
+                // (inventory, bizSales, bizReceivables, combos, prestamos, suppliers)
+                // que no están en el appData del Panel Personal.
+                await db.collection("users").doc(docId).set(appData, { merge: true });
+                // Guardar también datos de Fase 2 si están activos
+                if (typeof window.save === 'function' && window.save !== save) window.save();
+                showToast('success', 'Guardado', 'Datos sincronizados en la nube ☁️');
             } catch(e) {
-                showToast('error', 'Error', 'Fallo al guardar.');
+                showToast('error', 'Error', 'Fallo al guardar: ' + e.message);
             } finally {
                 setTimeout(() => {
                     btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-sky-400"></i>';
@@ -1111,16 +1122,29 @@
         window.switchMonth = switchMonth; window.updateIncome = updateIncome; window.updatePercent = updatePercent; window.addExpense = addExpense; window.handleExpenseInput = handleExpenseInput; window.removeExpense = removeExpense; window.openRecordModal = openRecordModal; window.saveRecord = saveRecord; window.handlePaymentInput = handlePaymentInput; window.addGoal = addGoal; window.removeGoal = removeGoal; window.updateGoal = updateGoal; window.toggleMsnType = toggleMsnType; window.addMission = addMission; window.removeMission = removeMission; window.saveToCloud = saveToCloud; window.handleAuth = handleAuth; window.handleRegister = handleRegister; window.handleLogout = handleLogout; window.toggleTheme = toggleTheme; window.toggleMonthDropdown = toggleMonthDropdown; window.toggleYearDropdown = toggleYearDropdown; window.selectMonth = selectMonth; window.selectYear = selectYear; window.toggleCustomSelect = toggleCustomSelect; window.selectCustomOption = selectCustomOption; window.toggleLang = toggleLang; window.toggleCalendar = toggleCalendar; window.changeCalMonth = changeCalMonth; window.selectDate = selectDate; window.toggleGoalSelect = toggleGoalSelect;
 
         // ── Exponer globales para fase2-logic.js ─────────────────────────────────
+        // NOTA: window.db y window.auth ya los expone firebase-init.js;
+        // los re-exponemos aquí como garantía en caso de carga asíncrona.
         window.db   = db;
         window.auth = auth;
         window.save = save;
         window.fx   = window.fx || {};
         // Sync window.currentUser en cada cambio de sesión
         auth.onAuthStateChanged((u) => { window.currentUser = u; });
-        // window.appData como getter vivo del appData local
+        // window.appData como getter/setter vivo del appData local.
+        // El setter permite que fase2-logic.js escriba datos de Fase 2
+        // directamente en el objeto (sin resetear los de Fase 1).
         Object.defineProperty(window, 'appData', {
             get: () => appData,
-            set: (_) => {},  // fase2-logic.js solo lee; Fase 1 es la fuente de verdad
+            set: (val) => {
+                // Solo se permite set desde firebase-init o carga de Firestore
+                // (cuando val es un objeto con la estructura base)
+                if (val && typeof val === 'object') {
+                    // Preservar campos de Fase 2 si ya existen
+                    const fase2Keys = ['inventory','bizSales','bizReceivables','combos','prestamos','suppliers','encargos'];
+                    fase2Keys.forEach(k => { if (appData[k] && !val[k]) val[k] = appData[k]; });
+                    appData = val;
+                }
+            },
             configurable: true
         });
         // Sync tasas FX al ticker del header
