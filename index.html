@@ -1307,6 +1307,22 @@
         </div>
       </div>
 
+      <!-- ── ADMIN (solo visible si window.userRole === 'admin') ── -->
+      <div id="settings-admin-section" class="hidden px-5 pt-0 pb-4">
+        <div class="mx-0 mb-3 border-t" style="border-color:rgba(255,255,255,0.06)"></div>
+        <p class="text-[9px] font-bold uppercase tracking-widest text-rose-400/80 mb-2.5"><i class="fa-solid fa-shield-halved mr-1"></i>Administración</p>
+        <button onclick="openAdminPanel()" class="btn-float w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-white border border-rose-500/30 hover:border-rose-500/60 transition" style="background:linear-gradient(135deg,rgba(239,68,68,0.12),rgba(220,38,38,0.08))">
+          <div class="w-7 h-7 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-lock text-rose-400 text-xs"></i>
+          </div>
+          <div class="text-left">
+            <p class="font-bold text-white text-xs">Panel de Administración</p>
+            <p class="text-[9px] text-rose-300/60 mt-0.5">Acceso restringido · Solo admins</p>
+          </div>
+          <i class="fa-solid fa-chevron-right ml-auto text-[9px] text-rose-400 opacity-60"></i>
+        </button>
+      </div>
+
     </div><!-- /scroll -->
   </div>
 </div><!-- /settings-modal -->
@@ -1322,6 +1338,12 @@ function openSettingsModal() {
     if (user) {
         if ($('settings-email')) $('settings-email').value = user.email || '';
         if ($('settings-name'))  $('settings-name').value  = user.displayName || '';
+    }
+    // Mostrar/ocultar sección de Admin según rol
+    const adminSection = $('settings-admin-section');
+    if (adminSection) {
+        if (window.userRole === 'admin') adminSection.classList.remove('hidden');
+        else                             adminSection.classList.add('hidden');
     }
     // Sincronizar estado del toggle de tema
     _syncSettingsThemeUI();
@@ -1440,6 +1462,35 @@ window.openChangePassword  = openChangePassword;
 window.saveNewPassword     = saveNewPassword;
 window.openBugReport       = openBugReport;
 window.submitBugReport     = submitBugReport;
+
+/* Admin */
+function openAdminPanel() {
+    // Doble verificación en tiempo de ejecución (seguridad client-side extra)
+    if (window.userRole !== 'admin') {
+        showToast('error', 'Acceso denegado', 'No tienes permisos para acceder al Panel de Administración.');
+        return;
+    }
+    closeSettingsModal();
+    showToast('info', 'Admin', 'Redirigiendo al Panel de Administración...');
+    // TODO: reemplaza esta URL con la ruta real de tu panel admin
+    setTimeout(() => { window.location.href = 'admin.html'; }, 1200);
+}
+window.openAdminPanel = openAdminPanel;
+
+/* Hook: firebase-init.js dispara esto cuando el rol está disponible */
+window._onRoleReady = function(role) {
+    // Si el modal de Ajustes está abierto, actualizar el botón de admin en tiempo real
+    const modal = $('settings-modal');
+    if (modal && !modal.classList.contains('hidden')) {
+        const adminSection = $('settings-admin-section');
+        if (adminSection) {
+            if (role === 'admin') adminSection.classList.remove('hidden');
+            else                  adminSection.classList.add('hidden');
+        }
+    }
+    console.log(`[EQUO Settings] Rol recibido desde firebase-init: ${role}`);
+};
+
 </script>
 
 </body>
