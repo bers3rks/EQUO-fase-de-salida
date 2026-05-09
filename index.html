@@ -41,7 +41,7 @@
         #particles { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
 
         /* Cursor Premium LERP */
-        #premium-cursor { position: fixed; top: 0; left: 0; width: 12px; height: 12px; background-color: var(--t-primary); border-radius: 50%; pointer-events: none; z-index: 200000; transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s, background-color 0.2s, opacity 0.2s; box-shadow: 0 0 15px var(--t-primary); }
+        #premium-cursor { position: fixed; top: 0; left: 0; width: 12px; height: 12px; background-color: var(--t-primary); border-radius: 50%; pointer-events: none; z-index: 9999999 !important; transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s, background-color 0.2s, opacity 0.2s; box-shadow: 0 0 15px var(--t-primary); cursor: none !important; }
         #premium-cursor.hovering { width: 36px; height: 36px; background-color: var(--t-primary-rgba); backdrop-filter: blur(2px); border: 1px solid var(--t-primary); }
 
         .anim-text-gradient {
@@ -62,6 +62,17 @@
             100% { transform: scaleY(1); opacity: 1; }
         }
         .liquid-bounce { animation: bounceLiquid 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; transform-origin: top center; }
+
+        /* Settings modal centered entrance */
+        @keyframes settingsIn {
+            0%   { opacity: 0; transform: scale(0.92) translateY(12px); }
+            60%  { opacity: 1; transform: scale(1.02) translateY(-2px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Garantizar cursor visible dentro del modal de Ajustes */
+        #settings-modal, #settings-modal * { cursor: auto !important; }
+        #settings-modal button, #settings-modal input, #settings-modal textarea { cursor: pointer !important; }
 
         /* Glassmorphism UI */
         .glass-card { background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 1.25rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); transition: all 0.4s ease; }
@@ -1193,8 +1204,8 @@
 <!-- ══════════════════════════════════════════════════════
      MODAL DE AJUSTES — Liquid Crystal Glassmorphism
 ══════════════════════════════════════════════════════ -->
-<div id="settings-modal" class="fixed inset-0 z-[500000] hidden bg-black/60 backdrop-blur-xl flex items-start justify-end p-4 pt-16" onclick="if(event.target===this)closeSettingsModal()">
-  <div class="w-full max-w-sm flex flex-col gap-0 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.7)] border border-white/10 animate-[bounceLiquid_0.4s_ease_forwards]" onclick="event.stopPropagation()" style="background:rgba(10,18,40,0.92);backdrop-filter:blur(32px)">
+<div id="settings-modal" class="fixed inset-0 z-[9999990] hidden bg-black/70 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)closeSettingsModal()" style="cursor:auto !important">
+  <div class="w-full max-w-[420px] flex flex-col gap-0 rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.8)] border border-white/10" onclick="event.stopPropagation()" style="background:rgba(10,18,40,0.95);backdrop-filter:blur(36px);animation:settingsIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards">
 
     <!-- Header del modal -->
     <div class="flex items-center justify-between px-5 py-4 border-b border-white/8" style="border-color:rgba(255,255,255,0.07)">
