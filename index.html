@@ -228,13 +228,28 @@
         <!-- Wrapper original que da proporciones: max-w, padding, gap -->
         <div class="flex-grow p-4 md:p-6 max-w-[1300px] mx-auto w-full flex flex-col gap-4 relative">
         <div class="glass-card p-3 flex flex-col xl:flex-row gap-4 items-stretch justify-between relative z-[90] w-full">
-            
-            <div class="relative w-full xl:w-56" id="month-dropdown-container">
-                <button onclick="toggleMonthDropdown()" class="glass-input flex justify-between items-center w-full !py-3 font-bold text-sky-400 hover:bg-white/5 transition-colors cursor-pointer border-white/20">
-                    <span id="current-month-text" class="text-sm tracking-wide">Enero</span>
-                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" id="month-drop-icon"></i>
-                </button>
-                <div id="month-dropdown-menu" class="absolute top-full left-0 w-full mt-2 bg-slate-900/95 dark:bg-black/95 backdrop-blur-3xl border border-white/10 p-2 hidden flex-col gap-1 z-[99999] rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.8)] max-h-[300px] overflow-y-auto"></div>
+
+            <!-- Selectores de periodo: Año + Mes -->
+            <div class="flex gap-2 w-full xl:w-auto shrink-0">
+
+                <!-- SELECTOR DE AÑO -->
+                <div class="relative w-24" id="year-dropdown-container">
+                    <button onclick="toggleYearDropdown()" class="glass-input flex justify-between items-center w-full !py-3 font-bold text-sky-400 hover:bg-white/5 transition-colors cursor-pointer border-white/20">
+                        <span id="current-year-text" class="text-sm tracking-wide">2026</span>
+                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" id="year-drop-icon"></i>
+                    </button>
+                    <div id="year-dropdown-menu" class="absolute top-full left-0 w-full mt-2 bg-slate-900/95 dark:bg-black/95 backdrop-blur-3xl border border-white/10 p-2 hidden flex-col gap-1 z-[99999] rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.8)] max-h-[220px] overflow-y-auto"></div>
+                </div>
+
+                <!-- SELECTOR DE MES -->
+                <div class="relative w-40" id="month-dropdown-container">
+                    <button onclick="toggleMonthDropdown()" class="glass-input flex justify-between items-center w-full !py-3 font-bold text-sky-400 hover:bg-white/5 transition-colors cursor-pointer border-white/20">
+                        <span id="current-month-text" class="text-sm tracking-wide">Enero</span>
+                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" id="month-drop-icon"></i>
+                    </button>
+                    <div id="month-dropdown-menu" class="absolute top-full left-0 w-full mt-2 bg-slate-900/95 dark:bg-black/95 backdrop-blur-3xl border border-white/10 p-2 hidden flex-col gap-1 z-[99999] rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.8)] max-h-[300px] overflow-y-auto"></div>
+                </div>
+
             </div>
 
             <div class="flex-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 text-center h-full">
@@ -584,11 +599,11 @@
             if(e.target.id === 'record-modal') $('record-modal').classList.add('hidden');
             if(e.target.id === 'mission-modal') $('mission-modal').classList.add('hidden');
             if(!e.target.closest('#month-dropdown-container') && dropdownOpen) toggleMonthDropdown();
+            if(!e.target.closest('#year-dropdown-container') && yearDropdownOpen) toggleYearDropdown();
             
             document.querySelectorAll('.custom-dropdown-menu').forEach(drop => {
                 if(!e.target.closest('.c-select-container') && !e.target.closest('.goal-sel-container') && !e.target.closest('.dp-container') && !drop.classList.contains('hidden')) {
                     drop.classList.add('hidden'); drop.classList.remove('liquid-bounce');
-                    // Restaurar z-index del card metas
                     if(drop.id.includes('goal-sel-')) { $('card-metas').classList.replace('z-[9999]', 'z-[50]'); }
                 }
             });
@@ -598,17 +613,26 @@
         const firebaseConfig = { apiKey: "AIzaSyBjDnhux11n1FLrfdjQ7qwaBDsiTkYb-CU", authDomain: "equo-7ed4d.firebaseapp.com", projectId: "equo-7ed4d", storageBucket: "equo-7ed4d.firebasestorage.app", messagingSenderId: "1019870804475", appId: "1:1019870804475:web:963831fdad13a04569f35e" };
         firebase.initializeApp(firebaseConfig); const auth = firebase.auth(); const db = firebase.firestore();
 
-        const buildDefault = () => ({ year: currentSystemYear, goals:[], missions:[], globalDebts:[], globalLoans:[], months: Array.from({length: 12}, (_, i) => ({ id: i, incomes: {trabajo:0, inversiones:0, trading:0, pasivos:0}, savingsPercent:0, investPercent:0, expenses:[], debtPayments: {}, loanPayments: {} })) });
+        const buildDefault = (yr = currentSystemYear) => ({ year: yr, goals:[], missions:[], globalDebts:[], globalLoans:[], months: Array.from({length: 12}, (_, i) => ({ id: i, incomes: {trabajo:0, inversiones:0, trading:0, pasivos:0}, savingsPercent:0, investPercent:0, expenses:[], debtPayments: {}, loanPayments: {} })) });
         let appData = buildDefault(); let sessionToastsShown = new Set(); let currM = new Date().getMonth(); let authReady = false, currentUser = null;
         let trendChartInst = null; let distChartInst = null;
+
+        /* ── AÑO ACTIVO ───────────────────────────────────────────────────── */
+        let currYear = currentSystemYear;
+        const YEAR_RANGE = 5; // años históricos a mostrar
+
+        // Doc Firestore: año actual → doc principal del usuario; histórico → doc separado
+        function yearDocId(uid, yr) {
+            return yr === currentSystemYear ? uid : `${uid}_year_${yr}`;
+        }
 
         auth.onAuthStateChanged((user) => { currentUser = user; window.currentUser = user; authReady = true; resolveAppStart(); });
         async function resolveAppStart() {
             if (!authReady) return;
             if (currentUser) {
                 $('auth-screen').classList.add('hidden');
-                await loadUserData(currentUser.uid);
-                $('app-shell').classList.remove('hidden');  // mostrar app-shell completo
+                await loadUserData(currentUser.uid, currentSystemYear);
+                $('app-shell').classList.remove('hidden');
                 $('app-shell').style.display = 'flex';
                 initApp();
             } else {
@@ -618,14 +642,26 @@
                 appData = buildDefault();
             }
         }
-        async function loadUserData(uid) {
+        async function loadUserData(uid, yr) {
             try {
-                const doc = await db.collection("users").doc(uid).get();
-                if (doc.exists) { appData = doc.data(); if(!appData.globalDebts) { appData.globalDebts=[]; appData.globalLoans=[]; appData.months.forEach(m=>{m.debtPayments={}; m.loanPayments={};}); } if(appData.year !== currentSystemYear) appData.year = currentSystemYear; } 
-                else { appData = buildDefault(); await db.collection("users").doc(uid).set(appData); }
-            } catch (e) { showToast('error', 'Error', 'Data load failed.'); appData = buildDefault(); }
+                const docId = yearDocId(uid, yr);
+                const doc = await db.collection("users").doc(docId).get();
+                if (doc.exists) {
+                    appData = doc.data();
+                    if (!appData.globalDebts) { appData.globalDebts=[]; appData.globalLoans=[]; appData.months.forEach(m=>{m.debtPayments={}; m.loanPayments={};}); }
+                    appData.year = yr;
+                } else {
+                    appData = buildDefault(yr);
+                    if (yr === currentSystemYear) await db.collection("users").doc(docId).set(appData);
+                }
+            } catch (e) { showToast('error', 'Error', 'Data load failed.'); appData = buildDefault(yr); }
         }
-        const save = () => { if (currentUser) db.collection("users").doc(currentUser.uid).set(appData).catch(e => console.error(e)); };
+        const save = () => {
+            if (currentUser) {
+                const docId = yearDocId(currentUser.uid, currYear);
+                db.collection("users").doc(docId).set(appData).catch(e => console.error(e));
+            }
+        };
 
         async function handleAuth() { let em = $('auth-email').value, p = $('auth-password').value; try { await auth.signInWithEmailAndPassword(em, p); } catch(err) { $('auth-error').innerText = "Credenciales incorrectas."; $('auth-error').classList.remove('hidden'); } }
         async function handleRegister() { let e = $('auth-email').value, p = $('auth-password').value; try { await auth.createUserWithEmailAndPassword(e, p); } catch(err) { $('auth-error').innerText = err.message; $('auth-error').classList.remove('hidden'); } }
@@ -687,12 +723,81 @@
         }
         function selectCustomOption(inputId, val, textKey) { $(inputId).value = val; $(inputId + '-text').innerText = t(textKey) || val; $(inputId + '-dropdown').classList.add('hidden'); $(inputId + '-dropdown').classList.remove('liquid-bounce'); }
 
-        /* INIT APP & DROPDOWN */
-        function initApp() { initLang(); switchMonth(currM); }
+        /* INIT APP & DROPDOWNS */
+        function initApp() { initLang(); renderYearDropdown(); switchMonth(currM); }
 
+        /* ── AÑO DROPDOWN ──────────────────────────────────────────────────── */
+        let yearDropdownOpen = false;
+
+        function toggleYearDropdown() {
+            yearDropdownOpen = !yearDropdownOpen;
+            const menu = $('year-dropdown-menu'), icon = $('year-drop-icon');
+            // Cerrar mes si está abierto
+            if (dropdownOpen) {
+                $('month-dropdown-menu').classList.add('hidden', 'liquid-bounce');
+                $('month-dropdown-menu').classList.remove('flex');
+                $('month-drop-icon').style.transform = 'rotate(0deg)';
+                dropdownOpen = false;
+            }
+            document.querySelectorAll('.custom-dropdown-menu').forEach(d => { d.classList.add('hidden'); d.classList.remove('liquid-bounce'); });
+            if (yearDropdownOpen) {
+                menu.classList.remove('hidden'); menu.classList.add('flex', 'liquid-bounce');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                menu.classList.add('hidden'); menu.classList.remove('flex', 'liquid-bounce');
+                icon.style.transform = 'rotate(0deg)';
+            }
+            event.stopPropagation();
+        }
+
+        function renderYearDropdown() {
+            const years = [];
+            for (let y = currentSystemYear; y >= currentSystemYear - YEAR_RANGE; y--) years.push(y);
+            $('year-dropdown-menu').innerHTML = years.map(y =>
+                `<button onclick="selectYear(${y})" class="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 text-xs transition-colors flex items-center gap-2 ${y === currYear ? 'bg-sky-500/20 text-sky-400 font-bold' : 'text-white/70 hover:text-white'}"><i class="fa-solid fa-calendar-days text-[9px] opacity-60"></i>${y}${y === currentSystemYear ? '<span class="ml-auto text-[8px] text-emerald-400 font-bold uppercase tracking-wider">Activo</span>' : ''}</button>`
+            ).join('');
+            $('current-year-text').innerText = currYear;
+        }
+
+        async function selectYear(yr) {
+            if (yr === currYear) { toggleYearDropdown(); return; }
+            // Guardar año actual antes de cambiar
+            save();
+            // Spinner en el botón
+            $('current-year-text').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            // Cerrar dropdown
+            yearDropdownOpen = false;
+            const menu = $('year-dropdown-menu'), icon = $('year-drop-icon');
+            menu.classList.add('hidden'); menu.classList.remove('flex', 'liquid-bounce');
+            icon.style.transform = 'rotate(0deg)';
+            // Destruir gráficos para que se re-inicialicen con nuevos datos
+            if (trendChartInst) { trendChartInst.destroy(); trendChartInst = null; }
+            if (distChartInst)  { distChartInst.destroy();  distChartInst  = null; }
+            // Cambiar año activo y cargar datos
+            currYear = yr;
+            sessionToastsShown = new Set();
+            await loadUserData(currentUser.uid, yr);
+            currM = 0; // Ir a Enero del año seleccionado
+            renderYearDropdown();
+            switchMonth(currM);
+            // Toast informativo
+            const isHistorico = yr < currentSystemYear;
+            showToast(
+                isHistorico ? 'warning' : 'success',
+                isHistorico ? `Año ${yr} — Histórico` : `Año ${yr} — Activo`,
+                isHistorico ? 'Visualizando datos históricos.' : 'De vuelta al año en curso.'
+            );
+        }
+
+        /* ── MES DROPDOWN ──────────────────────────────────────────────────── */
         let dropdownOpen = false;
         function toggleMonthDropdown() {
             dropdownOpen = !dropdownOpen; const menu = $('month-dropdown-menu'), icon = $('month-drop-icon');
+            // Cerrar año si está abierto
+            if (yearDropdownOpen) {
+                $('year-dropdown-menu').classList.add('hidden'); $('year-dropdown-menu').classList.remove('flex', 'liquid-bounce');
+                $('year-drop-icon').style.transform = 'rotate(0deg)'; yearDropdownOpen = false;
+            }
             document.querySelectorAll('.custom-dropdown-menu').forEach(d => { d.classList.add('hidden'); d.classList.remove('liquid-bounce'); });
             if(dropdownOpen) { menu.classList.remove('hidden'); menu.classList.add('flex', 'liquid-bounce'); icon.style.transform = 'rotate(180deg)'; } 
             else { menu.classList.remove('liquid-bounce'); menu.classList.add('hidden'); menu.classList.remove('flex'); icon.style.transform = 'rotate(0deg)'; }
@@ -990,7 +1095,7 @@
             }
         }
 
-        window.switchMonth = switchMonth; window.updateIncome = updateIncome; window.updatePercent = updatePercent; window.addExpense = addExpense; window.handleExpenseInput = handleExpenseInput; window.removeExpense = removeExpense; window.openRecordModal = openRecordModal; window.saveRecord = saveRecord; window.handlePaymentInput = handlePaymentInput; window.addGoal = addGoal; window.removeGoal = removeGoal; window.updateGoal = updateGoal; window.toggleMsnType = toggleMsnType; window.addMission = addMission; window.removeMission = removeMission; window.saveToCloud = saveToCloud; window.handleAuth = handleAuth; window.handleRegister = handleRegister; window.handleLogout = handleLogout; window.toggleTheme = toggleTheme; window.toggleMonthDropdown = toggleMonthDropdown; window.selectMonth = selectMonth; window.toggleCustomSelect = toggleCustomSelect; window.selectCustomOption = selectCustomOption; window.toggleLang = toggleLang; window.toggleCalendar = toggleCalendar; window.changeCalMonth = changeCalMonth; window.selectDate = selectDate; window.toggleGoalSelect = toggleGoalSelect;
+        window.switchMonth = switchMonth; window.updateIncome = updateIncome; window.updatePercent = updatePercent; window.addExpense = addExpense; window.handleExpenseInput = handleExpenseInput; window.removeExpense = removeExpense; window.openRecordModal = openRecordModal; window.saveRecord = saveRecord; window.handlePaymentInput = handlePaymentInput; window.addGoal = addGoal; window.removeGoal = removeGoal; window.updateGoal = updateGoal; window.toggleMsnType = toggleMsnType; window.addMission = addMission; window.removeMission = removeMission; window.saveToCloud = saveToCloud; window.handleAuth = handleAuth; window.handleRegister = handleRegister; window.handleLogout = handleLogout; window.toggleTheme = toggleTheme; window.toggleMonthDropdown = toggleMonthDropdown; window.toggleYearDropdown = toggleYearDropdown; window.selectMonth = selectMonth; window.selectYear = selectYear; window.toggleCustomSelect = toggleCustomSelect; window.selectCustomOption = selectCustomOption; window.toggleLang = toggleLang; window.toggleCalendar = toggleCalendar; window.changeCalMonth = changeCalMonth; window.selectDate = selectDate; window.toggleGoalSelect = toggleGoalSelect;
 
         // ── Exponer globales para fase2-logic.js ─────────────────────────────────
         window.db   = db;
