@@ -138,15 +138,15 @@
         #panel-negocios  { display: none; flex: 1; min-height: 0; }
 
         .panel-switch-btn {
-            display: inline-flex; align-items: center; gap: 0.35rem;
-            padding: 0.3rem 0.8rem; border-radius: 9999px;
-            font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 2rem; height: 2rem; border-radius: 9999px;
+            font-size: 13px;
             border: 1px solid rgba(255,255,255,0.12);
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.55);
             transition: all 0.25s ease; cursor: pointer;
         }
-        .panel-switch-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.3); }
+        .panel-switch-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.3); transform: scale(1.08); }
         .panel-switch-btn.active-panel {
             background: linear-gradient(135deg, rgba(56,189,248,0.25), rgba(129,140,248,0.25));
             border-color: rgba(56,189,248,0.6);
@@ -175,13 +175,25 @@
 
         <!-- HEADER MAESTRO — NUNCA se oculta al cambiar de panel -->
         <div class="p-4 md:px-6 md:pt-6 max-w-[1300px] mx-auto w-full">
-        <header class="flex flex-col lg:flex-row justify-between items-center gap-4 glass-card p-4 relative z-[100] w-full">
-            <div class="flex-1 flex justify-center lg:justify-start items-center">
+        <header class="flex flex-col lg:flex-row justify-between items-center gap-3 glass-card p-4 relative z-[100] w-full">
+
+            <!-- LOGO -->
+            <div class="flex-none flex items-center">
                 <div class="text-3xl font-extrabold tracking-tight anim-text-gradient font-['Outfit']">EQUO</div>
             </div>
-            
+
+            <!-- ── SWITCH DE PANELES (entre logo y ticker) ──────────── -->
+            <div class="flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-1 py-1">
+                <button id="btn-panel-personal" onclick="switchPanel('personal')" class="panel-switch-btn active-panel" title="Panel Personal">
+                    <i class="fa-solid fa-user"></i>
+                </button>
+                <button id="btn-panel-negocios" onclick="switchPanel('negocios')" class="panel-switch-btn" title="Panel de Negocios">
+                    <i class="fa-solid fa-briefcase"></i>
+                </button>
+            </div>
+
             <!-- Ticker FX Live -->
-            <div class="flex-none flex justify-center items-center text-[11px] sm:text-xs font-semibold tracking-wide font-['Outfit'] bg-white/5 border border-white/10 px-4 py-2 rounded-full gap-2 sm:gap-3 shadow-[0_0_15px_rgba(0,0,0,0.2)]">
+            <div class="flex-1 flex justify-center items-center text-[11px] sm:text-xs font-semibold tracking-wide font-['Outfit'] bg-white/5 border border-white/10 px-4 py-2 rounded-full gap-2 sm:gap-3 shadow-[0_0_15px_rgba(0,0,0,0.2)]">
                 <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)] mr-1"></div>
                 <div class="flex items-center"><span class="text-gray-400 mr-1">USD:</span> <span id="tick-usd" class="text-white font-bold">--.--</span></div>
                 <span class="text-white/20">|</span>
@@ -189,25 +201,16 @@
                 <span class="text-white/20">|</span>
                 <div class="flex items-center"><span class="text-gray-400 mr-1">USDT:</span> <span id="tick-usdt" class="text-white font-bold">--.--</span></div>
             </div>
-            
-            <!-- Herramientas -->
-            <div class="flex-1 flex flex-wrap items-center justify-center lg:justify-end gap-2">
 
-                <!-- ── SWITCH DE PANELES ──────────────────────────────── -->
-                <div class="flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-1 py-1 mr-1">
-                    <button id="btn-panel-personal" onclick="switchPanel('personal')" class="panel-switch-btn active-panel" title="Panel Personal">
-                        <i class="fa-solid fa-user"></i> Personal
-                    </button>
-                    <button id="btn-panel-negocios" onclick="switchPanel('negocios')" class="panel-switch-btn" title="Panel de Negocios">
-                        <i class="fa-solid fa-briefcase"></i> Negocios
-                    </button>
-                </div>
+            <!-- Herramientas -->
+            <div class="flex-none flex flex-wrap items-center justify-end gap-2">
 
                 <button onclick="$('mission-modal').classList.remove('hidden')" class="btn-float px-3 py-1.5 rounded bg-white/5 border border-white/10 text-[10px] font-semibold text-gray-200 tracking-wide"><i class="fa-solid fa-rocket text-violet-400 mr-1"></i> <span data-i18n="missionBtn">Misión</span></button>
-                <div class="w-px h-4 bg-white/20 mx-1 hidden sm:block"></div>
-                
-                <button id="btn-reset" onclick="confirmReset()" class="btn-float px-3 py-1.5 rounded bg-white/5 border border-white/10 text-[10px] font-semibold text-gray-200 tracking-wide"><i class="fa-solid fa-rotate-left text-red-400 mr-1"></i> <span data-i18n="resetBtn">Reset Año</span></button>
-                
+
+                <div class="w-px h-4 bg-white/20 mx-0.5 hidden sm:block"></div>
+
+                <button id="btn-save" onclick="saveToCloud()" class="btn-float px-3 py-1.5 rounded bg-white/5 border border-white/10 text-[10px] font-semibold text-sky-300 tracking-wide hover:text-white" title="Guardar en la nube"><i class="fa-solid fa-cloud-arrow-up text-sky-400 mr-1"></i> Guardar</button>
+
                 <button onclick="toggleTheme()" class="btn-float px-2.5 py-1.5 rounded bg-white/5 border border-white/10 text-[12px] font-semibold text-gray-200 hover:text-white transition shadow-inner"><i id="theme-icon" class="fa-solid fa-sun"></i></button>
 
                 <button onclick="toggleLang()" class="btn-float px-2.5 py-1.5 rounded bg-white/5 border border-white/10 text-[12px] font-semibold text-sky-400 hover:text-white transition shadow-inner"><i class="fa-solid fa-globe mr-1"></i> <span id="lang-text" class="text-[10px]">ES</span></button>
@@ -967,51 +970,27 @@
             }
         }
 
-        let resetClicks = 0;
-        async function confirmReset() {
-            if(!currentUser) return;
-            let btn = $('btn-reset');
-            if(resetClicks === 0) {
-                btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> Segur@?';
-                btn.classList.replace('bg-white/5', 'bg-red-500/80');
-                btn.classList.replace('text-gray-200', 'text-white');
-                resetClicks++;
-                setTimeout(() => {
-                    resetClicks = 0;
-                    btn.innerHTML = `<i class="fa-solid fa-rotate-left text-red-400 mr-1"></i> <span data-i18n="resetBtn">${t('resetBtn')}</span>`;
-                    btn.classList.replace('bg-red-500/80', 'bg-white/5');
-                    btn.classList.replace('text-white', 'text-gray-200');
-                    applyTranslations();
-                }, 3000);
-            } else {
-                // \u2500\u2500 1. SOFT RESET: reconstruir datos en memoria \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-                appData = buildDefault();
-                appData.year = currentSystemYear;
-
-                // \u2500\u2500 2. Persistir en Firebase \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        /* GUARDAR EN LA NUBE */
+        async function saveToCloud() {
+            if (!currentUser) { showToast('error', 'Error', 'No hay sesión activa.'); return; }
+            const btn = $('btn-save');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sky-400"></i>';
+            btn.disabled = true;
+            try {
                 await db.collection("users").doc(currentUser.uid).set(appData);
-
-                // \u2500\u2500 3. Destruir gráficos de Fase 1 para que se re-inicialicen en cero \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-                if (trendChartInst) { trendChartInst.destroy(); trendChartInst = null; }
-                if (distChartInst)  { distChartInst.destroy();  distChartInst  = null; }
-
-                // \u2500\u2500 4. Refresh Panel Personal (Fase 1) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-                initApp();
-
-                // \u2500\u2500 5. Refresh Panel de Negocios (Fase 2, solo si está cargado) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-                if (typeof window.forceRefreshFase2 === 'function') window.forceRefreshFase2();
-
-                // \u2500\u2500 6. Restaurar botón y notificar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-                resetClicks = 0;
-                btn.innerHTML = `<i class="fa-solid fa-rotate-left text-red-400 mr-1"></i> <span data-i18n="resetBtn">${t('resetBtn')}</span>`;
-                btn.classList.replace('bg-red-500/80', 'bg-white/5');
-                btn.classList.replace('text-white', 'text-gray-200');
-                applyTranslations();
-                showToast('success', 'Reset completado', 'El año ha sido reiniciado. Todos los módulos están en cero.');
+                if (typeof window.saveAppDataFase2 === 'function') window.saveAppDataFase2();
+                showToast('success', 'Guardado', 'Datos sincronizados.');
+            } catch(e) {
+                showToast('error', 'Error', 'Fallo al guardar.');
+            } finally {
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-sky-400"></i>';
+                    btn.disabled = false;
+                }, 1500);
             }
         }
 
-        window.switchMonth = switchMonth; window.updateIncome = updateIncome; window.updatePercent = updatePercent; window.addExpense = addExpense; window.handleExpenseInput = handleExpenseInput; window.removeExpense = removeExpense; window.openRecordModal = openRecordModal; window.saveRecord = saveRecord; window.handlePaymentInput = handlePaymentInput; window.addGoal = addGoal; window.removeGoal = removeGoal; window.updateGoal = updateGoal; window.toggleMsnType = toggleMsnType; window.addMission = addMission; window.removeMission = removeMission; window.confirmReset = confirmReset; window.handleAuth = handleAuth; window.handleRegister = handleRegister; window.handleLogout = handleLogout; window.toggleTheme = toggleTheme; window.toggleMonthDropdown = toggleMonthDropdown; window.selectMonth = selectMonth; window.toggleCustomSelect = toggleCustomSelect; window.selectCustomOption = selectCustomOption; window.toggleLang = toggleLang; window.toggleCalendar = toggleCalendar; window.changeCalMonth = changeCalMonth; window.selectDate = selectDate; window.toggleGoalSelect = toggleGoalSelect;
+        window.switchMonth = switchMonth; window.updateIncome = updateIncome; window.updatePercent = updatePercent; window.addExpense = addExpense; window.handleExpenseInput = handleExpenseInput; window.removeExpense = removeExpense; window.openRecordModal = openRecordModal; window.saveRecord = saveRecord; window.handlePaymentInput = handlePaymentInput; window.addGoal = addGoal; window.removeGoal = removeGoal; window.updateGoal = updateGoal; window.toggleMsnType = toggleMsnType; window.addMission = addMission; window.removeMission = removeMission; window.saveToCloud = saveToCloud; window.handleAuth = handleAuth; window.handleRegister = handleRegister; window.handleLogout = handleLogout; window.toggleTheme = toggleTheme; window.toggleMonthDropdown = toggleMonthDropdown; window.selectMonth = selectMonth; window.toggleCustomSelect = toggleCustomSelect; window.selectCustomOption = selectCustomOption; window.toggleLang = toggleLang; window.toggleCalendar = toggleCalendar; window.changeCalMonth = changeCalMonth; window.selectDate = selectDate; window.toggleGoalSelect = toggleGoalSelect;
 
         // ── Exponer globales para fase2-logic.js ─────────────────────────────────
         window.db   = db;
