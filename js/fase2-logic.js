@@ -150,6 +150,52 @@ document.addEventListener('DOMContentLoaded', function () {
      * inyectar dinámicamente el DOM de fase2.html en #panel-negocios.
      * Re-ejecuta todos los renders para poblar el DOM recién disponible.
      */
+    /**
+     * window.applyThemeToFase2()
+     * Sincroniza el modo claro/oscuro del body con el panel de negocios.
+     * Se llama: (a) al inicializar initFase2, (b) desde el MutationObserver
+     * cuando toggleTheme() cambia la clase del body, y (c) opcionalmente desde
+     * toggleTheme() en index.html como hook explícito.
+     */
+    window.applyThemeToFase2 = function () {
+        const isLight = document.body.classList.contains('light-mode');
+        const bizDash = document.getElementById('business-dashboard');
+        if (!bizDash) return;
+
+        // 1. Sincronizar la clase en el contenedor raíz del panel
+        if (isLight) {
+            bizDash.classList.add('light-mode');
+        } else {
+            bizDash.classList.remove('light-mode');
+        }
+
+        // 2. Propagar a modales del panel que se insertan en document.body
+        //    (no son hijos de #business-dashboard, pero deben heredar el tema)
+        const panelModals = [
+            'product-modal', 'supplier-modal', 'combo-modal', 'sale-modal',
+            'sale-edit-modal', 'encargo-modal', 'cxc-modal', 'cxc-payment-modal',
+            'prestamo-modal', 'centered-alert-modal', 'premium-confirm-modal'
+        ];
+        panelModals.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (isLight) el.classList.add('light-mode');
+            else         el.classList.remove('light-mode');
+        });
+
+        // 3. Re-renderizar componentes dinámicos para que el HTML generado
+        //    recoja las nuevas clases CSS (inventario, CxC, Caja generan HTML con colores hardcoded).
+        //    Usamos requestAnimationFrame para no bloquear el ciclo de pintura.
+        requestAnimationFrame(() => {
+            if (typeof renderInventory === 'function') renderInventory();
+            if (typeof renderCxC       === 'function') renderCxC();
+            if (typeof renderCaja      === 'function') renderCaja();
+            if (typeof renderSales     === 'function') renderSales();
+        });
+
+        console.log(`[EQUO] applyThemeToFase2() — modo ${isLight ? 'claro' : 'oscuro'} aplicado ✓`);
+    };
+
     window.initFase2 = function () {
         window._syncFxRates && window._syncFxRates(); // sincronizar tasas FX
         if (typeof window.renderDateSelectors === 'function') window.renderDateSelectors();
@@ -162,6 +208,23 @@ document.addEventListener('DOMContentLoaded', function () {
         if (typeof window.renderPrestamos === 'function') window.renderPrestamos();
         if (typeof window.calculateAdvancedAnalytics === 'function') window.calculateAdvancedAnalytics();
         if (typeof window.verificarAlertasGlobales   === 'function') window.verificarAlertasGlobales();
+
+        // ── Sincronizar tema inmediatamente al inicializar ──────────────────
+        window.applyThemeToFase2();
+
+        // ── MutationObserver: reacciona a toggleTheme() en el body raíz ────
+        if (!window._themeObserverFase2) {
+            window._themeObserverFase2 = new MutationObserver((mutations) => {
+                for (const m of mutations) {
+                    if (m.type === 'attributes' && m.attributeName === 'class') {
+                        window.applyThemeToFase2();
+                        break;
+                    }
+                }
+            });
+            window._themeObserverFase2.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        }
+
         console.log('[EQUO] initFase2() — Panel de Negocios inicializado ✓');
     };
 

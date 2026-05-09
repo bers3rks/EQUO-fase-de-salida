@@ -564,6 +564,8 @@
             document.body.classList.toggle('light-mode'); const isLight = document.body.classList.contains('light-mode');
             localStorage.setItem('equo-theme', isLight ? 'light' : 'dark'); $('theme-icon').className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
             if (trendChartInst || distChartInst) updateCharts();
+            // Notificar al Panel de Negocios (Fase 2) para sincronizar el tema
+            if (typeof window.applyThemeToFase2 === 'function') window.applyThemeToFase2();
         }
         
         /* TICKER FX (Live) */
