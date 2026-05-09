@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EQUO | Panel Emprendedor (Fase 2)</title>
+<meta name="description" content="Panel de gestión empresarial EQUO - Inventario, Ventas, Cobrador, Caja y Préstamos.">
+<!-- CDN deps (mismas versiones que Bussines_V7) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+<!-- Firebase compat -->
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+<!-- Firebase init centralizado -->
+<script src="js/firebase-init.js"></script>
+<!-- Estilos propios (copia los tokens CSS de Bussines_V7 o usa el CSS compartido) -->
+<link rel="stylesheet" href="css/fase2-styles.css">
+<!-- Flatpickr para Calendario Premium -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<style>
+  .flatpickr-calendar { font-family: 'Outfit', sans-serif !important; background: rgba(15, 23, 42, 0.95) !important; backdrop-filter: blur(24px) !important; border: 1px solid rgba(255,255,255,0.1) !important; box-shadow: 0 20px 40px rgba(0,0,0,0.8) !important; border-radius: 1rem !important; z-index: 999999 !important; }
+  .flatpickr-day.selected { background: rgba(14, 165, 233, 0.3) !important; border-color: #38bdf8 !important; color: #38bdf8 !important; font-weight: bold; }
+  .flatpickr-day:hover { background: rgba(255,255,255,0.1) !important; border-color: transparent !important; }
+  .flatpickr-weekdays { background: transparent !important; }
+  span.flatpickr-weekday { background: transparent !important; color: rgba(255,255,255,0.5) !important; }
+  .flatpickr-months .flatpickr-month { background: transparent !important; color: white !important; fill: white !important; }
+  .flatpickr-current-month .flatpickr-monthDropdown-months {
+      appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;
+      background-color: #0f172a !important; color: white !important; font-family: 'Outfit', sans-serif !important;
+      border: 1px solid rgba(56, 189, 248, 0.3) !important; border-radius: 0.5rem !important;
+      padding: 2px 8px !important; outline: none !important; cursor: pointer !important; z-index: 999999 !important;
+  }
+  .flatpickr-current-month .flatpickr-monthDropdown-months:hover { border-color: #38bdf8 !important; }
+  .flatpickr-monthDropdown-month { background-color: #0f172a !important; color: white !important; }
+  .numInputWrapper input { color: white !important; font-family: 'Outfit', sans-serif !important; }
+  .numInputWrapper:hover { background: transparent !important; }
+</style>
+  <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
+</head>
+<body>
+<div id="premium-cursor"></div>
+<canvas id="particles"></canvas>
+<datalist id="cat-list"></datalist>
+<datalist id="brand-list"></datalist>
+
+<!-- ===== BUSINESS DASHBOARD ===== -->
+<div id="business-dashboard" class="flex flex-col gap-4 p-4 md:p-6 relative z-[80]">
+
+  <!-- Barra superior de navegación -->
+  <div class="glass-card p-3 flex flex-row justify-between items-center gap-4 relative z-[90]">
+    <div class="flex items-center gap-3">
+      <div class="relative w-40 self-start z-[95]" id="month-dropdown-container-biz">
+        <button id="biz-month-dropdown-btn" class="glass-input flex justify-between items-center w-full !py-3 font-bold text-sky-400 hover:bg-white/5 transition-colors cursor-pointer border-white/20 glass-card">
+          <span id="biz-current-month-text" class="text-sm tracking-wide">Enero</span>
+          <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" id="biz-month-drop-icon"></i>
+        </button>
+        <div id="biz-month-dropdown-menu" class="custom-dropdown-menu absolute top-full left-0 w-full mt-2 bg-slate-900/95 backdrop-blur-3xl border border-white/10 p-2 hidden flex-col gap-1 z-[999] rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.8)] max-h-[300px] overflow-y-auto"></div>
+      </div>
+      <div class="relative w-28 self-start z-[95]" id="year-dropdown-container">
+        <button id="biz-year-dropdown-btn" class="glass-input flex justify-between items-center w-full !py-3 font-bold text-sky-400 hover:bg-white/5 transition-colors cursor-pointer border-white/20 glass-card">
+          <span id="biz-current-year-text" class="text-sm tracking-wide">2026</span>
+          <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" id="biz-year-drop-icon"></i>
+        </button>
+        <div id="biz-year-dropdown-menu" class="custom-dropdown-menu absolute top-full left-0 w-full mt-2 bg-slate-900/95 backdrop-blur-3xl border border-white/10 p-2 hidden flex-col gap-1 z-[999] rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.8)] max-h-[220px] overflow-y-auto"></div>
+      </div>
+    </div>
+    <div class="flex gap-4 border-b border-white/10 pb-1 overflow-x-auto justify-end flex-1">
+      <button onclick="switchBizTab('inventory')" id="tab-btn-inventory" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-white border-b-2 border-sky-400 pb-2 px-3 transition-colors">Inventario</button>
+      <button onclick="switchBizTab('sales')" id="tab-btn-sales" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-white pb-2 px-3 transition-colors">Ventas</button>
+      <button onclick="switchBizTab('encargos')" id="tab-btn-encargos" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-white pb-2 px-3 transition-colors">Encargos</button>
+      <button onclick="switchBizTab('cxc')" id="tab-btn-cxc" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-white pb-2 px-3 transition-colors">Cobrador</button>
+      <button onclick="switchBizTab('caja')" id="tab-btn-caja" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-white pb-2 px-3 transition-colors">Caja</button>
+      <button onclick="switchBizTab('prestamos')" id="tab-btn-prestamos" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-white pb-2 px-3 transition-colors">Préstamos</button>
+      <button onclick="switchBizTab('suppliers')" id="tab-btn-suppliers" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-white pb-2 px-3 transition-colors">Proveedores</button>
+      <button onclick="switchBizTab('analisis-avanzado')" id="tab-btn-analisis-avanzado" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-white pb-2 px-3 transition-colors">Análisis Avanzado</button>
+    </div>
+  </div>
+
+  <!-- TAB 1: INVENTARIO -->
+  <div id="biz-inventory-section" class="flex flex-col gap-8 mt-8 mb-8">
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-6 relative z-[80]">
+      <div class="glass-card p-6 text-center border-t-2 border-t-sky-400 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Stock Actual</p>
+        <p id="inv-metric-total-stock" class="text-xl font-extrabold text-white">0</p>
+        <p id="inv-metric-total-stock-val" class="text-[10px] text-sky-400 font-bold mt-1">$0.00</p>
+      </div>
+      <div class="glass-card p-6 text-center border-t-2 border-t-amber-400 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Stock Antiguo</p>
+        <p id="inv-metric-aging-stock" class="text-xl font-extrabold text-amber-400">0</p>
+        <p id="inv-metric-aging-stock-val" class="text-[10px] text-amber-400 font-bold mt-1">$0.00</p>
+      </div>
+      <div class="glass-card p-6 text-center border-t-2 border-t-pink-500 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Inversión Total</p>
+        <p id="inv-metric-investment" class="text-xl font-extrabold text-pink-400">$0.00</p>
+      </div>
+      <div class="glass-card p-6 text-center border-t-2 border-t-violet-400 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Ingreso Bruto</p>
+        <p id="inv-metric-gross-income" class="text-xl font-extrabold text-violet-400">$0.00</p>
+      </div>
+      <div class="glass-card p-6 text-center border-t-2 border-t-emerald-400 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Ganancia (VN)</p>
+        <p id="inv-metric-profit-sales" class="text-xl font-extrabold text-emerald-400">$0.00</p>
+      </div>
+      <div class="glass-card p-6 text-center border-t-2 border-t-amber-400 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Recaudación (CQ)</p>
+        <p id="inv-metric-profit-cxc" class="text-xl font-extrabold text-amber-400">$0.00</p>
+      </div>
+    </div>
+    <div class="glass-card p-5 flex justify-between items-center gap-4 relative z-[75]">
+      <div class="relative w-full md:w-64">
+        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+        <input type="text" id="inv-search" class="glass-input !py-2.5 !pl-8 text-xs w-full" placeholder="Buscar producto..." oninput="renderInventory()">
+      </div>
+      <button onclick="openProductModal()" class="btn-float px-5 py-2.5 rounded-lg theme-bg-gradient text-white font-bold text-xs shadow-lg whitespace-nowrap">
+        <i class="fa-solid fa-plus mr-1"></i> Añadir Producto
+      </button>
+    </div>
+    <div id="inventory-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10"></div>
+  </div>
+
+  <!-- TAB 2: VENTAS -->
+  <div id="biz-sales-section" class="hidden flex-col gap-4">
+    <div class="glass-card p-5 flex justify-between items-center relative z-[80]">
+      <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-cart-shopping text-emerald-400 mr-2"></i>Ventas</h2>
+      <div class="flex gap-2">
+        <button onclick="openComboModal()" class="btn-float px-4 py-2 rounded-lg bg-violet-500/20 border border-violet-500/50 text-violet-300 font-bold text-xs shadow-lg"><i class="fa-solid fa-layer-group mr-1"></i> Crear Combo</button>
+        <button onclick="openSaleModal()" class="btn-float px-4 py-2 rounded-lg theme-bg-gradient text-white font-bold text-xs shadow-lg"><i class="fa-solid fa-cash-register mr-1"></i> Registrar Venta</button>
+      </div>
+    </div>
+    <div id="combos-wrapper" class="glass-card p-5 mb-1 hidden flex-col">
+      <h3 class="text-sm font-bold text-white mb-3"><i class="fa-solid fa-layer-group text-violet-400 mr-2"></i>Combos Activos</h3>
+      <div id="active-combos-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+    </div>
+    <div id="sales-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10"></div>
+  </div>
+
+  <!-- TAB ENCARGOS -->
+  <div id="biz-encargos-section" class="hidden flex-col gap-4">
+    <div class="flex justify-between items-center mb-2">
+      <h3 class="text-xl font-extrabold text-white flex items-center gap-2"><i class="fa-solid fa-box-open text-sky-400"></i> Encargos / Pedidos</h3>
+      <button onclick="openEncargoModal()" class="btn-float py-2 px-4 rounded-xl theme-bg-gradient text-white font-bold text-sm shadow-lg whitespace-nowrap"><i class="fa-solid fa-plus mr-1"></i> Nuevo Encargo</button>
+    </div>
+    <!-- Métricas -->
+    <div class="grid grid-cols-4 gap-3 mb-2">
+      <div class="glass-card p-4 text-center">
+        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Total en Encargos</p>
+        <p id="encargos-metric-total" class="text-lg font-extrabold text-white">$0.00</p>
+      </div>
+      <div class="glass-card p-4 text-center">
+        <p class="text-[10px] text-emerald-400/80 uppercase font-bold tracking-wider mb-1">Total Recibido</p>
+        <p id="encargos-metric-abonos" class="text-lg font-extrabold text-emerald-400">$0.00</p>
+      </div>
+      <div class="glass-card p-4 text-center">
+        <p class="text-[10px] text-amber-400/80 uppercase font-bold tracking-wider mb-1">Por Cobrar</p>
+        <p id="encargos-metric-debt" class="text-lg font-extrabold text-amber-400">$0.00</p>
+      </div>
+      <div class="glass-card p-4 text-center">
+        <p class="text-[10px] text-sky-400/80 uppercase font-bold tracking-wider mb-1">Pedidos Activos</p>
+        <p id="encargos-metric-active" class="text-lg font-extrabold text-sky-400">0</p>
+      </div>
+    </div>
+    <div id="encargos-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10"></div>
+  </div>
+
+  <!-- TAB 3: COBRADOR (CxC) -->
+  <div id="biz-cxc-section" class="hidden flex-col gap-4">
+    <div class="glass-card p-5 flex justify-between items-center relative z-[80]">
+      <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-hand-holding-dollar text-amber-400 mr-2"></i>Cobrador</h2>
+      <button onclick="openCxCModal()" class="btn-float px-4 py-2 rounded-lg theme-bg-gradient text-white font-bold text-xs shadow-lg"><i class="fa-solid fa-plus mr-1"></i> Nueva Cuenta</button>
+    </div>
+    <div id="cxc-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10"></div>
+  </div>
+
+  <!-- TAB 4: PROVEEDORES -->
+  <div id="biz-suppliers-section" class="hidden flex-col gap-4">
+    <div class="glass-card p-5 flex justify-between items-center relative z-[80]">
+      <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-truck-fast text-sky-400 mr-2"></i>Proveedores</h2>
+      <button onclick="openSupplierModal()" class="btn-float px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white font-bold text-xs shadow-lg"><i class="fa-solid fa-handshake mr-1"></i> Vincular Nuevo Aliado</button>
+    </div>
+    <div id="suppliers-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10"></div>
+  </div>
+
+  <!-- TAB 5: CAJA -->
+  <div id="biz-caja-section" class="hidden flex-col gap-8 mt-8 mb-8">
+    <div id="caja-dashboard-view" class="flex flex-col gap-8">
+      <div class="glass-card p-6 flex justify-between items-center relative z-[80]">
+        <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-wallet text-emerald-400 mr-2"></i>Caja</h2>
+        <button onclick="renderCaja()" class="btn-float px-5 py-2.5 rounded-lg theme-bg-gradient text-white font-bold text-xs shadow-lg whitespace-nowrap"><i class="fa-solid fa-rotate-right mr-1"></i> Actualizar</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-[80]">
+        <div class="glass-card p-6 text-center border-t-2 border-t-sky-400 border border-white/10 flex flex-col justify-center shadow-lg">
+          <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Balance Total</p>
+          <h3 id="caja-balance-usd" class="text-xl font-extrabold text-sky-400">$0.00</h3>
+          <p id="caja-balance-bs" class="text-[10px] font-bold mt-2 text-white/50">Bs 0.00</p>
+        </div>
+        <div class="glass-card p-6 text-center border-t-2 border-t-violet-400 border border-white/10 flex flex-col justify-center shadow-lg">
+          <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Métodos con movimientos</p>
+          <p id="caja-method-count" class="text-xl font-extrabold text-violet-400">0</p>
+        </div>
+        <div class="glass-card p-6 text-center border-t-2 border-t-emerald-400 border border-white/10 flex flex-col justify-center shadow-lg">
+          <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Transacciones (mes)</p>
+          <p id="caja-trans-count" class="text-xl font-extrabold text-emerald-400">0</p>
+        </div>
+      </div>
+      <div id="cash-methods-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+    <!-- Detalle del método -->
+    <div id="caja-detail-view" class="hidden w-full flex-col gap-4 pt-0">
+      <div id="caja-detail-panel" class="glass-card w-full min-h-[600px] rounded-2xl p-5 md:p-6 transform transition-all duration-300 flex flex-col border border-white/10">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-1">
+          <div id="caja-detail-header" class="min-w-0">
+            <h3 id="caja-detail-title" class="text-sm font-bold tracking-wide flex items-center gap-2 text-white"><i class="fa-solid fa-clock-rotate-left text-sky-400"></i> Detalle</h3>
+            <p id="caja-detail-sub" class="text-sm text-slate-400">Transacciones del método</p>
+          </div>
+          <button onclick="closeCajaDetail()" class="btn-float px-5 py-2.5 rounded-lg theme-bg-gradient text-white font-bold text-sm shadow-lg whitespace-nowrap"><i class="fa-solid fa-arrow-left mr-2"></i>Volver</button>
+        </div>
+        <div class="glass-card p-5 flex justify-between items-center gap-4 relative z-[75] mb-4">
+          <div class="relative w-full md:w-64">
+            <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input id="caja-history-search" type="text" oninput="filterCajaDetail()" placeholder="Buscar por producto, fecha o moneda..." class="glass-input !py-2.5 !pl-8 text-xs w-full">
+          </div>
+        </div>
+        <div id="caja-detail-body" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: PRÉSTAMOS -->
+  <div id="biz-prestamos-section" class="hidden flex-col gap-8 mt-8 mb-8">
+    <div class="glass-card p-6 flex justify-between items-center relative z-[80]">
+      <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-hand-holding-dollar text-amber-400 mr-2"></i>Préstamos</h2>
+      <button type="button" onclick="openPrestamoModal()" class="btn-float px-5 py-2.5 rounded-lg theme-bg-gradient text-white font-bold text-xs shadow-lg whitespace-nowrap"><i class="fa-solid fa-plus mr-1"></i> Nuevo Préstamo</button>
+    </div>
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-6 relative z-[80]">
+      <div class="glass-card p-6 text-center border-t-2 border-t-sky-400 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Capital en Calle</p>
+        <p id="prest-resumen-calle" class="text-xl font-extrabold text-sky-400">$0.00</p>
+      </div>
+      <div class="glass-card p-6 text-center border-t-2 border-t-violet-400 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Intereses por Cobrar</p>
+        <p id="prest-resumen-intereses" class="text-xl font-extrabold text-violet-400">$0.00</p>
+      </div>
+      <div class="glass-card p-6 text-center border-t-2 border-t-red-500 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Monto en Mora</p>
+        <p id="prest-resumen-mora" class="text-xl font-extrabold text-red-400">$0.00</p>
+      </div>
+      <div class="glass-card p-6 text-center border-t-2 border-t-emerald-400 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Total Recuperado</p>
+        <p id="prest-resumen-recuperado" class="text-xl font-extrabold text-emerald-400">$0.00</p>
+      </div>
+      <div class="glass-card p-6 text-center border-t-2 border-t-sky-400 border border-white/10 flex flex-col justify-center shadow-lg">
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2"><i class="fa-solid fa-vault"></i> Valor Total en Garantías</p>
+        <p id="prest-resumen-garantias" class="text-xl font-extrabold text-sky-400">$0.00</p>
+      </div>
+    </div>
+    <div id="prestamos-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10"></div>
+  </div>
+
+  <!-- TAB 7: ANÁLISIS AVANZADO -->
+  <div id="biz-analisis-avanzado-section" class="hidden flex-col gap-4 pb-10">
+    <!-- CEREBRO FINANCIERO -->
+    <div class="glass-card p-5 flex justify-between items-center relative z-[80]">
+      <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-brain text-sky-400 mr-2"></i>Cerebro Financiero</h2>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+      <div class="glass-card p-5 relative overflow-hidden group hover:border-emerald-500/30 transition-colors">
+        <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block relative z-10"><i class="fa-solid fa-chart-line text-emerald-400 mr-1"></i>UTILIDAD NETA (GANANCIA)</label>
+        <p id="adv-metric-utilidad" class="text-2xl font-extrabold text-emerald-400 relative z-10">$0.00</p>
+      </div>
+
+      <div class="glass-card p-5 relative overflow-hidden group hover:border-sky-500/30 transition-colors">
+        <div class="absolute -right-4 -top-4 w-16 h-16 bg-sky-500/10 rounded-full blur-xl group-hover:bg-sky-500/20 transition-all"></div>
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block relative z-10"><i class="fa-solid fa-money-bill-transfer text-sky-400 mr-1"></i>FLUJO EN LA CALLE</label>
+        <p id="adv-metric-flujo" class="text-2xl font-extrabold text-sky-400 relative z-10">$0.00</p>
+      </div>
+
+      <div class="glass-card p-5 relative overflow-hidden group hover:border-violet-500/30 transition-colors">
+        <div class="absolute -right-4 -top-4 w-16 h-16 bg-violet-500/10 rounded-full blur-xl group-hover:bg-violet-500/20 transition-all"></div>
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block relative z-10"><i class="fa-solid fa-percent text-violet-400 mr-1"></i>RETORNO DE INVERSIÓN (ROI)</label>
+        <p id="adv-metric-roi" class="text-2xl font-extrabold text-violet-400 relative z-10">0.00%</p>
+      </div>
+
+      <div class="glass-card p-5 relative overflow-hidden group hover:border-amber-500/30 transition-colors">
+        <div class="absolute -right-4 -top-4 w-16 h-16 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all"></div>
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block relative z-10"><i class="fa-solid fa-vault text-amber-400 mr-1"></i>BALANCE DE CAJA</label>
+        <p id="ana-balance" class="text-2xl font-extrabold text-amber-400 relative z-10">$0.00</p>
+      </div>
+    </div>
+
+    <!-- ANÁLISIS DE GRÁFICAS -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+      <!-- GRÁFICA FLUJO DE CAJA -->
+      <div class="glass-card p-5">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4 block"><i class="fa-solid fa-chart-column text-sky-400 mr-1"></i>Flujo de Caja Mensual</label>
+        <div class="relative w-full h-64">
+          <canvas id="adv-chart-flujo"></canvas>
+        </div>
+      </div>
+      <!-- GRÁFICA DISTRIBUCIÓN -->
+      <div class="glass-card p-5">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4 block"><i class="fa-solid fa-chart-pie text-emerald-400 mr-1"></i>Distribución de Ventas</label>
+        <div class="relative w-full h-64 flex justify-center">
+          <canvas id="adv-chart-distribucion"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANÁLISIS DE RIESGO -->
+    <div class="glass-card p-5 flex justify-between items-center relative z-[80] mt-2">
+      <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-shield-virus text-rose-400 mr-2"></i>Análisis de Riesgo (Préstamos)</h2>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+      <div class="glass-card p-5 relative overflow-hidden group hover:border-rose-500/30 transition-colors">
+        <div class="absolute -right-4 -top-4 w-16 h-16 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition-all"></div>
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block relative z-10 flex items-center justify-between">
+          <span><i class="fa-solid fa-triangle-exclamation text-rose-400 mr-1"></i>ÍNDICE DE MORA</span>
+          <span id="adv-metric-mora-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
+        </label>
+        <p id="ana-mora" class="text-2xl font-extrabold text-rose-400 relative z-10">0.00%</p>
+      </div>
+      <div class="glass-card p-5 relative overflow-hidden group hover:border-sky-500/30 transition-colors">
+        <div class="absolute -right-4 -top-4 w-16 h-16 bg-sky-500/10 rounded-full blur-xl group-hover:bg-sky-500/20 transition-all"></div>
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block relative z-10"><i class="fa-solid fa-calendar-days text-sky-400 mr-1"></i>PROYECCIÓN INTERESES (30D)</label>
+        <p id="ana-intereses" class="text-2xl font-extrabold text-sky-400 relative z-10">$0.00</p>
+      </div>
+      <div class="glass-card p-5 relative overflow-hidden group hover:border-emerald-500/30 transition-colors">
+        <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block relative z-10"><i class="fa-solid fa-rotate-left text-emerald-400 mr-1"></i>TASA DE RECUPERACIÓN</label>
+        <p id="ana-recuperacion" class="text-2xl font-extrabold text-emerald-400 relative z-10">0.00%</p>
+      </div>
+    </div>
+
+    <!-- INTELIGENCIA DE INVENTARIO -->
+    <div class="glass-card p-5 flex justify-between items-center relative z-[80] mt-2">
+      <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-boxes-stacked text-amber-400 mr-2"></i>Inteligencia de Inventario</h2>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="glass-card p-5 relative overflow-hidden group hover:border-sky-500/30 transition-colors">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-sky-500/10 rounded-full blur-xl group-hover:bg-sky-500/20 transition-all"></div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block relative z-10"><i class="fa-solid fa-stopwatch text-sky-400 mr-1"></i>ROTACIÓN PROMEDIO</label>
+            <p id="ana-rotacion" class="text-2xl font-extrabold text-sky-400 relative z-10">0 Días</p>
+            <p class="text-[10px] text-gray-500 mt-1 relative z-10">Tiempo promedio hasta la venta</p>
+        </div>
+        <div class="glass-card p-5 relative overflow-hidden group hover:border-rose-500/30 transition-colors">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition-all"></div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block relative z-10 flex items-center justify-between">
+                <span><i class="fa-solid fa-sack-xmark text-rose-400 mr-1"></i>DINERO ESTANCADO</span>
+                <span id="adv-metric-estancado-dot" class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)] animate-pulse"></span>
+            </label>
+            <p id="ana-estancado" class="text-2xl font-extrabold text-rose-400 relative z-10">$0.00</p>
+            <p class="text-[10px] text-gray-500 mt-1 relative z-10">Mercancía con >30 días sin vender</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="glass-card p-4">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 block"><i class="fa-solid fa-fire text-orange-400 mr-1"></i>Top 5 Más Vendidos</label>
+            <div id="adv-top-vendidos" class="space-y-2"></div>
+        </div>
+        <div class="glass-card p-4">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 block"><i class="fa-solid fa-gem text-emerald-400 mr-1"></i>Top 5 Mayor Margen</label>
+            <div id="adv-top-margen" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /business-dashboard -->
+
+<!-- MODALES FASE 2 -->
+<!-- Alerta premium -->
+<div id="centered-alert-modal" class="fixed inset-0 z-[400000] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onclick="event.stopPropagation();">
+  <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem] border border-red-500/30 text-center shadow-[0_0_30px_rgba(220,38,38,0.2)]">
+    <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4 border border-red-500/50"><i class="fa-solid fa-triangle-exclamation text-3xl text-red-400"></i></div>
+    <h2 id="alert-title" class="text-xl font-extrabold mb-2 text-white tracking-tight">Atención</h2>
+    <p id="alert-msg" class="text-xs text-gray-300 mb-6 font-medium leading-relaxed">Mensaje de alerta</p>
+    <button onclick="closeBlockingAlert()" class="btn-float w-full py-2.5 rounded-lg bg-white/10 border border-white/20 text-white font-bold hover:bg-white/20 transition shadow-lg">Entendido</button>
+  </div>
+</div>
+
+<!-- Confirm premium -->
+<div id="premium-confirm-modal" class="fixed inset-0 z-[300000] hidden bg-black/70 backdrop-blur-md flex items-center justify-center p-4" onclick="event.stopPropagation();">
+  <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem] border border-sky-500/20 shadow-[0_0_30px_rgba(56,189,248,0.15)]">
+    <h2 id="premium-confirm-title" class="text-xl font-extrabold mb-3 text-sky-400 flex items-center gap-2"><i class="fa-solid fa-circle-question"></i> <span>Confirmar</span></h2>
+    <p id="premium-confirm-msg" class="text-xs text-gray-300 mb-6 font-medium leading-relaxed">¿Estás seguro?</p>
+    <div class="flex gap-3">
+      <button onclick="closeCustomConfirm()" class="w-1/2 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 font-bold hover:bg-white/10 hover:text-white transition">Cancelar</button>
+      <button onclick="executeCustomConfirm()" class="w-1/2 py-2 rounded-lg theme-bg-gradient text-white font-bold shadow-lg">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Producto -->
+<div id="product-modal" class="fixed inset-0 z-[100000] hidden bg-black/60 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-xl relative rounded-[1.5rem]" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('product-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <h2 id="prod-modal-title" class="text-xl font-extrabold mb-6 text-white tracking-tight flex items-center gap-2"><i class="fa-solid fa-box text-sky-400"></i> <span>Añadir Producto</span></h2>
+    <div class="space-y-4">
+      <input type="hidden" id="prod-id">
+      <input type="text" id="prod-name" class="glass-input" placeholder="Nombre del Producto">
+      <div class="grid grid-cols-2 gap-4">
+        <input type="text" id="prod-cat" list="cat-list" class="glass-input" placeholder="Categoría">
+        <input type="text" id="prod-brand" list="brand-list" class="glass-input" placeholder="Marca">
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <input type="number" id="prod-stock" class="glass-input" placeholder="Stock">
+        <input type="number" id="prod-cost" class="glass-input" placeholder="Costo USD" step="0.01">
+        <input type="number" id="prod-price" class="glass-input" placeholder="Precio USD" step="0.01" oninput="syncPriceRef(this.value)">
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="relative c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('prod-cur-dropdown')"><span id="prod-cur-text">USD</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="prod-cur" value="USD">
+          <div id="prod-cur-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[200000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prod-cur','USD',null)">USD</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prod-cur','EUR',null)">EUR</div>
+          </div>
+        </div>
+        <div class="relative c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('prod-meth-dropdown')"><span id="prod-meth-text">Zelle</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="prod-meth" value="Zelle">
+          <div id="prod-meth-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[200000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prod-meth','Zelle',null)">Zelle</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prod-meth','Binance',null)">Binance</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prod-meth','Efectivo',null)">Efectivo</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prod-meth','Pago Movil',null)">Pago Movil</div>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <input type="number" id="prod-sup-disc" class="glass-input" placeholder="Desc. Prov %" min="0" max="100">
+        <input type="number" id="prod-price-ref" class="glass-input opacity-50 cursor-not-allowed" placeholder="Precio ref" readonly>
+        <input type="number" id="prod-sale-disc" class="glass-input" placeholder="Desc. Venta %" min="0" max="100">
+      </div>
+      <button id="btn-save-prod" onclick="saveProduct()" class="btn-float w-full py-3 rounded-lg theme-bg-gradient text-white font-bold shadow-lg mt-4 text-sm">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Proveedor -->
+<div id="supplier-modal" class="fixed inset-0 z-[100000] hidden bg-black/60 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem]" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('supplier-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="text-xl font-extrabold mb-4 anim-text-gradient tracking-tight inline-block"><i class="fa-solid fa-handshake text-sky-400 mr-2"></i>Vincular Aliado</h2>
+    <div class="space-y-4">
+      <input type="hidden" id="sup-id">
+      <input type="text" id="sup-name" class="glass-input" placeholder="Nombre del aliado">
+      <input type="text" id="sup-contact" class="glass-input" placeholder="Tel / Email">
+      <input type="text" id="sup-prods" class="glass-input" placeholder="Notas / Productos">
+      <button onclick="saveSupplier()" class="btn-float w-full py-2.5 rounded-lg theme-bg-gradient text-white font-bold shadow-lg mt-2 text-sm">Guardar Aliado</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Combo -->
+<div id="combo-modal" class="fixed inset-0 z-[100000] hidden bg-black/60 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem]" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('combo-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="text-xl font-extrabold mb-4 anim-text-gradient tracking-tight inline-block"><i class="fa-solid fa-layer-group text-violet-400 mr-2"></i>Crear Combo</h2>
+    <div class="space-y-4">
+      <input type="text" id="combo-name" class="glass-input" placeholder="Nombre del Combo">
+      <input type="number" id="combo-price" class="glass-input" placeholder="Precio Fijo (USD)" step="0.01">
+      <div id="combo-prod-list" class="space-y-2 max-h-40 overflow-y-auto pr-2"></div>
+      <button onclick="saveCombo()" class="btn-float w-full py-2.5 rounded-lg bg-violet-500/20 border border-violet-500/50 text-violet-300 font-bold shadow-lg mt-2 text-sm">Guardar Combo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Venta -->
+<div id="sale-modal" class="fixed inset-0 z-[100000] hidden bg-black/60 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-md relative rounded-[1.5rem]" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('sale-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="text-xl font-extrabold mb-5 anim-text-gradient tracking-tight inline-block"><i class="fa-solid fa-cart-arrow-down text-sky-400 mr-2"></i>Registrar Venta</h2>
+    <div class="space-y-4">
+      
+      <!-- Fila 1: Tipo y Artículo -->
+      <div class="flex gap-3">
+        <div class="relative w-1/2 c-select-container">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">TIPO</label>
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('sale-type-dropdown')"><span id="sale-type-text" class="capitalize">Producto</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="sale-type" value="product">
+          <div id="sale-type-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95 capitalize">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('sale-type','product','Producto');buildSaleItemOptions();">Producto</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('sale-type','combo','Combo');buildSaleItemOptions();">Combo</div>
+          </div>
+        </div>
+        <div class="relative w-1/2 c-select-container">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">ARTÍCULO</label>
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300 truncate" onclick="toggleCustomSelect('sale-item-dropdown')"><span id="sale-item-text">Ej. Zapatos Nike</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="sale-item">
+          <div id="sale-item-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs max-h-40 overflow-y-auto bg-slate-900/95"></div>
+        </div>
+      </div>
+
+      <!-- Fila 2: Cantidad y Precio Manual (Checkbox) -->
+      <div class="flex gap-3 items-end">
+        <div class="w-1/2">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">CANTIDAD</label>
+          <input type="number" id="sale-qty" class="glass-input" value="1" min="1" oninput="updateSalePreview()">
+        </div>
+        <div class="w-1/2 flex items-center justify-between pb-1">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">PRECIO MANUAL</span>
+          <input type="checkbox" id="sale-custom-toggle" onchange="document.getElementById('sale-custom-div').style.display=this.checked?'block':'none';updateSalePreview();" class="w-4 h-4 cursor-pointer accent-sky-400">
+        </div>
+      </div>
+      <div id="sale-custom-div" style="display:none">
+        <input type="number" id="sale-price" class="glass-input" placeholder="0.00" oninput="updateSalePreview()">
+      </div>
+      
+      <button type="button" onclick="addItemToSaleCart()" class="btn-float w-full py-2.5 rounded-lg bg-sky-500/20 border border-sky-500/50 text-sky-300 font-bold shadow-lg text-sm mt-2 transition-colors hover:bg-sky-500/30"><i class="fa-solid fa-plus mr-1"></i> Añadir al Carrito</button>
+      
+      <!-- RESUMEN DE VENTA -->
+      <div id="sale-cart-resumen" class="glass-card p-3 border border-sky-500/20 mt-3 hidden">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block border-b border-white/5 pb-1">RESUMEN DE VENTA</p>
+        <div id="sale-cart-list" class="flex flex-col gap-2 max-h-32 overflow-y-auto mt-2"></div>
+      </div>
+      
+      <!-- Fila 3: Moneda y Método -->
+      <div class="flex gap-3">
+        <div class="relative w-1/2 c-select-container">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">MONEDA</label>
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('sale-cur-dropdown')"><span id="sale-cur-text">USD</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="sale-cur" value="USD">
+          <div id="sale-cur-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('sale-cur','USD',null);updateSaleMethodUI();">USD</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('sale-cur','BS',null);updateSaleMethodUI();">BS</div>
+          </div>
+        </div>
+        <div class="relative w-1/2 c-select-container" id="sale-usd-method-container">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">MÉTODO DE PAGO</label>
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('sale-usd-method-dropdown')"><span id="sale-usd-method-text">Zelle</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="sale-usd-method" value="Zelle">
+          <div id="sale-usd-method-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('sale-usd-method','Zelle',null)">Zelle</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('sale-usd-method','Binance',null)">Binance</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('sale-usd-method','Efectivo',null)">Efectivo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fila 4: Detalle Método Específico (BS) y Tasa Referencia -->
+      <div class="flex gap-3" id="sale-bs-method-container" style="display:none">
+        <div class="w-1/2">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">DETALLE DEL MÉTODO ESPECÍFICO</label>
+          <select id="sale-bs-method" class="glass-input w-full"><option value="Pago Movil">Pago Movil</option><option value="Transferencia">Transferencia</option><option value="Efectivo Bs">Efectivo Bs</option></select>
+        </div>
+        <div class="relative w-1/2 c-select-container">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">TIPO DE DÓLAR DE REFERENCIA</label>
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('sale-ref-dropdown')"><span id="sale-ref-text">BCV USD</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="sale-ref" value="bcvUsd">
+          <div id="sale-ref-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('sale-ref','bcvUsd','BCV USD');updateSalePreview();">BCV USD</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('sale-ref','bcvEur','BCV EUR');updateSalePreview();">BCV EUR</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('sale-ref','usdt','USDT');updateSalePreview();">USDT</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-black/20 border border-sky-500/20 p-3 rounded-lg text-center mt-3 shadow-inner">
+        <p class="text-[10px] text-sky-400 uppercase tracking-widest font-bold mb-1">TOTAL A COBRAR</p>
+        <p id="sale-total-display" class="text-2xl font-extrabold text-sky-400">$0.00</p>
+        <p id="sale-preview-text" class="hidden"></p> <!-- Hidden text if JS fallback expects it -->
+      </div>
+      
+      <button onclick="processSale()" class="btn-float w-full py-3 rounded-xl theme-bg-gradient text-white font-extrabold shadow-lg mt-4 text-sm transition-transform hover:scale-[1.02]"><i class="fa-solid fa-check mr-2"></i> Procesar Venta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Venta -->
+<div id="sale-edit-modal" class="fixed inset-0 z-[100000] hidden bg-black/60 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem]" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('sale-edit-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="text-xl font-extrabold mb-4 anim-text-gradient tracking-tight inline-block"><i class="fa-solid fa-pen text-sky-400 mr-2"></i>Editar Venta</h2>
+    <div class="space-y-4">
+      <input type="hidden" id="edit-sale-id">
+      <input type="number" id="edit-sale-price" class="glass-input" placeholder="Precio Venta (USD Unitario)">
+      <div class="flex gap-3">
+        <div class="relative w-1/2 c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('edit-sale-cur-dropdown')"><span id="edit-sale-cur-text">USD</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="edit-sale-cur" value="USD">
+          <div id="edit-sale-cur-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('edit-sale-cur','USD',null);updateEditSaleMethodUI();">USD</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('edit-sale-cur','BS',null);updateEditSaleMethodUI();">BS</div>
+          </div>
+        </div>
+        <div class="relative w-1/2 c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('edit-sale-method-dropdown')"><span id="edit-sale-method-text">Zelle</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="edit-sale-method" value="Zelle">
+          <div id="edit-sale-method-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95"></div>
+        </div>
+      </div>
+      <button onclick="saveEditSale()" class="btn-float w-full py-2.5 rounded-lg theme-bg-gradient text-white font-bold shadow-lg mt-2 text-sm">Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Encargos -->
+<div id="encargo-modal" class="fixed inset-0 z-[100000] hidden bg-black/60 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-lg relative rounded-[1.5rem] my-auto" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('encargo-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-xmark"></i></button>
+    <h2 id="encargo-modal-title" class="text-xl font-extrabold mb-5 anim-text-gradient tracking-tight inline-block"><i class="fa-solid fa-box-open text-sky-400 mr-2"></i>Nuevo Encargo</h2>
+    <div class="space-y-4">
+      <input type="hidden" id="encargo-id">
+      
+      <!-- Cliente y Fecha -->
+      <div class="flex gap-3">
+        <div class="w-1/2">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">CLIENTE</label>
+          <input type="text" id="encargo-cliente" class="glass-input w-full" placeholder="Ej. María Pérez">
+        </div>
+        <div class="w-1/2">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">FECHA DEL PEDIDO</label>
+          <input type="text" id="encargo-fecha" class="glass-input w-full">
+        </div>
+      </div>
+      
+      <!-- SECCIÓN DE ARTÍCULOS (CARRITO) -->
+      <div class="border border-white/10 rounded-xl p-3 bg-white/5">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block border-b border-white/5 pb-1"><i class="fa-solid fa-cart-plus mr-1"></i>Añadir Artículo</label>
+        <div class="flex flex-col gap-2">
+          <input type="text" id="encargo-item-name" class="glass-input w-full text-xs" placeholder="Nombre (Ej. Zapatillas Nike)">
+          <div class="flex gap-2">
+            <input type="text" id="encargo-item-link" class="glass-input w-1/2 text-xs" placeholder="Ref/Link (Opcional)">
+            <input type="number" id="encargo-item-price" class="glass-input w-1/4 text-xs" placeholder="Precio ($)">
+            <button type="button" onclick="addEncargoItem()" class="w-1/4 py-1 rounded-lg bg-sky-500/20 text-sky-300 font-bold hover:bg-sky-500/40 transition-colors"><i class="fa-solid fa-plus"></i></button>
+          </div>
+        </div>
+        <!-- Lista de artículos del encargo -->
+        <div id="encargo-cart-list" class="flex flex-col gap-1 mt-3 max-h-32 overflow-y-auto empty:hidden"></div>
+      </div>
+      
+      <!-- SECCIÓN DE PAGOS -->
+      <div class="border border-white/10 rounded-xl p-3 bg-white/5">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block border-b border-white/5 pb-1"><i class="fa-solid fa-money-bill-wave mr-1"></i>Sección de Pagos</label>
+        <div class="flex gap-3 items-end">
+          <div class="w-1/3 text-center bg-black/20 p-2 rounded-lg border border-white/5">
+            <p class="text-[9px] text-gray-400 uppercase font-bold">TOTAL</p>
+            <p id="encargo-total-display" class="font-extrabold text-sky-400">$0.00</p>
+          </div>
+          <div class="w-1/3">
+            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 block text-center">ABONO INICIAL</label>
+            <input type="number" id="encargo-abono" class="glass-input w-full text-center" placeholder="0.00" oninput="updateEncargoPayments()">
+          </div>
+          <div class="w-1/3 text-center bg-amber-900/10 p-2 rounded-lg border border-amber-500/20">
+            <p class="text-[9px] text-amber-400/70 uppercase font-bold">SALDO</p>
+            <p id="encargo-saldo-display" class="font-extrabold text-amber-400">$0.00</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex gap-3">
+        <div class="relative w-1/2 c-select-container">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">PRIORIDAD</label>
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('encargo-priority-dropdown')"><span id="encargo-priority-text">Normal</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="encargo-priority" value="Normal">
+          <div id="encargo-priority-dropdown" class="absolute bottom-full left-0 w-full mb-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer text-emerald-400 font-bold" onclick="selectCustomOption('encargo-priority','Baja','Baja')">Baja</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer text-sky-400 font-bold" onclick="selectCustomOption('encargo-priority','Normal','Normal')">Normal</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer text-amber-400 font-bold" onclick="selectCustomOption('encargo-priority','Alta','Alta')">Alta</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer text-red-400 font-bold" onclick="selectCustomOption('encargo-priority','Urgente','Urgente')">Urgente</div>
+          </div>
+        </div>
+        <div class="relative w-1/2 c-select-container">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">ESTADO INICIAL</label>
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('encargo-status-dropdown')"><span id="encargo-status-text">Pedido</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="encargo-status" value="Pedido">
+          <div id="encargo-status-dropdown" class="absolute bottom-full left-0 w-full mb-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer text-amber-400 font-bold" onclick="selectCustomOption('encargo-status','Pedido','Pedido')">Pedido</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer text-sky-400 font-bold" onclick="selectCustomOption('encargo-status','En Camino','En Camino')">En Camino</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer text-emerald-400 font-bold" onclick="selectCustomOption('encargo-status','Entregado','Entregado')">Entregado</div>
+          </div>
+        </div>
+      </div>
+      
+      <button onclick="saveEncargo()" class="btn-float w-full py-3 rounded-xl theme-bg-gradient text-white font-extrabold shadow-lg mt-2 text-sm transition-transform hover:scale-[1.02]"><i class="fa-solid fa-check mr-2"></i> Guardar Encargo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal CxC Nueva Cuenta -->
+<div id="cxc-modal" class="fixed inset-0 z-[100000] hidden bg-black/60 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-md relative rounded-[1.5rem]" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('cxc-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="text-xl font-extrabold mb-4 anim-text-gradient tracking-tight inline-block"><i class="fa-solid fa-hand-holding-dollar text-amber-400 mr-2"></i>Nueva Cuenta</h2>
+    <div class="space-y-3">
+      <input type="text" id="cxc-name" class="glass-input" placeholder="Nombre del Cliente">
+      <input type="text" id="cxc-desc" class="glass-input" placeholder="Descripción / Motivo">
+      <div class="flex gap-2 p-3 bg-white/5 border border-sky-500/20 rounded-lg">
+        <div class="relative w-2/3 c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300 truncate" onclick="toggleCustomSelect('cxc-item-dropdown')"><span id="cxc-item-text">--</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="cxc-item">
+          <div id="cxc-item-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs max-h-40 overflow-y-auto bg-slate-900/95"></div>
+        </div>
+        <div class="w-1/3"><input type="number" id="cxc-qty" class="glass-input" value="1" min="1" placeholder="Cant."></div>
+      </div>
+      <div class="flex gap-2">
+        <input type="number" id="cxc-total" class="glass-input w-1/2" placeholder="Deuda Total ($)" oninput="updateCxCPreview()">
+        <input type="number" id="cxc-init" class="glass-input w-1/2" placeholder="Abono Inicial ($)" oninput="updateCxCPreview()">
+      </div>
+      <div class="flex gap-2">
+        <div class="relative w-1/2 c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('cxc-freq-dropdown')"><span id="cxc-freq-text">Mensual</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="cxc-freq" value="monthly">
+          <div id="cxc-freq-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-freq','weekly','weekly')">Semanal</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-freq','biweekly','biweekly')">Quincenal</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-freq','monthly','monthly')">Mensual</div>
+          </div>
+        </div>
+        <input type="number" id="cxc-inst" class="glass-input w-1/2" value="1" min="1" placeholder="N Cuotas" oninput="updateCxCPreview()">
+      </div>
+      <div class="w-full">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">FECHA DE LA DEUDA</label>
+        <input type="text" id="cxc-date" class="glass-input w-full"><input type="hidden" id="dp-text-cxc" value="">
+      </div>
+      <div class="bg-amber-900/20 border border-amber-500/30 p-2 rounded-lg text-center flex justify-between items-center">
+        <span class="text-[10px] text-amber-200 uppercase font-bold">Monto x cuota:</span>
+        <span id="cxc-preview-amt" class="text-sm font-extrabold text-amber-400">$0.00</span>
+      </div>
+      <button onclick="saveCxC()" class="btn-float w-full py-2.5 rounded-lg bg-amber-500/20 border border-amber-500/50 text-amber-300 font-bold shadow-lg mt-2 text-sm">Guardar Cuenta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal CxC Abono -->
+<div id="cxc-payment-modal" class="fixed inset-0 z-[100000] hidden bg-black/60 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem]" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('cxc-payment-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="text-xl font-extrabold mb-4 anim-text-gradient tracking-tight inline-block"><i class="fa-solid fa-money-bill-wave text-amber-400 mr-2"></i>Registrar Abono</h2>
+    <input type="hidden" id="cxc-pay-id">
+    <div class="space-y-4">
+      <div class="flex justify-between items-center bg-black/20 p-2 rounded border border-white/5">
+        <span class="text-xs text-gray-400">Cuota Sugerida:</span>
+        <span id="cxc-pay-sugg" class="text-sm font-bold text-amber-400">$0.00</span>
+      </div>
+      <div class="flex gap-3">
+        <div class="relative w-1/2 c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('cxc-pay-cur-dropdown')"><span id="cxc-pay-cur-text">USD</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="cxc-pay-cur" value="USD">
+          <div id="cxc-pay-cur-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-pay-cur','USD',null);updateCxCPaymentUI();">USD</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-pay-cur','BS',null);updateCxCPaymentUI();">BS</div>
+          </div>
+        </div>
+        <input type="number" id="cxc-pay-amount" class="glass-input w-1/2" placeholder="Monto Recibido" oninput="updateCxCPaymentUI()">
+      </div>
+      <div id="cxc-pay-usd-method-container" class="relative c-select-container">
+        <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('cxc-pay-usd-meth-dropdown')"><span id="cxc-pay-usd-meth-text">Zelle</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+        <input type="hidden" id="cxc-pay-usd-meth" value="Zelle">
+        <div id="cxc-pay-usd-meth-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[200000] text-xs bg-slate-900/95">
+          <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-pay-usd-meth','Zelle',null)">Zelle</div>
+          <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-pay-usd-meth','Binance',null)">Binance</div>
+          <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-pay-usd-meth','Efectivo',null)">Efectivo</div>
+        </div>
+      </div>
+      <div id="cxc-pay-bs-method-container" class="flex gap-3" style="display:none">
+        <div class="relative w-1/2 c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('cxc-pay-bs-meth-dropdown')"><span id="cxc-pay-bs-meth-text">Pago Movil</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="cxc-pay-bs-meth" value="Pago Movil">
+          <div id="cxc-pay-bs-meth-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[200000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-pay-bs-meth','Pago Movil',null)">Pago Movil</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-pay-bs-meth','Transferencia',null)">Transferencia</div>
+          </div>
+        </div>
+        <div class="relative w-1/2 c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('cxc-pay-ref-dropdown')"><span id="cxc-pay-ref-text">BCV USD</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="cxc-pay-ref" value="USD">
+          <div id="cxc-pay-ref-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[150000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-pay-ref','USD','bcvUsd');updateCxCPaymentUI();">BCV USD</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-pay-ref','EUR','bcvEur');updateCxCPaymentUI();">BCV EUR</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('cxc-pay-ref','USDT','paralelo');updateCxCPaymentUI();">USDT</div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-amber-900/20 border border-amber-500/30 p-3 rounded-lg text-center">
+        <p class="text-[10px] text-amber-200 uppercase font-bold mb-1">Abono Neto (USD)</p>
+        <p id="cxc-pay-preview-usd" class="text-xl font-extrabold text-amber-400">$0.00</p>
+      </div>
+      <button onclick="processCxCPayment()" class="btn-float w-full py-2.5 rounded-lg bg-amber-500/20 border border-amber-500/50 text-amber-300 font-bold shadow-lg mt-2 text-sm"><i class="fa-solid fa-check mr-1"></i> Confirmar Pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Préstamo (alta) -->
+<div id="prestamo-modal" class="fixed inset-0 z-[100000] hidden bg-black/60 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-lg relative rounded-[1.5rem] border border-white/10 my-8" onclick="event.stopPropagation()">
+    <button type="button" onclick="document.getElementById('prestamo-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="text-xl font-extrabold mb-4 text-white tracking-tight flex items-center gap-2"><i class="fa-solid fa-file-contract text-sky-400"></i> Nuevo Préstamo</h2>
+    <input type="hidden" id="prestamo-id" value="">
+    <div class="space-y-3 text-left">
+      <input type="text" id="prestamo-cliente" class="glass-input" placeholder="Nombre del cliente">
+      <div class="grid grid-cols-2 gap-3">
+        <input type="number" id="prestamo-capital" step="0.01" class="glass-input" placeholder="Capital (USD)" oninput="if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">
+        <div class="flex gap-1 relative">
+            <input type="number" id="prestamo-tasa" step="0.01" class="glass-input w-1/2 px-2" placeholder="Tasa (%)" oninput="if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">
+            <div class="relative c-select-container w-1/2">
+              <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300 text-[10px] px-2 h-full" onclick="toggleCustomSelect('prestamo-tasa-freq-dropdown')">
+                <span id="prestamo-tasa-freq-text" class="flex items-center gap-1">Anual</span>
+                <i class="fa-solid fa-chevron-down text-[8px]"></i>
+              </div>
+              <input type="hidden" id="prestamo-tasa-freq" value="anual">
+              <div id="prestamo-tasa-freq-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[200000] text-[10px] bg-slate-900/95">
+                <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-tasa-freq','anual','Anual');if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">Anual (%)</div>
+                <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-tasa-freq','mensual','Mensual');if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">Mensual (%)</div>
+                <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-tasa-freq','semanal','Semanal');if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">Semanal (%)</div>
+              </div>
+            </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="relative c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('prestamo-frecuencia-dropdown')"><span id="prestamo-frecuencia-text">Mensual</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="prestamo-frecuencia" value="mensual">
+          <div id="prestamo-frecuencia-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[200000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-frecuencia','semanal','Semanal');if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">Semanal</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-frecuencia','mensual','Mensual');if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">Mensual</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-frecuencia','anual','Anual');if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">Anual</div>
+          </div>
+        </div>
+        <div class="relative c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('prestamo-tipo-interes-dropdown')"><span id="prestamo-tipo-interes-text">Interés Simple</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="prestamo-tipo-interes" value="simple">
+          <div id="prestamo-tipo-interes-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[200000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-tipo-interes','simple','Interés Simple');if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">Interés Simple</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-tipo-interes','compuesto','Interés Compuesto');if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">Interés Compuesto</div>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="relative c-select-container">
+          <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('prestamo-tipo-cuota-dropdown')"><span id="prestamo-tipo-cuota-text">Cuota Fija</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+          <input type="hidden" id="prestamo-tipo-cuota" value="Cuota Fija">
+          <div id="prestamo-tipo-cuota-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[200000] text-xs bg-slate-900/95">
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-tipo-cuota','Cuota Fija','Cuota Fija');if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">Cuota Fija</div>
+            <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-tipo-cuota','Interes sobre Saldo','Interés sobre Saldo');if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">Interés sobre Saldo</div>
+          </div>
+        </div>
+        <input type="number" id="prestamo-cuotas" min="1" class="glass-input" placeholder="Cuotas totales" oninput="if(window.actualizarPreviewPrestamo)window.actualizarPreviewPrestamo()">
+      </div>
+      <div class="grid grid-cols-1 gap-3">
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">FECHA DEL PRÉSTAMO</label>
+          <input type="text" id="prestamo-fecha-inicio" class="glass-input w-full">
+        </div>
+      </div>
+      <div class="relative">
+        <i class="fa-solid fa-shield-halved absolute left-3 top-3.5 text-sky-400"></i>
+        <input type="text" id="prestamo-garantia" class="glass-input pl-9" placeholder="Garantía (Ej. Vehículo, Inmueble)">
+      </div>
+      <div class="relative mt-2">
+        <i class="fa-solid fa-dollar-sign absolute left-3 top-3.5 text-sky-400"></i>
+        <input type="number" id="prestamo-garantia-valor" class="glass-input pl-9" placeholder="Valor estimado de la prenda (USD)">
+      </div>
+      <textarea id="prestamo-garantia-desc" rows="2" class="glass-input resize-none" placeholder="Descripción detallada de la garantía"></textarea>
+      <div>
+        <label class="text-[11px] text-gray-400 font-semibold uppercase mb-1 block">Foto prenda (opcional)</label>
+        <label for="prestamo-garantia-foto" class="glass-input flex items-center justify-center gap-2 cursor-pointer hover:bg-sky-500/10 transition-colors border-dashed border-sky-500/30 text-sky-400 py-3">
+            <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+            <span id="prestamo-file-name" class="font-semibold text-sm">Seleccionar archivo</span>
+        </label>
+        <input type="file" id="prestamo-garantia-foto" accept="image/*" onchange="document.getElementById('prestamo-file-name').innerText = this.files[0] ? this.files[0].name : 'Seleccionar archivo'; prestamoGarantiaPreview(this)" class="hidden">
+        <img id="prestamo-garantia-preview" class="hidden mt-2 max-h-32 rounded-lg border border-white/10 object-contain w-full" alt="">
+      </div>
+      <!-- Smart Preview Card -->
+      <div id="prestamo-smart-preview" class="bg-slate-900/50 border border-white/10 p-3 rounded-lg flex flex-col gap-2 mt-2 hidden">
+        <div class="flex justify-between items-center border-b border-white/5 pb-2">
+            <span class="text-xs text-gray-400">Total a Pagar:</span>
+            <span id="preview-total-pagar" class="text-sm font-bold text-sky-400">$0.00</span>
+        </div>
+        <div class="flex justify-between items-center border-b border-white/5 pb-2">
+            <span class="text-xs text-gray-400">Intereses Totales:</span>
+            <span id="preview-intereses" class="text-sm font-bold text-emerald-400">$0.00</span>
+        </div>
+        <div class="flex justify-between items-center border-b border-white/5 pb-2">
+            <span class="text-xs text-gray-400 flex items-center gap-1"><i class="fa-solid fa-percent text-sky-400"></i> Interés por <span id="preview-freq-int-lbl">Mes</span>:</span>
+            <span id="preview-interes-periodo" class="text-sm font-bold text-emerald-400">$0.00</span>
+        </div>
+        <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-400">Monto por Cuota (<span id="preview-freq-lbl">Mensual</span>):</span>
+            <span id="preview-cuota" class="text-lg font-extrabold text-white">$0.00</span>
+        </div>
+      </div>
+      <button type="button" id="btn-save-prestamo" onclick="window.savePrestamoForm()" class="btn-float w-full py-3 rounded-lg theme-bg-gradient text-white font-bold shadow-lg mt-2 text-sm">Guardar préstamo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Abono Préstamo -->
+<div id="prestamo-abono-modal" class="fixed inset-0 z-[100000] hidden bg-black/60 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem] border border-white/10" onclick="event.stopPropagation()">
+    <button type="button" onclick="document.getElementById('prestamo-abono-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="text-lg font-extrabold mb-4 text-white">Registrar abono</h2>
+    <input type="hidden" id="prestamo-abono-loan-id" value="">
+    <div class="space-y-3">
+      <input type="number" id="prestamo-abono-monto" step="0.01" class="glass-input" placeholder="Monto (USD)">
+      <div class="relative c-select-container">
+        <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('prestamo-abono-metodo-dropdown')"><span id="prestamo-abono-metodo-text">Efectivo</span> <i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+        <input type="hidden" id="prestamo-abono-metodo" value="Efectivo">
+        <div id="prestamo-abono-metodo-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu z-[200000] text-xs bg-slate-900/95">
+          <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-abono-metodo','Efectivo',null)">Efectivo</div>
+          <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-abono-metodo','Zelle',null)">Zelle</div>
+          <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-abono-metodo','Pago Movil',null)">Pago Movil</div>
+          <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-abono-metodo','Transferencia',null)">Transferencia</div>
+          <div class="p-2 hover:bg-white/10 cursor-pointer" onclick="selectCustomOption('prestamo-abono-metodo','Binance',null)">Binance</div>
+        </div>
+      </div>
+      <p id="prestamo-abono-hint" class="text-[10px] text-gray-400 leading-snug"></p>
+      <button type="button" onclick="window.submitPrestamoAbono()" class="btn-float w-full py-2.5 rounded-lg theme-bg-gradient text-white font-bold shadow-lg text-sm">Aplicar abono</button>
+      <button type="button" onclick="whatsappUltimoAbono()" class="btn-float w-full py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs"><i class="fa-brands fa-whatsapp mr-1"></i> Recibo WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ticker de tasas (necesario para getRate) -->
+<div style="display:none">
+  <span id="tick-usd">1</span>
+  <span id="tick-eur">1</span>
+  <span id="tick-usdt">1</span>
+</div>
+
+<!-- Premium Confirm Modal -->
+<div id="premium-confirm-modal" class="fixed inset-0 z-[200000] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onclick="if(event.target===this)window.closeCustomConfirm()">
+  <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem] border border-red-500/20 text-center shadow-2xl" onclick="event.stopPropagation()">
+    <i class="fa-solid fa-triangle-exclamation text-4xl text-red-400 mb-4 drop-shadow-[0_0_15px_rgba(248,113,113,0.5)]"></i>
+    <h2 id="premium-confirm-title" class="text-xl font-extrabold mb-2 text-white uppercase tracking-wide">Confirmar Acción</h2>
+    <p id="premium-confirm-msg" class="text-xs text-gray-400 mb-6 px-2">¿Estás seguro de que deseas realizar esta acción? No se puede deshacer.</p>
+    <div class="flex gap-3">
+      <button onclick="window.closeCustomConfirm()" class="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-gray-300 font-bold hover:bg-white/10 transition-colors">Cancelar</button>
+      <button onclick="window.executeCustomConfirm()" class="flex-1 py-3 rounded-xl bg-red-500/20 border border-red-500/50 text-red-400 font-extrabold hover:bg-red-500/30 transition-colors shadow-[0_0_15px_rgba(248,113,113,0.3)]">Sí, Borrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Abono Modal -->
+<div id="custom-abono-modal" class="fixed inset-0 z-[200000] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="glass-card p-6 w-full max-w-xs relative rounded-[1.5rem] border border-emerald-500/20" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('custom-abono-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <div class="text-center mb-5">
+      <i class="fa-solid fa-money-bill-transfer text-3xl text-emerald-400 mb-2 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]"></i>
+      <h2 class="text-lg font-extrabold text-white uppercase tracking-wide">Abono Rápido</h2>
+      <p id="custom-abono-desc" class="text-[10px] text-gray-400 mt-1">Saldo actual: $0.00</p>
+    </div>
+    <input type="hidden" id="custom-abono-id" value="">
+    <div class="mb-4">
+      <label class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2 block text-center">Monto del Abono ($)</label>
+      <input type="number" id="custom-abono-monto" class="glass-input w-full text-center text-lg font-bold text-white placeholder:text-gray-600" placeholder="Ej. 50.00" step="0.01">
+    </div>
+    <button onclick="window.executeCustomAbono()" class="w-full py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 font-extrabold hover:bg-emerald-500/30 transition-colors shadow-[0_0_15px_rgba(52,211,153,0.2)]"><i class="fa-solid fa-check mr-2"></i>Registrar Abono</button>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<!-- Helper global: selectCustomOption (necesario para dropdowns custom) -->
+<!-- Logica Fase 2 -->
+<script src="js/fase2-logic.js"></script>
+
+</body>
+</html>
+

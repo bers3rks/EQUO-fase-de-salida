@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EQUO | Advanced Financial Management</title>
+    
+    <!-- Font Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6.5.1 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Fase 2: Estilos y Flatpickr -->
+    <link rel="stylesheet" href="css/fase2-styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
+    <!-- Frameworks -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* MOTOR DE COLORES - Dark Theme Default */
+        :root {
+            color-scheme: dark;
+            --t-primary: #38bdf8; --t-secondary: #818cf8;
+            --t-primary-rgba: rgba(56, 189, 248, 0.4); --t-primary-light: rgba(56, 189, 248, 0.15);
+            --glass-bg: rgba(255, 255, 255, 0.02); --glass-border: rgba(255, 255, 255, 0.04);
+        }
+        
+        body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #ffffff; overflow-x: hidden; margin: 0; cursor: none !important; transition: background-color 0.4s ease; }
+        * { cursor: none !important; }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--t-primary-rgba); border-radius: 10px; }
+
+        #particles { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
+
+        /* Cursor Premium LERP */
+        #premium-cursor { position: fixed; top: 0; left: 0; width: 12px; height: 12px; background-color: var(--t-primary); border-radius: 50%; pointer-events: none; z-index: 200000; transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s, background-color 0.2s, opacity 0.2s; box-shadow: 0 0 15px var(--t-primary); }
+        #premium-cursor.hovering { width: 36px; height: 36px; background-color: var(--t-primary-rgba); backdrop-filter: blur(2px); border: 1px solid var(--t-primary); }
+
+        .anim-text-gradient {
+            background: linear-gradient(to right, #7dd3fc, #ffffff, #bae6fd, #ffffff, #7dd3fc);
+            background-size: 300% 300%; -webkit-background-clip: text; color: transparent;
+            animation: textGradientFlow 4s ease-in-out infinite;
+        }
+        @keyframes textGradientFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        @keyframes pulseOrb { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }
+        .orb-pulse { animation: pulseOrb 6s ease-in-out infinite; }
+
+        /* Dropdown Liquid Bounce (Elastic) */
+        @keyframes bounceLiquid {
+            0% { transform: scaleY(0.4); opacity: 0; }
+            50% { transform: scaleY(1.08); opacity: 1; }
+            75% { transform: scaleY(0.97); opacity: 1; }
+            100% { transform: scaleY(1); opacity: 1; }
+        }
+        .liquid-bounce { animation: bounceLiquid 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; transform-origin: top center; }
+
+        /* Glassmorphism UI */
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 1.25rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); transition: all 0.4s ease; }
+        .glass-login { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
+        
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"], input[type="text"], input[type="email"], input[type="password"] { -moz-appearance: textfield; }
+        .glass-input { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); color: #F8FAFC; border-radius: 0.5rem; padding: 0.6rem 0.75rem; width: 100%; transition: 0.3s; font-size: 0.875rem; font-family: 'Outfit', sans-serif; }
+        .glass-input:focus { outline: none; border-color: var(--t-primary); box-shadow: 0 0 15px var(--t-primary-light); background: rgba(0,0,0,0.3); }
+
+        .btn-float { transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, color 0.3s ease, background-color 0.3s ease !important; display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; }
+        .btn-float:hover { transform: translateY(-2px); border-color: var(--t-primary) !important; color: #fff !important; box-shadow: 0 6px 15px -5px var(--t-primary-rgba); }
+        .theme-bg-gradient { background: linear-gradient(135deg, var(--t-primary), var(--t-secondary)); }
+        
+        .progress-bar-bg { background: rgba(255,255,255,0.1); border-radius: 999px; overflow: hidden; height: 6px; width: 100%; margin-top: 6px; }
+        .progress-bar-fill { height: 100%; border-radius: 999px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Custom Datepicker UI Neon */
+        .cal-day { padding: 4px; text-align: center; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; font-weight: 500; }
+        .cal-day:hover:not(.empty) { background: rgba(56, 189, 248, 0.3); transform: scale(1.1); }
+        .cal-day.selected { background: var(--t-primary); color: #fff !important; text-shadow: 0 0 5px rgba(255,255,255,0.8); box-shadow: 0 0 15px var(--t-primary); font-weight: 800; transform: scale(1.1); }
+        .cal-day.empty { cursor: default; }
+
+        /* Custom Selects Menu */
+        .custom-dropdown-menu { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; box-shadow: 0 15px 40px rgba(0,0,0,0.8); overflow: hidden; }
+        
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 100000; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+        .toast-card { pointer-events: auto; background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.75rem; padding: 14px 16px; width: 320px; display: flex; gap: 12px; align-items: flex-start; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+
+        /* Glow Vectorial de Iconos */
+        .glow-success { filter: drop-shadow(0 0 4px rgba(52,211,153,0.8)); }
+        .glow-fail { filter: drop-shadow(0 0 4px rgba(248,113,113,0.8)); }
+        .glow-pend { filter: drop-shadow(0 0 4px rgba(251,191,36,0.8)); }
+
+        /* =========================================
+           LIGHT MODE ENGINE - LIQUID CRYSTAL
+        ========================================= */
+        .light-mode { color-scheme: light; background-color: #f8fafc !important; color: #0f172a !important; }
+        .light-mode .custom-dropdown-menu { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 15px 40px rgba(0,0,0,0.15); }
+        .light-mode .text-white { color: #0f172a !important; }
+        .light-mode .text-gray-200 { color: #1e293b !important; }
+        .light-mode .text-gray-300 { color: #334155 !important; }
+        .light-mode .text-gray-400 { color: #475569 !important; }
+        .light-mode .text-gray-500 { color: #64748b !important; }
+        .light-mode .text-white\/20 { color: rgba(0,0,0,0.2) !important; }
+        .light-mode .bg-white\/5 { background-color: rgba(0,0,0,0.03) !important; }
+        .light-mode .bg-white\/10 { background-color: rgba(0,0,0,0.06) !important; }
+        .light-mode .bg-white\/20 { background-color: rgba(0,0,0,0.12) !important; }
+        .light-mode .border-white\/5 { border-color: rgba(0,0,0,0.05) !important; }
+        .light-mode .border-white\/10 { border-color: rgba(0,0,0,0.1) !important; }
+        .light-mode .border-white\/20 { border-color: rgba(0,0,0,0.15) !important; }
+        .light-mode .bg-black\/20 { background-color: rgba(255,255,255,0.6) !important; }
+        .light-mode .bg-black\/30 { background-color: rgba(255,255,255,0.7) !important; }
+        .light-mode .bg-black\/40 { background-color: rgba(255,255,255,0.8) !important; }
+        .light-mode .bg-black\/70, .light-mode .bg-black\/80 { background-color: rgba(255,255,255,0.85) !important; backdrop-filter: blur(12px); }
+        .light-mode .glass-card, .light-mode .glass-login { background: rgba(255, 255, 255, 0.65) !important; border: 1px solid rgba(255, 255, 255, 0.8) !important; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08) !important; }
+        .light-mode .glass-input { background: rgba(255, 255, 255, 0.6) !important; border: 1px solid rgba(0, 0, 0, 0.08) !important; color: #0f172a !important; }
+        .light-mode .glass-input:focus { background: rgba(255, 255, 255, 1) !important; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4) !important; border-color: var(--t-primary) !important; }
+        .light-mode .anim-text-gradient { background: linear-gradient(to right, #0284c7, #3b82f6, #6366f1, #3b82f6, #0284c7) !important; background-size: 300% 300% !important; -webkit-background-clip: text !important; color: transparent !important; }
+        .light-mode .btn-float:hover { color: #ffffff !important; }
+        .light-mode .text-emerald-400 { color: #059669 !important; }
+        .light-mode .text-red-400 { color: #dc2626 !important; }
+        .light-mode .text-sky-400 { color: #0284c7 !important; }
+        .light-mode .text-pink-400 { color: #db2777 !important; }
+        .light-mode .text-violet-400 { color: #7c3aed !important; }
+        .light-mode .text-amber-400 { color: #d97706 !important; }
+
+        /* ── Dual Panel System ─────────────────────────────────── */
+        #app-shell { display: none; }  /* oculto hasta login */
+        /* panel-personal e panel-negocios son solo contenedores de visibilidad;
+           el max-width y padding lo gestiona el wrapper interno (.panel-inner) */
+        #panel-personal { flex: 1; }
+        /* panel-negocios: contenedor transparente, el padding lo pone #business-dashboard */
+        #panel-negocios  { display: none; flex: 1; min-height: 0; }
+
+        .panel-switch-btn {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.3rem 0.8rem; border-radius: 9999px;
+            font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.55);
+            transition: all 0.25s ease; cursor: pointer;
+        }
+        .panel-switch-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.3); }
+        .panel-switch-btn.active-panel {
+            background: linear-gradient(135deg, rgba(56,189,248,0.25), rgba(129,140,248,0.25));
+            border-color: rgba(56,189,248,0.6);
+            color: #38bdf8;
+            box-shadow: 0 0 14px rgba(56,189,248,0.25);
+        }
+
+        /* Flatpickr en MyEQUO (heredado de fase2) */
+        .flatpickr-calendar { font-family: 'Outfit', sans-serif !important; background: rgba(15,23,42,0.97) !important;
+            backdrop-filter: blur(24px) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8) !important; border-radius: 1rem !important; z-index: 999999 !important; }
+        .flatpickr-day.selected { background: rgba(14,165,233,0.3) !important; border-color: #38bdf8 !important; color: #38bdf8 !important; font-weight: bold; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col overflow-x-hidden" id="body">
+
+    <!-- UI Background (Partículas) -->
+    <div id="premium-cursor"></div>
+    <canvas id="particles"></canvas>
+    <div id="toast-container"></div>
+
+    <!-- ============================================================
+         APP SHELL (visible tras login) — Header siempre presente
+    ============================================================ -->
+    <div id="app-shell" class="hidden flex-grow flex flex-col">
+
+        <!-- HEADER MAESTRO — NUNCA se oculta al cambiar de panel -->
+        <div class="p-4 md:px-6 md:pt-6 max-w-[1300px] mx-auto w-full">
+        <header class="flex flex-col lg:flex-row justify-between items-center gap-4 glass-card p-4 relative z-[100] w-full">
+            <div class="flex-1 flex justify-center lg:justify-start items-center">
+                <div class="text-3xl font-extrabold tracking-tight anim-text-gradient font-['Outfit']">EQUO</div>
+            </div>
+            
+            <!-- Ticker FX Live -->
+            <div class="flex-none flex justify-center items-center text-[11px] sm:text-xs font-semibold tracking-wide font-['Outfit'] bg-white/5 border border-white/10 px-4 py-2 rounded-full gap-2 sm:gap-3 shadow-[0_0_15px_rgba(0,0,0,0.2)]">
+                <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)] mr-1"></div>
+                <div class="flex items-center"><span class="text-gray-400 mr-1">USD:</span> <span id="tick-usd" class="text-white font-bold">--.--</span></div>
+                <span class="text-white/20">|</span>
+                <div class="flex items-center"><span class="text-gray-400 mr-1">EUR:</span> <span id="tick-eur" class="text-white font-bold">--.--</span></div>
+                <span class="text-white/20">|</span>
+                <div class="flex items-center"><span class="text-gray-400 mr-1">USDT:</span> <span id="tick-usdt" class="text-white font-bold">--.--</span></div>
+            </div>
+            
+            <!-- Herramientas -->
+            <div class="flex-1 flex flex-wrap items-center justify-center lg:justify-end gap-2">
+
+                <!-- ── SWITCH DE PANELES ──────────────────────────────── -->
+                <div class="flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-1 py-1 mr-1">
+                    <button id="btn-panel-personal" onclick="switchPanel('personal')" class="panel-switch-btn active-panel" title="Panel Personal">
+                        <i class="fa-solid fa-user"></i> Personal
+                    </button>
+                    <button id="btn-panel-negocios" onclick="switchPanel('negocios')" class="panel-switch-btn" title="Panel de Negocios">
+                        <i class="fa-solid fa-briefcase"></i> Negocios
+                    </button>
+                </div>
+
+                <button onclick="$('mission-modal').classList.remove('hidden')" class="btn-float px-3 py-1.5 rounded bg-white/5 border border-white/10 text-[10px] font-semibold text-gray-200 tracking-wide"><i class="fa-solid fa-rocket text-violet-400 mr-1"></i> <span data-i18n="missionBtn">Misión</span></button>
+                <div class="w-px h-4 bg-white/20 mx-1 hidden sm:block"></div>
+                
+                <button id="btn-reset" onclick="confirmReset()" class="btn-float px-3 py-1.5 rounded bg-white/5 border border-white/10 text-[10px] font-semibold text-gray-200 tracking-wide"><i class="fa-solid fa-rotate-left text-red-400 mr-1"></i> <span data-i18n="resetBtn">Reset Año</span></button>
+                
+                <button onclick="toggleTheme()" class="btn-float px-2.5 py-1.5 rounded bg-white/5 border border-white/10 text-[12px] font-semibold text-gray-200 hover:text-white transition shadow-inner"><i id="theme-icon" class="fa-solid fa-sun"></i></button>
+
+                <button onclick="toggleLang()" class="btn-float px-2.5 py-1.5 rounded bg-white/5 border border-white/10 text-[12px] font-semibold text-sky-400 hover:text-white transition shadow-inner"><i class="fa-solid fa-globe mr-1"></i> <span id="lang-text" class="text-[10px]">ES</span></button>
+
+                <button onclick="handleLogout()" class="btn-float px-2.5 py-1.5 rounded bg-red-500/10 border border-red-500/30 text-[10px] font-semibold text-red-400 hover:text-white"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </header>
+        </div><!-- /header-wrapper -->
+
+        <!-- CONTENEDOR DE PANELES — solo este bloque alterna -->
+        <div id="main-content" class="flex-1 flex flex-col">
+
+        <!-- PANEL PERSONAL (Fase 1) -->
+        <div id="panel-personal">
+        <!-- Wrapper original que da proporciones: max-w, padding, gap -->
+        <div class="flex-grow p-4 md:p-6 max-w-[1300px] mx-auto w-full flex flex-col gap-4 relative">
+        <div class="glass-card p-3 flex flex-col xl:flex-row gap-4 items-stretch justify-between relative z-[90] w-full">
+            
+            <div class="relative w-full xl:w-56" id="month-dropdown-container">
+                <button onclick="toggleMonthDropdown()" class="glass-input flex justify-between items-center w-full !py-3 font-bold text-sky-400 hover:bg-white/5 transition-colors cursor-pointer border-white/20">
+                    <span id="current-month-text" class="text-sm tracking-wide">Enero</span>
+                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" id="month-drop-icon"></i>
+                </button>
+                <div id="month-dropdown-menu" class="absolute top-full left-0 w-full mt-2 bg-slate-900/95 dark:bg-black/95 backdrop-blur-3xl border border-white/10 p-2 hidden flex-col gap-1 z-[99999] rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.8)] max-h-[300px] overflow-y-auto"></div>
+            </div>
+
+            <div class="flex-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 text-center h-full">
+                <div class="bg-white/5 border border-white/10 p-2 rounded-xl flex flex-col justify-center"><p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5" data-i18n="annInc">Ingreso Anual</p><p id="sum-inc" class="text-sm font-extrabold text-emerald-400 drop-shadow-md">$0.00</p></div>
+                <div class="bg-white/5 border border-white/10 p-2 rounded-xl flex flex-col justify-center"><p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5" data-i18n="annExp">Gasto Anual</p><p id="sum-exp" class="text-sm font-extrabold text-red-400 drop-shadow-md">$0.00</p></div>
+                <div class="bg-white/5 border border-white/10 p-2 rounded-xl flex flex-col justify-center"><p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5" data-i18n="annSav">Ahorro Anual</p><p id="sum-sav" class="text-sm font-extrabold text-pink-400 drop-shadow-md">$0.00</p></div>
+                <div class="bg-white/5 border border-white/10 p-2 rounded-xl flex flex-col justify-center"><p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5" data-i18n="annInv">Cap. Invertido</p><p id="sum-inv" class="text-sm font-extrabold text-sky-400 drop-shadow-md">$0.00</p></div>
+                
+                <div class="bg-white/5 border border-emerald-500/20 p-2 rounded-xl flex flex-col justify-center items-center"><span class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5"><i class="fa-solid fa-circle-check text-emerald-400 mr-1 glow-success"></i><span data-i18n="msnSucc">Logradas</span></span><b id="sum-goal-suc" class="text-sm font-extrabold text-emerald-400">0</b></div>
+                <div class="bg-white/5 border border-red-500/20 p-2 rounded-xl flex flex-col justify-center items-center"><span class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5"><i class="fa-solid fa-circle-xmark text-red-400 mr-1 glow-fail"></i><span data-i18n="msnFail">Fallidas</span></span><b id="sum-goal-fail" class="text-sm font-extrabold text-red-400">0</b></div>
+                <div class="bg-white/5 border border-amber-500/20 p-2 rounded-xl flex flex-col justify-center items-center"><span class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5"><i class="fa-solid fa-hourglass-half text-amber-400 mr-1 glow-pend"></i><span data-i18n="msnPend">Pendientes</span></span><b id="sum-goal-pend" class="text-sm font-extrabold text-amber-400">0</b></div>
+            </div>
+        </div>
+
+        <!-- MAIN GRID (Con Z-Index dinámico y sin overflow: hidden que corte los submenús) -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-grow mb-10 z-[80] relative">
+            
+            <!-- COLUMNA 1 -->
+            <div class="lg:col-span-4 space-y-5">
+                <div class="glass-card p-5">
+                    <h2 class="text-sm font-bold mb-4 flex items-center gap-2 tracking-wide"><i class="fa-solid fa-briefcase text-emerald-400"></i> <span data-i18n="incSrcLbl">Fuentes de Ingreso</span></h2>
+                    <div class="space-y-2.5">
+                        <div class="relative"><i class="fa-solid fa-briefcase absolute left-3 top-2.5 text-emerald-400 text-xs"></i><input type="number" id="inc-trabajo" class="glass-input pl-8 !py-1.5 text-xs font-medium" oninput="updateIncome('trabajo', this.value)" data-i18n-placeholder="jobPh" placeholder="Trabajo Fijo ($)"></div>
+                        <div class="relative"><i class="fa-brands fa-bitcoin absolute left-3 top-2.5 text-orange-400 text-xs"></i><input type="number" id="inc-trading" class="glass-input pl-8 !py-1.5 text-xs font-medium" oninput="updateIncome('trading', this.value)" data-i18n-placeholder="tradePh" placeholder="Trading / Crypto ($)"></div>
+                        <div class="relative"><i class="fa-solid fa-chart-line absolute left-3 top-2.5 text-sky-400 text-xs"></i><input type="number" id="inc-inversiones" class="glass-input pl-8 !py-1.5 text-xs font-medium" oninput="updateIncome('inversiones', this.value)" data-i18n-placeholder="invPh" placeholder="Inversiones ($)"></div>
+                        <div class="relative"><i class="fa-solid fa-seedling absolute left-3 top-2.5 text-emerald-400 text-xs"></i><input type="number" id="inc-pasivos" class="glass-input pl-8 !py-1.5 text-xs font-medium" oninput="updateIncome('pasivos', this.value)" data-i18n-placeholder="pasPh" placeholder="Rentas / Pasivos ($)"></div>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-5">
+                    <h2 class="text-sm font-bold mb-4 flex items-center gap-2 tracking-wide"><i class="fa-solid fa-piggy-bank text-pink-400"></i> <span data-i18n="distLbl">Distribución</span></h2>
+                    <div class="flex gap-3">
+                        <div class="w-1/2 relative"><label class="text-[10px] text-gray-400 ml-1 mb-1 flex items-center font-semibold uppercase" data-i18n="pctSavLbl">% AHORRO</label><input type="number" id="pct-ahorro" class="glass-input !py-1.5 text-xs" oninput="updatePercent('savingsPercent', this.value)" placeholder="0"></div>
+                        <div class="w-1/2 relative"><label class="text-[10px] text-gray-400 ml-1 mb-1 flex items-center font-semibold uppercase" data-i18n="pctInvLbl">% INVERSIÓN</label><input type="number" id="pct-inversion" class="glass-input !py-1.5 text-xs" oninput="updatePercent('investPercent', this.value)" placeholder="0"></div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-5">
+                    <h2 class="text-sm font-bold mb-4 flex items-center gap-2 tracking-wide"><i class="fa-solid fa-book-open text-red-400"></i> <span data-i18n="debtTitle">Deudas y Préstamos</span></h2>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2"><h3 class="text-[10px] font-semibold text-red-400 uppercase tracking-wide" data-i18n="debtPayLbl">Deudas a Pagar</h3><button onclick="openRecordModal('debt')" class="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded transition"><i class="fa-solid fa-plus"></i></button></div>
+                        <div id="debts-container" class="space-y-1.5"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2"><h3 class="text-[10px] font-semibold text-sky-400 uppercase tracking-wide" data-i18n="loanRecLbl">Préstamos a Cobrar</h3><button onclick="openRecordModal('loan')" class="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded transition"><i class="fa-solid fa-plus"></i></button></div>
+                        <div id="loans-container" class="space-y-1.5"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA 2: Gastos -->
+            <div class="lg:col-span-4 glass-card p-5 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-bold tracking-wide flex items-center gap-2"><i class="fa-solid fa-receipt text-gray-400"></i> <span data-i18n="expTitle">Gastos Operativos</span></h2>
+                    <button onclick="addExpense()" class="btn-float w-7 h-7 rounded-full theme-bg-gradient flex justify-center items-center shadow-[0_0_10px_var(--t-primary-rgba)]"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                </div>
+                <div id="expenses-container" class="space-y-2 flex-grow"></div>
+            </div>
+
+            <!-- COLUMNA 3: Balance y Metas -->
+            <div class="lg:col-span-4 space-y-5">
+                <div class="glass-card p-5 relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full blur-[40px] pointer-events-none" style="background-color: var(--t-primary-light)"></div>
+                    <h2 class="text-sm font-bold mb-4 tracking-wide relative z-10 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-sky-400"></i> <span data-i18n="balTitle">Balance Mensual</span></h2>
+                    <div class="space-y-2 text-xs relative z-10">
+                        <div class="flex justify-between p-2 rounded bg-white/5 border border-white/5"><span class="text-gray-300 font-medium" data-i18n="totInc">Ingresos Totales</span><span id="disp-tot-inc" class="font-bold text-emerald-400">$0.00</span></div>
+                        <div class="flex justify-between p-2 rounded bg-white/5 border border-white/5"><span class="text-gray-300 font-medium" data-i18n="totExp">Gastos Totales</span><span id="disp-tot-exp" class="font-bold text-red-400">$0.00</span></div>
+                        <div class="flex justify-between p-2 rounded bg-white/5 border border-white/5"><span class="text-gray-200 font-semibold" data-i18n="grossBal">Balance Bruto</span><span id="disp-tot-bal" class="font-bold text-white">$0.00</span></div>
+                        
+                        <div class="flex justify-between px-2 pt-2"><span class="text-gray-400 text-[10px] uppercase" data-i18n="savDest">Ahorro Dest.</span><span id="disp-tot-sav" class="font-bold text-pink-400 text-xs">$0.00</span></div>
+                        <div class="flex justify-between px-2"><span class="text-gray-400 text-[10px] uppercase" data-i18n="invDest">Inversión Dest.</span><span id="disp-tot-inv" class="font-bold text-sky-400 text-xs">$0.00</span></div>
+                        <div class="flex justify-between px-2"><span class="text-gray-400 text-[10px] uppercase text-red-400/80" data-i18n="debtPay">Abonos Deudas</span><span id="disp-tot-debt" class="font-bold text-red-400 text-xs">-$0.00</span></div>
+                        <div class="flex justify-between px-2 pb-2"><span class="text-gray-400 text-[10px] uppercase text-sky-400/80" data-i18n="loanRec">Préstamos Cobrados</span><span id="disp-tot-loan" class="font-bold text-sky-400 text-xs">+$0.00</span></div>
+                        
+                        <!-- Lógica de Balance Arrastrado -->
+                        <div class="flex justify-between px-2 pt-2 border-t border-white/10 mt-1 mb-1"><span class="text-gray-400 text-[10px] uppercase font-bold" data-i18n="prevBal">Saldo Acumulado</span><span id="disp-prev-bal" class="font-bold text-gray-300 text-xs">$0.00</span></div>
+
+                        <div class="mt-4 p-4 rounded-xl bg-black/40 border border-white/10 text-center relative overflow-hidden">
+                            <div class="absolute inset-0 opacity-20 theme-bg-gradient pointer-events-none"></div>
+                            <span class="block text-[9px] text-gray-300 uppercase tracking-[0.2em] mb-1 relative z-10" data-i18n="freeCap">Capital Remanente Libre</span>
+                            <span id="disp-tot-rem" class="text-2xl font-extrabold anim-text-gradient drop-shadow-md relative z-10 tracking-tight">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="missions-render-box" class="glass-card p-5 hidden">
+                    <h2 class="text-sm font-bold mb-3 tracking-wide flex items-center gap-2"><i class="fa-solid fa-rocket text-violet-400"></i> <span data-i18n="stMsnTitle">Misiones Estratégicas</span></h2>
+                    <div id="missions-list" class="space-y-3"></div>
+                </div>
+
+                <!-- Fix Scroll Interno & Z-Index Dropdown (Id Dinámico) -->
+                <div id="card-metas" class="glass-card p-5 relative z-[50] transition-all duration-300">
+                    <h2 class="text-sm font-bold mb-3 tracking-wide flex items-center gap-2"><i class="fa-solid fa-bullseye text-white"></i> <span data-i18n="goalsTitle">Metas del Mes</span></h2>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="goal-name" class="glass-input !py-1.5 text-xs w-1/2" data-i18n-placeholder="namePh" placeholder="Nombre">
+                        <input type="number" id="goal-amount" class="glass-input !py-1.5 text-xs w-1/3" data-i18n-placeholder="amountPh" placeholder="Monto $">
+                        <button onclick="addGoal()" class="btn-float w-1/6 bg-white/10 border border-white/20 rounded flex justify-center items-center"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                    </div>
+                    <div id="goals-container" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD DE RENDIMIENTO -->
+            <div class="lg:col-span-12 glass-card p-5 flex flex-col lg:flex-row gap-6 relative z-[10]">
+                <div class="w-full lg:w-2/3">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-bold tracking-wide flex items-center gap-2"><i class="fa-solid fa-chart-line text-sky-400"></i> <span data-i18n="trendTitle">Tendencia Mensual</span></h2>
+                        <span id="trend-variation" class="text-[10px] font-semibold px-2 py-1 bg-white/10 rounded text-gray-300"></span>
+                    </div>
+                    <canvas id="trendChart" height="80"></canvas>
+                </div>
+                <div class="w-full lg:w-1/3 border-t lg:border-t-0 lg:border-l border-white/10 pt-4 lg:pt-0 lg:pl-6 flex flex-col justify-center relative">
+                    <h2 class="text-sm font-bold mb-4 tracking-wide flex items-center gap-2"><i class="fa-solid fa-chart-pie text-pink-400"></i> <span data-i18n="chartDistTitle">Distribución de Capital</span></h2>
+                    <div class="flex justify-center">
+                        <canvas id="distChart" height="180"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+        </div><!-- /panel-inner (max-w-[1300px] wrapper) -->
+        </div><!-- /panel-personal -->
+
+        </div><!-- /main-content -->
+    </div><!-- /app-shell -->
+
+    <!-- Panel Negocios: hermano de panel-personal, dentro de main-content.
+         Se inyecta una sola vez con fetch(); nunca se borra con innerHTML. -->
+    <!-- #panel-negocios lo crea switchPanel() dinámicamente dentro de #main-content -->
+
+    <!-- ==========================================
+         Z-INDEX SUPREMO: MODALES AL FINAL DEL DOM
+         ========================================== -->
+         
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="fixed inset-0 z-[100000] hidden flex flex-col items-center justify-center p-4 min-h-screen overflow-hidden">
+        <div class="absolute top-1/4 left-[15%] w-96 h-96 bg-sky-500/20 rounded-full blur-3xl orb-pulse mix-blend-screen pointer-events-none"></div>
+        <div class="absolute bottom-1/4 right-[15%] w-96 h-96 bg-blue-600/20 rounded-full blur-3xl orb-pulse mix-blend-screen pointer-events-none" style="animation-delay: 2s;"></div>
+
+        <div class="glass-login relative z-10 p-10 w-full max-w-sm text-center mx-auto">
+            <div class="flex items-center justify-center mb-8">
+                <span class="text-6xl font-extrabold anim-text-gradient font-['Outfit'] tracking-tight">EQUO</span>
+            </div>
+            <div id="auth-error" class="hidden bg-red-900/40 border border-red-500/50 text-red-200 text-xs p-2 rounded mb-4"></div>
+            
+            <form id="loginForm" onsubmit="event.preventDefault(); handleAuth();" class="w-full">
+                <div class="relative mb-4">
+                    <i class="fa-solid fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="email" id="auth-email" class="glass-input !py-3 !pl-10 text-sm font-medium" data-i18n-placeholder="emailPh" placeholder="Correo electrónico" required>
+                </div>
+                <div class="relative mb-8">
+                    <i class="fa-solid fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="password" id="auth-password" class="glass-input !py-3 !pl-10 text-sm font-medium" data-i18n-placeholder="passPh" placeholder="Contraseña" required>
+                </div>
+                <button type="submit" class="btn-float w-full py-3 rounded-lg theme-bg-gradient text-white font-bold shadow-lg mb-4 hover:shadow-[0_0_20px_rgba(56,189,248,0.5)]" data-i18n="loginBtn">Iniciar Sesión</button>
+            </form>
+            <button type="button" onclick="handleRegister()" class="text-xs text-sky-200 hover:text-white transition block w-full tracking-wide" data-i18n="registerBtn">¿No tienes cuenta? Regístrate</button>
+        </div>
+    </div>
+
+    <!-- Modal Registro (Deudas / Préstamos) -->
+    <div id="record-modal" class="fixed inset-0 z-[100000] hidden bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem]" onclick="event.stopPropagation();">
+            <button onclick="$('record-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="record-title" class="text-lg font-extrabold mb-4 anim-text-gradient tracking-tight inline-block">Nuevo Registro</h2>
+            <div class="space-y-4">
+                <input type="hidden" id="record-type">
+                <div><label id="record-label-name" class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1 block" data-i18n="entityLbl">Entidad</label><input type="text" id="record-name" class="glass-input"></div>
+                <div class="flex gap-3 relative">
+                    <!-- CUSTOM DATEPICKER NEON -->
+                    <div class="w-1/2 relative dp-container">
+                        <label class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1 block" data-i18n="dateLbl">Inicio</label>
+                        <div class="glass-input cursor-pointer flex justify-between items-center text-xs text-gray-400/80" onclick="toggleCalendar(event)" id="dp-display">
+                            <span id="dp-text" data-i18n="selectDateLbl">Selec. Fecha</span> <i class="fa-solid fa-calendar"></i>
+                        </div>
+                        <input type="hidden" id="record-date">
+                        
+                        <div id="dp-calendar" class="absolute top-full left-0 mt-2 custom-dropdown-menu p-3 hidden z-[100000] w-64 text-xs shadow-2xl">
+                            <div class="flex justify-between items-center mb-2 text-white">
+                                <button onclick="changeCalMonth(-1); event.stopPropagation();" class="p-1 hover:text-sky-400 transition"><i class="fa-solid fa-chevron-left"></i></button>
+                                <span id="cal-month-year" class="font-bold tracking-wide"></span>
+                                <button onclick="changeCalMonth(1); event.stopPropagation();" class="p-1 hover:text-sky-400 transition"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-gray-400 font-bold mb-1" id="cal-days-header"></div>
+                            <div class="grid grid-cols-7 gap-1 text-gray-300" id="cal-grid"></div>
+                        </div>
+                    </div>
+                    <div class="w-1/2"><label class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1 block" data-i18n="amountLbl">Monto ($)</label><input type="number" id="record-amount" class="glass-input"></div>
+                </div>
+                <button onclick="saveRecord()" class="btn-float w-full py-2.5 rounded-lg theme-bg-gradient text-white font-bold shadow-lg mt-2" data-i18n="saveBtn">Registrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Misión Modal -->
+    <div id="mission-modal" class="fixed inset-0 z-[100000] hidden bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem]" onclick="event.stopPropagation();">
+            <button onclick="$('mission-modal').classList.add('hidden')" class="btn-float absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h2 class="text-xl font-extrabold mb-1 anim-text-gradient tracking-tight flex items-center gap-2"><i class="fa-solid fa-rocket text-violet-400"></i> <span data-i18n="strategyLbl">Estrategia</span></h2>
+            <p class="text-[11px] text-gray-400 mb-5" data-i18n="coachGuideLbl">El Coach guiará tu progreso hacia este objetivo.</p>
+            <div class="space-y-4">
+                <div><label class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1 block" data-i18n="msnNameLbl">Misión</label><input type="text" id="msn-name" class="glass-input" data-i18n-placeholder="msnNamePh" placeholder="Ej. Comprar Auto"></div>
+                <div><label class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1 block" data-i18n="msnTotalLbl">Monto Total ($)</label><input type="number" id="msn-amount" class="glass-input" placeholder="Ej. 15000"></div>
+                
+                <div class="relative c-select-container">
+                    <label class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1 block" data-i18n="msnTypeLbl">Tipo de Plazo</label>
+                    <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('msn-type-dropdown')">
+                        <span id="msn-type-text" data-i18n="qtyMonths">Cantidad de Meses</span> <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </div>
+                    <input type="hidden" id="msn-type" value="months">
+                    <div id="msn-type-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu hidden flex-col z-[100000] text-sm">
+                        <div class="p-2.5 hover:bg-white/10 cursor-pointer text-gray-300 transition" onclick="selectCustomOption('msn-type', 'months', 'qtyMonths'); toggleMsnType();" data-i18n="qtyMonths">Cantidad de Meses</div>
+                        <div class="p-2.5 hover:bg-white/10 cursor-pointer text-gray-300 transition" onclick="selectCustomOption('msn-type', 'specific', 'specMonth'); toggleMsnType();" data-i18n="specMonth">Mes Específico</div>
+                    </div>
+                </div>
+
+                <div id="div-msn-months"><label class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1 block" data-i18n="monthsLbl">Meses</label><input type="number" id="msn-months" class="glass-input" placeholder="Ej. 12"></div>
+                
+                <div id="div-msn-specific" class="hidden relative c-select-container">
+                    <label class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1 block" data-i18n="targetMonthLbl">Mes Objetivo</label>
+                    <div class="glass-input cursor-pointer flex justify-between items-center text-gray-300" onclick="toggleCustomSelect('msn-spec-dropdown')">
+                        <span id="msn-spec-text">Enero</span> <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </div>
+                    <input type="hidden" id="msn-spec-month" value="0">
+                    <div id="msn-spec-dropdown" class="absolute top-full left-0 w-full mt-1 custom-dropdown-menu hidden flex-col z-[100000] max-h-40 overflow-y-auto text-sm shadow-2xl"></div>
+                </div>
+                
+                <button onclick="addMission()" class="btn-float w-full py-2.5 rounded-lg theme-bg-gradient text-white font-bold shadow-lg mt-4" data-i18n="activeMsnBtn">Activar Misión</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Core -->
+    <script>
+        const $ = id => document.getElementById(id);
+        
+        /* I18N DICTIONARY */
+        const translations = {
+            es: {
+                months:["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
+                monthsShort:["Do","Lu","Ma","Mi","Ju","Vi","Sa"],
+                emailPh: "Correo electrónico", passPh: "Contraseña", loginBtn: "Iniciar Sesión", registerBtn: "¿No tienes cuenta? Regístrate",
+                entityLbl: "Entidad", dateLbl: "Inicio", amountLbl: "Monto ($)", selectDateLbl: "Selec. Fecha", saveBtn: "Registrar",
+                strategyLbl: "Estrategia", coachGuideLbl: "El Coach guiará tu progreso hacia este objetivo.", msnNameLbl: "Misión", msnNamePh: "Ej. Comprar Auto", msnTotalLbl: "Monto Total ($)", msnTypeLbl: "Tipo de Plazo", qtyMonths: "Cantidad de Meses", specMonth: "Mes Específico", monthsLbl: "Meses", targetMonthLbl: "Mes Objetivo", activeMsnBtn: "Activar Misión",
+                missionBtn: "Misión", resetBtn: "Reset Año", prevBal: "Saldo Acumulado",
+                annInc: "Ingreso Anual", annExp: "Gasto Anual", annSav: "Ahorro Anual", annInv: "Cap. Invertido", msnSucc: "Logradas", msnFail: "Fallidas", msnPend: "Pendientes",
+                incSrcLbl: "Fuentes de Ingreso", jobPh: "Trabajo Fijo ($)", tradePh: "Trading / Crypto ($)", invPh: "Inversiones ($)", pasPh: "Rentas / Pasivos ($)",
+                distLbl: "Distribución", pctSavLbl: "% AHORRO", pctInvLbl: "% INVERSIÓN",
+                debtTitle: "Deudas y Préstamos", debtPayLbl: "Deudas a Pagar", loanRecLbl: "Préstamos a Cobrar",
+                expTitle: "Gastos Operativos", balTitle: "Balance Mensual", totInc: "Ingresos Totales", totExp: "Gastos Totales", grossBal: "Balance Bruto", savDest: "Ahorro Dest.", invDest: "Inversión Dest.", debtPay: "Abonos Deudas", loanRec: "Préstamos Cobrados", freeCap: "Capital Remanente Libre",
+                stMsnTitle: "Misiones Estratégicas", goalsTitle: "Metas del Mes", namePh: "Nombre", amountPh: "Monto $",
+                trendTitle: "Tendencia Mensual", chartDistTitle: "Distribución de Capital",
+                descPh: "Descripción", noExp: "Sin gastos operativos.", noDebts: "No hay deudas activas.", noLoans: "No hay préstamos pendientes.", noGoals: "Sin metas cortas.",
+                restLbl: "Resta: $", lackLbl: "Falta: $", payMonthLbl: "Abono mes:", chargeMonthLbl: "Cobro mes:",
+                Pendiente: "Pendiente", Logrado: "Logrado", Fallido: "Fallido", EnProgreso: "En Progreso", Cumplida: "Cumplida",
+                vsLastM: "vs mes anterior", endLbl: "Fin:",
+                coachWelcome: "¡Bienvenido al {year}! Fija una Misión Estratégica.", coachAlert: "Alerta Financiera", coachWarn: "Alerta Amarilla", coachExc: "¡Excelente Progreso!", coachNeg: "El saldo anterior es negativo por", coachHurry: "¡Ponte las pilas! El mes pasado reuniste", coachTarget: "Para tu meta", coachNeed: "deberías aportar", coachAdjust: "Ajusta tus gastos de", coachGood: "¡Buen trabajo! Has asegurado", coachKeep: "para tus misiones. Sigue así este mes."
+            },
+            en: {
+                months:["January","February","March","April","May","June","July","August","September","October","November","December"],
+                monthsShort:["Su","Mo","Tu","We","Th","Fr","Sa"],
+                emailPh: "Email address", passPh: "Password", loginBtn: "Log In", registerBtn: "Don't have an account? Sign up",
+                entityLbl: "Entity", dateLbl: "Start Date", amountLbl: "Amount ($)", selectDateLbl: "Select Date", saveBtn: "Save Record",
+                strategyLbl: "Strategy", coachGuideLbl: "The Coach will guide your progress towards this goal.", msnNameLbl: "Mission", msnNamePh: "Ex. Buy a Car", msnTotalLbl: "Total Amount ($)", msnTypeLbl: "Term Type", qtyMonths: "Number of Months", specMonth: "Specific Month", monthsLbl: "Months", targetMonthLbl: "Target Month", activeMsnBtn: "Activate Mission",
+                missionBtn: "Mission", resetBtn: "Reset Year", prevBal: "Accum. Balance",
+                annInc: "Annual Income", annExp: "Annual Expense", annSav: "Annual Savings", annInv: "Cap. Invested", msnSucc: "Achieved", msnFail: "Failed", msnPend: "Pending",
+                incSrcLbl: "Income Sources", jobPh: "Fixed Job ($)", tradePh: "Trading / Crypto ($)", invPh: "Investments ($)", pasPh: "Passive Income ($)",
+                distLbl: "Distribution", pctSavLbl: "% SAVINGS", pctInvLbl: "% INVESTED",
+                debtTitle: "Debts & Loans", debtPayLbl: "Debts to Pay", loanRecLbl: "Loans to Collect",
+                expTitle: "Operating Expenses", balTitle: "Monthly Balance", totInc: "Total Incomes", totExp: "Total Expenses", grossBal: "Gross Balance", savDest: "Savings Dest.", invDest: "Invest. Dest.", debtPay: "Debt Payments", loanRec: "Loans Collected", freeCap: "Free Remaining Capital",
+                stMsnTitle: "Strategic Missions", goalsTitle: "Monthly Goals", namePh: "Name", amountPh: "Amount $",
+                trendTitle: "Monthly Trend", chartDistTitle: "Capital Distribution",
+                descPh: "Description", noExp: "No operating expenses.", noDebts: "No active debts.", noLoans: "No pending loans.", noGoals: "No short-term goals.",
+                restLbl: "Rest: $", lackLbl: "Lack: $", payMonthLbl: "Pay month:", chargeMonthLbl: "Col. month:",
+                Pendiente: "Pending", Logrado: "Achieved", Fallido: "Failed", EnProgreso: "In Progress", Cumplida: "Completed",
+                vsLastM: "vs last month", endLbl: "End:",
+                coachWelcome: "Welcome to {year}! Set a Strategic Mission.", coachAlert: "Financial Alert", coachWarn: "Yellow Alert", coachExc: "Excellent Progress!", coachNeg: "Previous balance is negative by", coachHurry: "Step it up! Last month you gathered", coachTarget: "For your goal", coachNeed: "you should contribute", coachAdjust: "Adjust your expenses for", coachGood: "Good job! You secured", coachKeep: "for your missions. Keep it up this month."
+            }
+        };
+
+        let currentLang = localStorage.getItem('equo-lang') || 'es';
+        function t(key) { return translations[currentLang][key] || key; }
+
+        function initLang() { applyTranslations(); $('lang-text').innerText = currentLang.toUpperCase(); }
+        
+        function toggleLang() {
+            currentLang = currentLang === 'es' ? 'en' : 'es'; localStorage.setItem('equo-lang', currentLang); $('lang-text').innerText = currentLang.toUpperCase();
+            applyTranslations(); renderMonthDropdown(); renderMissions(); renderGoals(); renderDebtsLoans(); renderExpenses();
+            if($('cal-days-header')) { $('cal-days-header').innerHTML = translations[currentLang].monthsShort.map(d=>`<div>${d}</div>`).join(''); if(!$('dp-calendar').classList.contains('hidden')) renderCalendar(); }
+            if(trendChartInst) updateCharts();
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n')); });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-placeholder')); });
+        }
+
+        /* MOTOR ESTÉTICO Y THEMES */
+        function hexToRgba(hex, alpha) { let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${alpha})`; }
+        const activeTheme = { p: "#38bdf8", s: "#818cf8" }; const root = document.documentElement;
+        root.style.setProperty('--t-primary', activeTheme.p); root.style.setProperty('--t-secondary', activeTheme.s);
+        root.style.setProperty('--t-primary-rgba', hexToRgba(activeTheme.p, 0.4)); root.style.setProperty('--t-primary-light', hexToRgba(activeTheme.p, 0.15));
+        const currentSystemYear = new Date().getFullYear();
+
+        function initTheme() {
+            const saved = localStorage.getItem('equo-theme'); const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+            if (saved === 'light' || (!saved && prefersLight)) { document.body.classList.add('light-mode'); if($('theme-icon')) $('theme-icon').className = 'fa-solid fa-moon'; } 
+            else { if($('theme-icon')) $('theme-icon').className = 'fa-solid fa-sun'; }
+        }
+        initTheme();
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode'); const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('equo-theme', isLight ? 'light' : 'dark'); $('theme-icon').className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+            if (trendChartInst || distChartInst) updateCharts();
+        }
+        
+        /* TICKER FX (Live) */
+        async function fetchCurrencyRates() {
+            try {
+                const[resUsd, resEur, resUsdt] = await Promise.all([ fetch('https://ve.dolarapi.com/v1/dolares/oficial'), fetch('https://ve.dolarapi.com/v1/euros/oficial'), fetch('https://ve.dolarapi.com/v1/dolares/paralelo') ]);
+                const[dataUsd, dataEur, dataUsdt] = await Promise.all([ resUsd.json(), resEur.json(), resUsdt.json() ]);
+                if($('tick-usd')) $('tick-usd').innerText = dataUsd.promedio.toFixed(2); if($('tick-eur')) $('tick-eur').innerText = dataEur.promedio.toFixed(2); if($('tick-usdt')) $('tick-usdt').innerText = dataUsdt.promedio.toFixed(2);
+            } catch (error) {
+                if($('tick-usd')) $('tick-usd').innerText = 'Err'; if($('tick-eur')) $('tick-eur').innerText = 'Err'; if($('tick-usdt')) $('tick-usdt').innerText = 'Err';
+            }
+        }
+        fetchCurrencyRates(); setInterval(fetchCurrencyRates, 60000);
+
+        /* CURSOR & PARTICULAS */
+        const cursor = $('premium-cursor'); let mx = window.innerWidth/2, my = window.innerHeight/2, cx = mx, cy = my;
+        window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+        function renderCursor() { cx += (mx - cx) * 0.15; cy += (my - cy) * 0.15; cursor.style.left = `${cx}px`; cursor.style.top = `${cy}px`; requestAnimationFrame(renderCursor); } renderCursor();
+        document.addEventListener('mouseover', e => { if(e.target.closest('button, input, select, label, .toast-card, a, i, .cursor-pointer, .cal-day')) cursor.classList.add('hovering'); });
+        document.addEventListener('mouseout', e => { if(e.target.closest('button, input, select, label, .toast-card, a, i, .cursor-pointer, .cal-day')) cursor.classList.remove('hovering'); });
+
+        const canvas = $('particles'), ctx = canvas.getContext('2d'); canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        let pArray = Array.from({length: 45}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*1.5 + 0.5, sx: (Math.random()-0.5)*0.2, sy: (Math.random()-1)*0.4 - 0.1 }));
+        function animParticles() {
+            ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle = document.body.classList.contains('light-mode') ? 'rgba(2, 132, 199, 0.25)' : 'rgba(56,189,248,0.25)';
+            for(let p of pArray) { p.x += p.sx; p.y += p.sy; if(p.x < 0) p.x = canvas.width; if(p.x > canvas.width) p.x = 0; if(p.y < 0) p.y = canvas.height; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); }
+            requestAnimationFrame(animParticles);
+        }
+        animParticles(); window.addEventListener('resize', () => { canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+
+        /* CIERRE INTELIGENTE (CLICK OUTSIDE GLOBAL) */
+        document.addEventListener('click', (e) => {
+            if(e.target.id === 'record-modal') $('record-modal').classList.add('hidden');
+            if(e.target.id === 'mission-modal') $('mission-modal').classList.add('hidden');
+            if(!e.target.closest('#month-dropdown-container') && dropdownOpen) toggleMonthDropdown();
+            
+            document.querySelectorAll('.custom-dropdown-menu').forEach(drop => {
+                if(!e.target.closest('.c-select-container') && !e.target.closest('.goal-sel-container') && !e.target.closest('.dp-container') && !drop.classList.contains('hidden')) {
+                    drop.classList.add('hidden'); drop.classList.remove('liquid-bounce');
+                    // Restaurar z-index del card metas
+                    if(drop.id.includes('goal-sel-')) { $('card-metas').classList.replace('z-[9999]', 'z-[50]'); }
+                }
+            });
+        });
+
+        /* FIREBASE & DATOS */
+        const firebaseConfig = { apiKey: "AIzaSyBjDnhux11n1FLrfdjQ7qwaBDsiTkYb-CU", authDomain: "equo-7ed4d.firebaseapp.com", projectId: "equo-7ed4d", storageBucket: "equo-7ed4d.firebasestorage.app", messagingSenderId: "1019870804475", appId: "1:1019870804475:web:963831fdad13a04569f35e" };
+        firebase.initializeApp(firebaseConfig); const auth = firebase.auth(); const db = firebase.firestore();
+
+        const buildDefault = () => ({ year: currentSystemYear, goals:[], missions:[], globalDebts:[], globalLoans:[], months: Array.from({length: 12}, (_, i) => ({ id: i, incomes: {trabajo:0, inversiones:0, trading:0, pasivos:0}, savingsPercent:0, investPercent:0, expenses:[], debtPayments: {}, loanPayments: {} })) });
+        let appData = buildDefault(); let sessionToastsShown = new Set(); let currM = new Date().getMonth(); let authReady = false, currentUser = null;
+        let trendChartInst = null; let distChartInst = null;
+
+        auth.onAuthStateChanged((user) => { currentUser = user; window.currentUser = user; authReady = true; resolveAppStart(); });
+        async function resolveAppStart() {
+            if (!authReady) return;
+            if (currentUser) {
+                $('auth-screen').classList.add('hidden');
+                await loadUserData(currentUser.uid);
+                $('app-shell').classList.remove('hidden');  // mostrar app-shell completo
+                $('app-shell').style.display = 'flex';
+                initApp();
+            } else {
+                $('app-shell').classList.add('hidden');
+                $('auth-screen').classList.remove('hidden');
+                gsap.fromTo('#auth-screen', {opacity:0}, {opacity:1, duration:1});
+                appData = buildDefault();
+            }
+        }
+        async function loadUserData(uid) {
+            try {
+                const doc = await db.collection("users").doc(uid).get();
+                if (doc.exists) { appData = doc.data(); if(!appData.globalDebts) { appData.globalDebts=[]; appData.globalLoans=[]; appData.months.forEach(m=>{m.debtPayments={}; m.loanPayments={};}); } if(appData.year !== currentSystemYear) appData.year = currentSystemYear; } 
+                else { appData = buildDefault(); await db.collection("users").doc(uid).set(appData); }
+            } catch (e) { showToast('error', 'Error', 'Data load failed.'); appData = buildDefault(); }
+        }
+        const save = () => { if (currentUser) db.collection("users").doc(currentUser.uid).set(appData).catch(e => console.error(e)); };
+
+        async function handleAuth() { let em = $('auth-email').value, p = $('auth-password').value; try { await auth.signInWithEmailAndPassword(em, p); } catch(err) { $('auth-error').innerText = "Credenciales incorrectas."; $('auth-error').classList.remove('hidden'); } }
+        async function handleRegister() { let e = $('auth-email').value, p = $('auth-password').value; try { await auth.createUserWithEmailAndPassword(e, p); } catch(err) { $('auth-error').innerText = err.message; $('auth-error').classList.remove('hidden'); } }
+        function handleLogout() { auth.signOut(); location.reload(); }
+
+        function showToast(type, title, msg) {
+            let cols = { success: { b: 'border-emerald-500', iC: 'text-emerald-400', i: 'fa-check-circle', tC: 'text-emerald-300' }, warning: { b: 'border-yellow-500', iC: 'text-yellow-400', i: 'fa-bolt', tC: 'text-yellow-300' }, error: { b: 'border-red-500', iC: 'text-red-400', i: 'fa-triangle-exclamation', tC: 'text-red-300' }, info: { b: 'border-blue-500', iC: 'text-blue-400', i: 'fa-layer-group', tC: 'text-blue-300' } }[type];
+            const toast = document.createElement('div'); toast.className = `toast-card border-l-4 ${cols.b}`;
+            toast.innerHTML = `<div class="text-2xl ${cols.iC} pt-0.5"><i class="fa-solid ${cols.i}"></i></div><div class="flex-1"><h4 class="font-bold text-sm ${cols.tC}">${title}</h4><p class="text-[11px] text-gray-200 mt-1 leading-snug">${msg}</p></div><button onclick="this.parentElement.remove()" class="text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>`;
+            $('toast-container').appendChild(toast); gsap.fromTo(toast, { x: 100, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "back.out(1.2)" });
+            setTimeout(() => { if(toast.parentElement) gsap.to(toast, { x: 100, opacity: 0, duration: 0.4, onComplete: () => toast.remove() }); }, 8000);
+        }
+
+        /* LÓGICA DE SALDO ARRASTRADO (ACUMULADO) */
+        function getAccumulatedBalance(upToMonth) {
+            if (upToMonth < 0) return 0;
+            let total = 0;
+            for (let i = 0; i <= upToMonth; i++) {
+                let m = appData.months[i];
+                let tInc = m.incomes.trabajo + m.incomes.inversiones + m.incomes.trading + m.incomes.pasivos;
+                let tExp = m.expenses.reduce((s, e) => s + (e.amount || 0), 0);
+                let sav = tInc * (m.savingsPercent / 100 || 0); let inv = tInc * (m.investPercent / 100 || 0);
+                let tDebt = Object.values(m.debtPayments).reduce((a, b) => a + b, 0); let tLoan = Object.values(m.loanPayments).reduce((a, b) => a + b, 0);
+                total += (tInc - tExp - sav - inv - tDebt + tLoan);
+            }
+            return total;
+        }
+
+        /* CUSTOM DATEPICKER (NEON LIQUID) */
+        let calCurrentMonth = new Date().getMonth(); let calCurrentYear = new Date().getFullYear(); let calSelectedDate = null;
+        function renderCalendar() {
+            const firstDay = new Date(calCurrentYear, calCurrentMonth, 1).getDay(); const daysInMonth = new Date(calCurrentYear, calCurrentMonth + 1, 0).getDate();
+            $('cal-month-year').innerText = `${translations[currentLang].months[calCurrentMonth]} ${calCurrentYear}`;
+            let html = '';
+            for(let i=0; i<firstDay; i++) html += `<div class="cal-day empty"></div>`;
+            for(let i=1; i<=daysInMonth; i++) {
+                let dateStr = `${calCurrentYear}-${String(calCurrentMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                let selClass = calSelectedDate === dateStr ? 'selected' : '';
+                html += `<div class="cal-day ${selClass}" onclick="selectDate('${dateStr}'); event.stopPropagation();">${i}</div>`;
+            }
+            $('cal-grid').innerHTML = html; $('cal-days-header').innerHTML = translations[currentLang].monthsShort.map(d=>`<div>${d}</div>`).join('');
+        }
+        function changeCalMonth(dir) { calCurrentMonth += dir; if(calCurrentMonth < 0) { calCurrentMonth = 11; calCurrentYear--; } if(calCurrentMonth > 11) { calCurrentMonth = 0; calCurrentYear++; } renderCalendar(); }
+        function toggleCalendar(e) {
+            if(e) e.stopPropagation(); const cal = $('dp-calendar');
+            document.querySelectorAll('.custom-dropdown-menu').forEach(d => { if(d!==cal) { d.classList.add('hidden'); d.classList.remove('liquid-bounce'); }});
+            cal.classList.toggle('hidden'); if(!cal.classList.contains('hidden')) { cal.classList.add('liquid-bounce'); renderCalendar(); } else { cal.classList.remove('liquid-bounce'); }
+        }
+        function selectDate(dateStr) {
+            calSelectedDate = dateStr; $('record-date').value = dateStr; let parts = dateStr.split('-');
+            $('dp-text').innerText = `${parts[2]}/${parts[1]}/${parts[0]}`; $('dp-text').classList.add('text-white', 'font-bold');
+            $('dp-calendar').classList.add('hidden'); $('dp-calendar').classList.remove('liquid-bounce');
+        }
+
+        /* CUSTOM SELECT GLOBAL */
+        function toggleCustomSelect(id) {
+            const el = $(id); document.querySelectorAll('.custom-dropdown-menu').forEach(d => { if(d !== el) { d.classList.add('hidden'); d.classList.remove('liquid-bounce'); }});
+            el.classList.toggle('hidden'); if(!el.classList.contains('hidden')) el.classList.add('liquid-bounce'); else el.classList.remove('liquid-bounce'); event.stopPropagation();
+        }
+        function selectCustomOption(inputId, val, textKey) { $(inputId).value = val; $(inputId + '-text').innerText = t(textKey) || val; $(inputId + '-dropdown').classList.add('hidden'); $(inputId + '-dropdown').classList.remove('liquid-bounce'); }
+
+        /* INIT APP & DROPDOWN */
+        function initApp() { initLang(); switchMonth(currM); }
+
+        let dropdownOpen = false;
+        function toggleMonthDropdown() {
+            dropdownOpen = !dropdownOpen; const menu = $('month-dropdown-menu'), icon = $('month-drop-icon');
+            document.querySelectorAll('.custom-dropdown-menu').forEach(d => { d.classList.add('hidden'); d.classList.remove('liquid-bounce'); });
+            if(dropdownOpen) { menu.classList.remove('hidden'); menu.classList.add('flex', 'liquid-bounce'); icon.style.transform = 'rotate(180deg)'; } 
+            else { menu.classList.remove('liquid-bounce'); menu.classList.add('hidden'); menu.classList.remove('flex'); icon.style.transform = 'rotate(0deg)'; }
+            event.stopPropagation();
+        }
+        function selectMonth(idx) { switchMonth(idx); toggleMonthDropdown(); }
+        
+        function renderMonthDropdown() {
+            $('month-dropdown-menu').innerHTML = translations[currentLang].months.map((m,i) => `<button onclick="selectMonth(${i})" class="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 text-xs text-white/70 hover:text-white transition-colors ${i===currM ? 'bg-sky-500/20 !text-sky-400 font-bold' : ''}">${m}</button>`).join('');
+            $('current-month-text').innerText = translations[currentLang].months[currM];
+        }
+
+        function switchMonth(idx) {
+            currM = idx; renderMonthDropdown(); let m = appData.months[currM];
+            $('inc-trabajo').value = m.incomes.trabajo || ''; $('inc-trading').value = m.incomes.trading || ''; $('inc-inversiones').value = m.incomes.inversiones || ''; $('inc-pasivos').value = m.incomes.pasivos || '';
+            $('pct-ahorro').value = m.savingsPercent || ''; $('pct-inversion').value = m.investPercent || '';
+            renderExpenses(); renderDebtsLoans(); renderGoals(); calcMath(); renderMissions(); checkCoach();
+        }
+
+        /* COACH INTELIGENTE MULTILINGÜE */
+        function checkCoach() {
+            let actualSystemMonth = new Date().getMonth();
+            if(currM < actualSystemMonth) return; if(sessionToastsShown.has(currM)) return;
+
+            if(currM === 0 && appData.missions.length === 0) { showToast('info', t('msnSucc')+'?', t('coachWelcome').replace('{year}', appData.year)); sessionToastsShown.add(currM); return; }
+
+            if(currM > 0 && appData.missions.length > 0) {
+                let prevBal = getAccumulatedBalance(currM - 1);
+                let activeMission = appData.missions.find(m => m.status === 'En Progreso');
+                if(activeMission) {
+                    let totalSavedGlobal = calculateTotalSavedForMissions(currM - 1);
+                    let cuotaNecesaria = (activeMission.targetAmount - totalSavedGlobal) / Math.max(1, activeMission.duration - ((currM - 1) - activeMission.startM + (appData.year - activeMission.startY)*12));
+                    
+                    if(prevBal < 0) showToast('error', t('coachAlert'), `${t('coachNeg')} $${Math.abs(prevBal).toFixed(0)}.`);
+                    else if(prevBal < (0.8 * cuotaNecesaria)) showToast('warning', t('coachWarn'), `⚠️ ${t('coachHurry')} $${prevBal.toFixed(0)}. ${t('coachTarget')} "${activeMission.name}", ${t('coachNeed')} $${cuotaNecesaria.toFixed(0)}. ${t('coachAdjust')} ${translations[currentLang].months[currM]}.`);
+                    else showToast('success', t('coachExc'), `${t('coachGood')} $${prevBal.toFixed(0)} ${t('coachKeep')}`);
+                    sessionToastsShown.add(currM);
+                }
+            }
+        }
+
+        /* LÓGICA DE DATOS CORE */
+        function updateIncome(t, v) { appData.months[currM].incomes[t] = parseFloat(v)||0; calcMath(); renderMissions(); save(); }
+        function updatePercent(t, v) { appData.months[currM][t] = parseFloat(v)||0; calcMath(); renderMissions(); save(); }
+        function addExpense() { let id=Date.now(); appData.months.forEach(m=>m.expenses.push({id,name:'',amount:0})); renderExpenses(); save(); }
+        function handleExpenseInput(id, field, v) { if(field==='amount') { let e=appData.months[currM].expenses.find(x=>x.id===id); if(e) e.amount=parseFloat(v)||0; } else { appData.months.forEach(m=>{ let e=m.expenses.find(x=>x.id===id); if(e) e.name=v; }); } calcMath(); renderMissions(); save(); }
+        function removeExpense(id) { appData.months[currM].expenses = appData.months[currM].expenses.filter(x=>x.id!==id); renderExpenses(); calcMath(); renderMissions(); save(); }
+        
+        function renderExpenses() {
+            $('expenses-container').innerHTML = appData.months[currM].expenses.map(e => `
+                <div class="bg-black/20 border border-white/5 p-2 rounded-lg flex gap-2 items-center transition hover:border-white/20">
+                    <input type="text" value="${e.name}" oninput="handleExpenseInput(${e.id},'name',this.value)" placeholder="${t('descPh')}" class="glass-input !py-1.5 text-[11px] w-3/5">
+                    <div class="relative w-2/5"><span class="absolute left-2 top-1.5 text-gray-400 text-[10px]">$</span><input type="number" value="${e.amount||''}" oninput="handleExpenseInput(${e.id},'amount',this.value)" class="glass-input !py-1.5 pl-4 text-[11px] w-full"></div>
+                    <button onclick="removeExpense(${e.id})" class="text-gray-500 hover:text-red-400 px-1"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                </div>
+            `).join('') || `<p class="text-[11px] text-gray-500 text-center py-2 italic">${t('noExp')}</p>`;
+        }
+
+        function openRecordModal(type) {
+            $('record-type').value = type; $('record-title').innerText = type === 'debt' ? t('debtTitle') : t('loanRecLbl');
+            calSelectedDate = null; $('dp-text').innerText = t('selectDateLbl'); $('dp-text').classList.remove('text-white', 'font-bold');
+            $('record-name').value = ''; $('record-date').value = ''; $('record-amount').value = '';
+            $('record-modal').classList.remove('hidden');
+        }
+
+        function saveRecord() {
+            let ty = $('record-type').value, n = $('record-name').value, d = $('record-date').value, a = parseFloat($('record-amount').value);
+            if(!n || !d || isNaN(a) || a<=0) { showToast('error', 'Error', 'Datos inválidos.'); return; }
+            let obj = { id: Date.now(), name: n, date: d, total: a, startM: currM, liquidatedMonth: null };
+            if(ty==='debt') appData.globalDebts.push(obj); else appData.globalLoans.push(obj);
+            $('record-modal').classList.add('hidden'); renderDebtsLoans(); calcMath(); save();
+        }
+
+        function getPaidUpTo(id, limitM, type) { let paid = 0; for(let i=0; i<=limitM; i++) { paid += (type==='debt' ? (appData.months[i].debtPayments[id]||0) : (appData.months[i].loanPayments[id]||0)); } return paid; }
+        
+        function handlePaymentInput(id, val, type) {
+            let v = parseFloat(val) || 0; let item = (type==='debt') ? appData.globalDebts.find(x=>x.id===id) : appData.globalLoans.find(x=>x.id===id);
+            let prevPaid = getPaidUpTo(id, currM - 1, type); let remBefore = item.total - prevPaid;
+            if(v > remBefore) { v = remBefore; event.target.value = v; } 
+            let pObj = (type==='debt') ? appData.months[currM].debtPayments : appData.months[currM].loanPayments; let wasLiquidated = item.liquidatedMonth !== null; pObj[id] = v;
+            let remEl = $(`${type}-rem-${id}`); if(remEl) remEl.innerText = (type==='debt'?t('restLbl'):t('lackLbl')) + (remBefore - v).toFixed(2);
+            if(v >= remBefore && !wasLiquidated) { item.liquidatedMonth = currM; showToast('success', t('msnSucc'), `${item.name}.`); } else if(v < remBefore && wasLiquidated && item.liquidatedMonth === currM) { item.liquidatedMonth = null; }
+            calcMath(); renderMissions(); save(); 
+        }
+
+        function renderDebtsLoans() {
+            let htmlDebts = appData.globalDebts.filter(d => d.startM <= currM && (d.liquidatedMonth === null || d.liquidatedMonth >= currM)).map(d => {
+                let currentPayment = appData.months[currM].debtPayments[d.id] || '';
+                return `<div class="bg-red-900/10 border border-red-500/20 p-2 rounded-lg text-[10px]"><div class="flex justify-between mb-1 text-gray-200"><span>${d.name}</span><span id="debt-rem-${d.id}" class="text-red-400 font-semibold">${t('restLbl')} ${((d.total - getPaidUpTo(d.id, currM - 1, 'debt')) - (currentPayment||0)).toFixed(2)}</span></div><div class="flex gap-2 items-center"><span class="text-gray-400">${t('payMonthLbl')}</span><input type="number" value="${currentPayment}" oninput="handlePaymentInput(${d.id},this.value,'debt')" placeholder="0" class="glass-input !py-1 w-full border-red-400/50"></div></div>`;
+            }).join('');
+            $('debts-container').innerHTML = htmlDebts || `<p class="text-[10px] text-gray-500 italic">${t('noDebts')}</p>`;
+
+            let htmlLoans = appData.globalLoans.filter(l => l.startM <= currM && (l.liquidatedMonth === null || l.liquidatedMonth >= currM)).map(l => {
+                let currentPayment = appData.months[currM].loanPayments[l.id] || '';
+                return `<div class="bg-sky-900/10 border border-sky-500/20 p-2 rounded-lg text-[10px]"><div class="flex justify-between mb-1 text-gray-200"><span>${l.name}</span><span id="loan-rem-${l.id}" class="text-sky-400 font-semibold">${t('lackLbl')} ${((l.total - getPaidUpTo(l.id, currM - 1, 'loan')) - (currentPayment||0)).toFixed(2)}</span></div><div class="flex gap-2 items-center"><span class="text-gray-400">${t('chargeMonthLbl')}</span><input type="number" value="${currentPayment}" oninput="handlePaymentInput(${l.id},this.value,'loan')" placeholder="0" class="glass-input !py-1 w-full border-sky-400/50"></div></div>`;
+            }).join('');
+            $('loans-container').innerHTML = htmlLoans || `<p class="text-[10px] text-gray-500 italic">${t('noLoans')}</p>`;
+        }
+
+        /* GOALS CON Z-INDEX DINÁMICO Y GLOW */
+        function addGoal() { let n=$('goal-name').value, a=parseFloat($('goal-amount').value); if(!n || isNaN(a)) return; appData.goals.push({ id:Date.now(), name:n, amount:a, deadline:currM, status:'Pendiente' }); $('goal-name').value=''; $('goal-amount').value=''; renderGoals(); calcMath(); save(); }
+        function removeGoal(id) { appData.goals = appData.goals.filter(g=>g.id!==id); renderGoals(); calcMath(); save(); }
+        function updateGoal(id, st) { let g=appData.goals.find(x=>x.id===id); if(g){ g.status=st; renderGoals(); calcMath(); save(); } }
+        
+        function toggleGoalSelect(id, ev) {
+            if(ev) ev.stopPropagation(); const el = $(`goal-sel-${id}`);
+            document.querySelectorAll('.custom-dropdown-menu').forEach(d => { if(d !== el) { d.classList.add('hidden'); d.classList.remove('liquid-bounce'); }});
+            el.classList.toggle('hidden'); 
+            if(!el.classList.contains('hidden')) {
+                el.classList.add('liquid-bounce');
+                $('card-metas').classList.replace('z-[50]', 'z-[9999]'); // Boost Z-index Dinámico
+            } else { 
+                el.classList.remove('liquid-bounce'); 
+                $('card-metas').classList.replace('z-[9999]', 'z-[50]'); // Restaurar Z-index
+            }
+        }
+
+        function renderGoals() {
+            $('goals-container').innerHTML = appData.goals.filter(g=>g.deadline===currM).map(g => {
+                let colorClass = g.status === 'Logrado' ? 'text-emerald-400 glow-success' : (g.status === 'Fallido' ? 'text-red-400 glow-fail' : 'text-amber-400 glow-pend');
+                let iconClass = g.status === 'Logrado' ? 'fa-circle-check' : (g.status === 'Fallido' ? 'fa-circle-xmark' : 'fa-hourglass-half');
+                return `<div class="bg-black/20 border border-white/5 p-2 rounded-lg text-[11px]"><div class="flex justify-between mb-1.5 font-semibold"><span>${g.name}</span><span style="color:var(--t-primary)">$${g.amount}</span></div>
+                    <div class="flex gap-2">
+                        <div class="relative w-full goal-sel-container">
+                            <div class="glass-input cursor-pointer !py-1 flex justify-between items-center text-[10px] ${colorClass}" onclick="toggleGoalSelect(${g.id}, event)">
+                                <span><i class="fa-solid ${iconClass} mr-1"></i> ${t(g.status)}</span> <i class="fa-solid fa-chevron-down text-[8px]"></i>
+                            </div>
+                            <div id="goal-sel-${g.id}" class="absolute top-full right-0 w-32 mt-1 custom-dropdown-menu hidden flex-col z-[99999] text-[10px]">
+                                <div class="p-2 hover:bg-white/10 cursor-pointer text-amber-400 glow-pend transition" onclick="updateGoal(${g.id}, 'Pendiente')"><i class="fa-solid fa-hourglass-half mr-1"></i> ${t('Pendiente')}</div>
+                                <div class="p-2 hover:bg-white/10 cursor-pointer text-emerald-400 glow-success transition" onclick="updateGoal(${g.id}, 'Logrado')"><i class="fa-solid fa-circle-check mr-1"></i> ${t('Logrado')}</div>
+                                <div class="p-2 hover:bg-white/10 cursor-pointer text-red-400 glow-fail transition" onclick="updateGoal(${g.id}, 'Fallido')"><i class="fa-solid fa-circle-xmark mr-1"></i> ${t('Fallido')}</div>
+                            </div>
+                        </div>
+                        <button onclick="removeGoal(${g.id})" class="text-gray-500 hover:text-red-400 px-1"><i class="fa-solid fa-xmark"></i></button>
+                    </div></div>`;
+            }).join('') || `<p class="text-[10px] text-gray-500 text-center py-2 italic">${t('noGoals')}</p>`;
+        }
+
+        /* MISIONES */
+        function toggleMsnType() { 
+            let ty = $('msn-type').value; $('div-msn-months').style.display = ty === 'months' ? 'block' : 'none'; $('div-msn-specific').style.display = ty === 'specific' ? 'block' : 'none';
+            if(ty === 'specific') {
+                $('msn-spec-dropdown').innerHTML = translations[currentLang].months.map((m,i)=>`<div class="p-2.5 hover:bg-white/10 cursor-pointer text-gray-300 transition" onclick="selectCustomOption('msn-spec-month', ${i}, null); $('msn-spec-text').innerText='${m}';">${m}</div>`).join('');
+                $('msn-spec-text').innerText = translations[currentLang].months[0]; $('msn-spec-month').value = 0;
+            }
+        }
+        function addMission() {
+            let n=$('msn-name').value, a=parseFloat($('msn-amount').value), type=$('msn-type').value; if(!n || isNaN(a)) return showToast('error', 'Error', 'Datos incompletos.');
+            let dur=0, tM=0, tY=appData.year;
+            if(type === 'months') { dur=parseInt($('msn-months').value); if(isNaN(dur)||dur<=0) return; tM=(currM+dur)%12; tY=appData.year+Math.floor((currM+dur)/12); } 
+            else { tM=parseInt($('msn-spec-month').value); tY=appData.year+(tM<=currM?1:0); dur=(tY-appData.year)*12+tM-currM; if(dur<=0) dur=1; }
+            appData.missions.push({ id:Date.now(), name:n, targetAmount:a, duration:dur, startM:currM, startY:appData.year, targetM:tM, targetY:tY, status: 'En Progreso' });
+            $('msn-name').value=''; $('msn-amount').value=''; $('msn-months').value=''; $('mission-modal').classList.add('hidden');
+            renderMissions(); calcMath(); save(); showToast('info', t('msnSucc'), `"${n}" -> ${translations[currentLang].months[tM]} ${tY}.`);
+        }
+        function removeMission(id) { appData.missions = appData.missions.filter(x=>x.id!==id); renderMissions(); calcMath(); save(); }
+        function calculateTotalSavedForMissions(upToMonth = currM) {
+            let total = 0;
+            for(let i=0; i<=upToMonth; i++) {
+                let m = appData.months[i]; let tInc = m.incomes.trabajo + m.incomes.inversiones + m.incomes.trading + m.incomes.pasivos;
+                let tExp = m.expenses.reduce((s, e) => s + (e.amount||0), 0); let tDebt = Object.values(m.debtPayments).reduce((a,b)=>a+b,0), tLoan = Object.values(m.loanPayments).reduce((a,b)=>a+b,0);
+                let sav = tInc*(m.savingsPercent/100||0), inv = tInc*(m.investPercent/100||0); total += (sav + (tInc - tExp - sav - inv - tDebt + tLoan));
+            } return total;
+        }
+        function renderMissions() {
+            let container = $('missions-render-box'), list = $('missions-list');
+            if(appData.missions.length === 0) { container.classList.add('hidden'); return; }
+            container.classList.remove('hidden'); let totalSaved = calculateTotalSavedForMissions(currM);
+            list.innerHTML = appData.missions.map(m => {
+                let progress = Math.min((totalSaved / m.targetAmount) * 100, 100);
+                if(progress >= 100) m.status = 'Cumplida'; else if(appData.year > m.targetY || (appData.year === m.targetY && currM > m.targetM)) m.status = 'Fallida'; else m.status = 'En Progreso';
+                let iconStatus = m.status === 'Cumplida' ? '<i class="fa-solid fa-circle-check text-emerald-400 glow-success"></i>' : m.status === 'Fallida' ? '<i class="fa-solid fa-circle-xmark text-red-400 glow-fail"></i>' : '<i class="fa-solid fa-hourglass-half text-amber-400 glow-pend"></i>';
+                return `<div class="bg-black/30 border border-white/5 p-3 rounded-lg relative"><div class="flex justify-between items-start mb-1"><div><p class="font-bold text-white text-[12px]"><i class="fa-solid fa-bullseye text-white mr-1.5" style="font-size:10px;"></i>${m.name}</p><p class="text-[9px] text-sky-400 mt-0.5">Meta: $${m.targetAmount.toLocaleString()} | ${t('endLbl')} ${translations[currentLang].months[m.targetM]} ${m.targetY}</p></div><button onclick="removeMission(${m.id})" class="text-gray-500 hover:text-red-400 transition"><i class="fa-solid fa-trash text-xs"></i></button></div><div class="flex justify-between items-center text-[9px] text-gray-400 mt-1.5 mb-1"><span class="flex items-center gap-1">${iconStatus} ${t(m.status)}</span><span class="font-bold text-white">${progress.toFixed(1)}%</span></div><div class="progress-bar-bg" style="height:5px"><div class="progress-bar-fill theme-bg-gradient shadow-[0_0_10px_var(--t-primary)]" style="width:${progress}%"></div></div></div>`;
+            }).join('');
+        }
+
+        /* DASHBOARD ANUAL SUPERIOR */
+        function updateAnnualDashboard() {
+            let tInc=0, tExp=0, tSav=0, tInv=0, suc=0, fail=0, pend=0;
+            appData.months.forEach(m => {
+                let mi = m.incomes.trabajo + m.incomes.inversiones + m.incomes.trading + m.incomes.pasivos; tInc+=mi; tExp += m.expenses.reduce((s,e)=>s+(e.amount||0),0);
+                tSav += mi*(m.savingsPercent/100||0); tInv += mi*(m.investPercent/100||0);
+            });
+            appData.goals.forEach(g => { if(g.status==='Logrado')suc++; else if(g.status==='Fallido')fail++; else pend++; });
+            if($('sum-inc')) $('sum-inc').innerText=`$${tInc.toFixed(2)}`; if($('sum-exp')) $('sum-exp').innerText=`$${tExp.toFixed(2)}`;
+            if($('sum-sav')) $('sum-sav').innerText=`$${tSav.toFixed(2)}`; if($('sum-inv')) $('sum-inv').innerText=`$${tInv.toFixed(2)}`;
+            if($('sum-goal-suc')) $('sum-goal-suc').innerText=suc; if($('sum-goal-fail')) $('sum-goal-fail').innerText=fail; if($('sum-goal-pend')) $('sum-goal-pend').innerText=pend;
+        }
+
+        /* MATEMÁTICAS MENSUALES (INCLUYE SALDO ARRASTRADO) */
+        function calcMath() {
+            let m = appData.months[currM]; 
+            let tInc = m.incomes.trabajo + m.incomes.inversiones + m.incomes.trading + m.incomes.pasivos;
+            let tExp = m.expenses.reduce((s, e) => s + (e.amount||0), 0); 
+            let tDebt = Object.values(m.debtPayments).reduce((a,b)=>a+b,0); let tLoan = Object.values(m.loanPayments).reduce((a,b)=>a+b,0);
+            let sav = tInc * (m.savingsPercent/100||0); let inv = tInc * (m.investPercent/100||0); 
+            let bal = tInc - tExp; 
+            
+            // Calculo Mes Actual
+            let rem = bal - sav - inv - tDebt + tLoan;
+            
+            // Calculo Histórico Arrastrado (Liquidez real no gastada de meses anteriores)
+            let prevBal = getAccumulatedBalance(currM - 1);
+            let totalRem = rem + prevBal;
+
+            $('disp-tot-inc').innerText = `$${tInc.toFixed(2)}`; $('disp-tot-exp').innerText = `$${tExp.toFixed(2)}`;
+            $('disp-tot-bal').innerText = `$${bal.toFixed(2)}`; $('disp-tot-bal').className = `font-bold tracking-wide ${bal<0?'text-red-400':'text-white'}`;
+            $('disp-tot-sav').innerText = `$${sav.toFixed(2)}`; $('disp-tot-inv').innerText = `$${inv.toFixed(2)}`;
+            $('disp-tot-debt').innerText = `-$${tDebt.toFixed(2)}`; $('disp-tot-loan').innerText = `+$${tLoan.toFixed(2)}`;
+            
+            // Visualización Arrastrado
+            if($('disp-prev-bal')) {
+                $('disp-prev-bal').innerText = `${prevBal < 0 ? '-' : ''}$${Math.abs(prevBal).toFixed(2)}`;
+                $('disp-prev-bal').className = `font-bold text-xs ${prevBal < 0 ? 'text-red-400' : 'text-emerald-400'}`;
+            }
+
+            // Visualización Total Absoluta (Liquidez en la billetera)
+            $('disp-tot-rem').innerText = `$${totalRem.toFixed(2)}`; 
+            $('disp-tot-rem').className = `text-2xl font-extrabold anim-text-gradient drop-shadow-md relative z-10 tracking-tight`;
+            
+            updateAnnualDashboard(); updateCharts();
+        }
+
+        /* GRÁFICOS */
+        function updateCharts() {
+            if(!window.Chart) return;
+            const isLight = document.body.classList.contains('light-mode');
+            const tColor = isLight ? '#475569' : '#94a3b8'; const gColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)'; const borderC = isLight ? '#ffffff' : '#0f172a';
+            Chart.defaults.color = tColor; Chart.defaults.font.family = "'Outfit', sans-serif";
+
+            let labels = translations[currentLang].months.slice(0, currM + 1); let incData =[], expData =[];
+            for(let i=0; i<=currM; i++) {
+                let mObj = appData.months[i]; let mi = mObj.incomes.trabajo + mObj.incomes.inversiones + mObj.incomes.trading + mObj.incomes.pasivos;
+                let me = mObj.expenses.reduce((s,e)=>s+(e.amount||0),0); incData.push(mi); expData.push(me);
+            }
+
+            if(currM > 0) {
+                let currentInc = incData[currM] || 0, prevInc = incData[currM-1] || 0;
+                if(prevInc > 0) {
+                    let varPct = ((currentInc - prevInc) / prevInc) * 100; let sign = varPct >= 0 ? '+' : ''; let colorClass = varPct >= 0 ? 'text-emerald-400' : 'text-red-400';
+                    $('trend-variation').innerHTML = `<span class="${colorClass}">${sign}${varPct.toFixed(1)}%</span> ${t('vsLastM')}`;
+                } else $('trend-variation').innerHTML = '';
+            } else $('trend-variation').innerHTML = ''; 
+
+            if(trendChartInst) {
+                trendChartInst.data.labels = labels; trendChartInst.data.datasets[0].data = incData; trendChartInst.data.datasets[1].data = expData;
+                trendChartInst.data.datasets[0].label = t('totInc'); trendChartInst.data.datasets[1].label = t('totExp');
+                trendChartInst.options.scales.x.ticks.color = tColor; trendChartInst.options.scales.y.ticks.color = tColor;
+                trendChartInst.options.scales.x.grid.color = gColor; trendChartInst.options.scales.y.grid.color = gColor;
+                if(trendChartInst.options.plugins.legend) trendChartInst.options.plugins.legend.labels.color = tColor;
+                trendChartInst.update();
+            } else {
+                const ctxTrend = $('trendChart').getContext('2d');
+                trendChartInst = new Chart(ctxTrend, {
+                    type: 'line', data: { labels: labels, datasets:[ { label: t('totInc'), data: incData, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', tension: 0.4, fill: true }, { label: t('totExp'), data: expData, borderColor: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.1)', tension: 0.4, fill: true } ] },
+                    options: { responsive: true, plugins: { legend: { labels: { color: tColor, font: {family: "'Outfit', sans-serif"} } } }, scales: { x: { ticks: { color: tColor, font: {family: "'Outfit', sans-serif"} }, grid: { color: gColor } }, y: { ticks: { color: tColor, font: {family: "'Outfit', sans-serif"} }, grid: { color: gColor } } } }
+                });
+            }
+
+            let m = appData.months[currM]; let mi = m.incomes.trabajo + m.incomes.inversiones + m.incomes.trading + m.incomes.pasivos; let mExp = m.expenses.reduce((s,e)=>s+(e.amount||0),0);
+            let mSav = mi * (m.savingsPercent/100||0); let mInv = mi * (m.investPercent/100||0); let mDebt = Object.values(m.debtPayments).reduce((a,b)=>a+b,0);
+            let distData =[mExp, mSav, mInv, mDebt];
+            
+            if(distChartInst) {
+                distChartInst.data.datasets[0].data = distData; distChartInst.data.datasets[0].borderColor = borderC;
+                distChartInst.data.labels =[t('expTitle'), t('annSav'), t('annInv'), t('debtPay')];
+                if(distChartInst.options.plugins.legend) distChartInst.options.plugins.legend.labels.color = tColor;
+                distChartInst.update();
+            } else {
+                const ctxDist = $('distChart').getContext('2d');
+                distChartInst = new Chart(ctxDist, {
+                    type: 'doughnut', data: { labels:[t('expTitle'), t('annSav'), t('annInv'), t('debtPay')], datasets:[{ data: distData, backgroundColor:['#9ca3af', '#f472b6', '#38bdf8', '#f87171'], borderColor: borderC, borderWidth: 2 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: tColor, font: {family: "'Outfit', sans-serif"} } }, tooltip: { titleFont: { family: "'Outfit', sans-serif" }, bodyFont: { family: "'Outfit', sans-serif" } } } }
+                });
+            }
+        }
+
+        let resetClicks = 0;
+        async function confirmReset() {
+            if(!currentUser) return;
+            let btn = $('btn-reset');
+            if(resetClicks === 0) {
+                btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> Segur@?';
+                btn.classList.replace('bg-white/5', 'bg-red-500/80');
+                btn.classList.replace('text-gray-200', 'text-white');
+                resetClicks++;
+                setTimeout(() => {
+                    resetClicks = 0;
+                    btn.innerHTML = `<i class="fa-solid fa-rotate-left text-red-400 mr-1"></i> <span data-i18n="resetBtn">${t('resetBtn')}</span>`;
+                    btn.classList.replace('bg-red-500/80', 'bg-white/5');
+                    btn.classList.replace('text-white', 'text-gray-200');
+                    applyTranslations();
+                }, 3000);
+            } else {
+                // \u2500\u2500 1. SOFT RESET: reconstruir datos en memoria \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+                appData = buildDefault();
+                appData.year = currentSystemYear;
+
+                // \u2500\u2500 2. Persistir en Firebase \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+                await db.collection("users").doc(currentUser.uid).set(appData);
+
+                // \u2500\u2500 3. Destruir gráficos de Fase 1 para que se re-inicialicen en cero \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+                if (trendChartInst) { trendChartInst.destroy(); trendChartInst = null; }
+                if (distChartInst)  { distChartInst.destroy();  distChartInst  = null; }
+
+                // \u2500\u2500 4. Refresh Panel Personal (Fase 1) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+                initApp();
+
+                // \u2500\u2500 5. Refresh Panel de Negocios (Fase 2, solo si está cargado) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+                if (typeof window.forceRefreshFase2 === 'function') window.forceRefreshFase2();
+
+                // \u2500\u2500 6. Restaurar botón y notificar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+                resetClicks = 0;
+                btn.innerHTML = `<i class="fa-solid fa-rotate-left text-red-400 mr-1"></i> <span data-i18n="resetBtn">${t('resetBtn')}</span>`;
+                btn.classList.replace('bg-red-500/80', 'bg-white/5');
+                btn.classList.replace('text-white', 'text-gray-200');
+                applyTranslations();
+                showToast('success', 'Reset completado', 'El año ha sido reiniciado. Todos los módulos están en cero.');
+            }
+        }
+
+        window.switchMonth = switchMonth; window.updateIncome = updateIncome; window.updatePercent = updatePercent; window.addExpense = addExpense; window.handleExpenseInput = handleExpenseInput; window.removeExpense = removeExpense; window.openRecordModal = openRecordModal; window.saveRecord = saveRecord; window.handlePaymentInput = handlePaymentInput; window.addGoal = addGoal; window.removeGoal = removeGoal; window.updateGoal = updateGoal; window.toggleMsnType = toggleMsnType; window.addMission = addMission; window.removeMission = removeMission; window.confirmReset = confirmReset; window.handleAuth = handleAuth; window.handleRegister = handleRegister; window.handleLogout = handleLogout; window.toggleTheme = toggleTheme; window.toggleMonthDropdown = toggleMonthDropdown; window.selectMonth = selectMonth; window.toggleCustomSelect = toggleCustomSelect; window.selectCustomOption = selectCustomOption; window.toggleLang = toggleLang; window.toggleCalendar = toggleCalendar; window.changeCalMonth = changeCalMonth; window.selectDate = selectDate; window.toggleGoalSelect = toggleGoalSelect;
+
+        // ── Exponer globales para fase2-logic.js ─────────────────────────────────
+        window.db   = db;
+        window.auth = auth;
+        window.save = save;
+        window.fx   = window.fx || {};
+        // Sync window.currentUser en cada cambio de sesión
+        auth.onAuthStateChanged((u) => { window.currentUser = u; });
+        // window.appData como getter vivo del appData local
+        Object.defineProperty(window, 'appData', {
+            get: () => appData,
+            set: (_) => {},  // fase2-logic.js solo lee; Fase 1 es la fuente de verdad
+            configurable: true
+        });
+        // Sync tasas FX al ticker del header
+        window._syncFxRates = function() {
+            const usd  = parseFloat(document.getElementById('tick-usd')?.innerText)  || 0;
+            const eur  = parseFloat(document.getElementById('tick-eur')?.innerText)  || 0;
+            const usdt = parseFloat(document.getElementById('tick-usdt')?.innerText) || 0;
+            if (usd > 0) { window.fx.usd_bcv = usd; window.fx.eur_bcv = eur; window.fx.usd_usdt = usdt; }
+        };
+        setInterval(window._syncFxRates, 5000);
+
+        // ── Sistema Doble Panel ────────────────────────────────────────────────────
+        // Regla: switchPanel() SOLO alterna display. NUNCA borra innerHTML.
+        // El panel-negocios se crea dentro de #main-content una sola vez con fetch().
+        let _fase2Loaded = false;
+
+        // Crear panel-negocios como hermano de panel-personal dentro de main-content
+        (function createNegocionPanel() {
+            const mc = document.getElementById('main-content');
+            if (!mc || document.getElementById('panel-negocios')) return;
+            const div = document.createElement('div');
+            div.id = 'panel-negocios';
+            div.style.display = 'none';
+            div.style.flex = '1';
+            div.style.flexDirection = 'column';
+            mc.appendChild(div);
+        })();
+
+        window.switchPanel = async function(panel) {
+            const pPersonal = document.getElementById('panel-personal');
+            const pNegocios = document.getElementById('panel-negocios');
+            const btnP = document.getElementById('btn-panel-personal');
+            const btnN = document.getElementById('btn-panel-negocios');
+            if (!pPersonal || !pNegocios) return;
+
+            if (panel === 'negocios') {
+                // Primera vez: cargar fase2.html con fetch, luego nunca más
+                if (!_fase2Loaded) {
+                    pNegocios.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:16rem;color:#38bdf8"><i class="fa-solid fa-spinner fa-spin" style="font-size:2rem"></i></div>';
+                    try {
+                        const res    = await fetch('fase2.html');
+                        const html   = await res.text();
+                        const parser = new DOMParser();
+                        const doc    = parser.parseFromString(html, 'text/html');
+                        // Eliminar <script> del HTML parseado (ya está cargado fase2-logic.js)
+                        doc.querySelectorAll('script').forEach(s => s.remove());
+                        // Limpiar spinner e inyectar el DOM de fase2.html
+                        pNegocios.innerHTML = '';
+                        Array.from(doc.body.childNodes).forEach(node =>
+                            pNegocios.appendChild(document.importNode(node, true))
+                        );
+                        _fase2Loaded = true;
+                        window._syncFxRates();
+                        // Disparar init de Fase 2 para poblar el DOM recién inyectado
+                        if (typeof window.initFase2 === 'function') window.initFase2();
+                    } catch(e) {
+                        pNegocios.innerHTML = '<p style="color:#f87171;text-align:center;padding:3rem">Error: abre el archivo desde un servidor local (no file://).</p>';
+                        console.error('[EQUO] switchPanel fetch error:', e);
+                    }
+                }
+                // Alternar display
+                pPersonal.style.display = 'none';
+                pNegocios.style.display = 'flex';
+                pNegocios.style.flexDirection = 'column';
+                btnP.classList.remove('active-panel');
+                btnN.classList.add('active-panel');
+            } else {
+                // Volver a Personal: panel-negocios queda en DOM, solo oculto
+                pNegocios.style.display = 'none';
+                pPersonal.style.display = 'flex';
+                pPersonal.style.flexDirection = 'column';
+                btnN.classList.remove('active-panel');
+                btnP.classList.add('active-panel');
+            }
+        };
+    </script>
+
+    <!-- Lógica Fase 2 (cargada al final; fase2-logic.js requiere window.db y window.auth) -->
+    <script src="js/fase2-logic.js"></script>
+</body>
+</html>

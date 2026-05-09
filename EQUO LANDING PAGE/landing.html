@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EQUO — Claridad financiera para tu vida y tu negocio</title>
+<meta name="description" content="EQUO: la herramienta definitiva para personas que buscan orden y emprendedores que exigen precisión. Finanzas personales y gestión de negocios en una sola interfaz de cristal."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>tailwind.config={theme:{extend:{fontFamily:{outfit:['Outfit','sans-serif']}}}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Outfit',sans-serif;background:#0f172a;color:#e2e8f0;overflow-x:hidden;cursor:none;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:#0f172a;}
+::-webkit-scrollbar-thumb{background:linear-gradient(#38bdf8,#818cf8);border-radius:3px;}
+
+/* CURSOR */
+#cur-ring{position:fixed;width:44px;height:44px;border:1.5px solid rgba(56,189,248,.55);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .22s,height .22s,border-color .22s,background .22s;}
+#cur-dot{position:fixed;width:5px;height:5px;background:#38bdf8;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);}
+#ptx{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.orb{position:fixed;border-radius:50%;filter:blur(110px);pointer-events:none;z-index:0;}
+
+/* GLASS */
+.glass{background:rgba(255,255,255,.04);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.08);border-radius:1.5rem;}
+.glass-sm{background:rgba(255,255,255,.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.07);border-radius:.875rem;}
+
+/* GRADIENT TEXT — FIX: 400% size + seamless loop */
+.anim-text-gradient{background:linear-gradient(90deg,#38bdf8,#818cf8,#e879f9,#818cf8,#38bdf8);background-size:400% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gf 6s linear infinite;}
+.grad-text{background:linear-gradient(135deg,#38bdf8,#818cf8 50%,#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+/* BUTTONS */
+.btn-neon{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;background:linear-gradient(135deg,#38bdf8,#818cf8);border:none;border-radius:.875rem;padding:.9rem 2.25rem;font-family:'Outfit',sans-serif;font-weight:700;font-size:1rem;color:#0f172a;cursor:none;overflow:hidden;transition:transform .2s,box-shadow .2s;}
+.btn-neon:hover{transform:translateY(-3px);box-shadow:0 0 40px rgba(56,189,248,.5),0 0 80px rgba(129,140,248,.25);}
+.btn-ghost{display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(56,189,248,.35);background:transparent;border-radius:.875rem;padding:.85rem 2rem;font-family:'Outfit',sans-serif;font-weight:600;font-size:.95rem;color:#38bdf8;cursor:none;transition:all .2s;}
+.btn-ghost:hover{background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.7);box-shadow:0 0 24px rgba(56,189,248,.2);}
+
+/* NAV */
+#nav{position:fixed;top:0;left:0;right:0;z-index:200;padding:1.25rem 2.5rem;display:flex;align-items:center;justify-content:space-between;transition:background .3s,box-shadow .3s;}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:.375rem;border-radius:9999px;padding:.3rem 1rem;font-size:.75rem;font-weight:600;letter-spacing:.02em;}
+.badge-sky{background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.35);color:#38bdf8;}
+.badge-indigo{background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.35);color:#818cf8;}
+.badge-fuchsia{background:rgba(232,121,249,.12);border:1px solid rgba(232,121,249,.35);color:#e879f9;}
+.badge-emerald{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);color:#10b981;}
+
+/* PROGRESS */
+.prog{background:rgba(255,255,255,.07);border-radius:9999px;height:6px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:9999px;}
+
+/* ICON BOX */
+.icon-box{width:2.5rem;height:2.5rem;border-radius:.75rem;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+
+/* CHART BAR */
+.chart-bar{border-radius:3px 3px 0 0;background:linear-gradient(to top,#38bdf8,#818cf8);transform-origin:bottom;}
+
+/* DIVIDER */
+.divider{width:60px;height:2px;border-radius:9999px;background:linear-gradient(90deg,#38bdf8,#818cf8);margin:0 auto;}
+
+/* FLOAT */
+.float-anim{animation:float 6s ease-in-out infinite;}
+
+/* SECTION SEPARATOR */
+.section-sep{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;}
+.section-sep-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);}
+
+/* PRICING */
+.pricing-glow{position:relative;}
+.pricing-glow::before{content:'';position:absolute;inset:-1px;border-radius:1.5rem;background:linear-gradient(135deg,#38bdf8,#818cf8,#e879f9);z-index:-1;opacity:0;transition:opacity .4s;}
+.pricing-glow:hover::before{opacity:1;}
+
+/* INVESTOR CARD — pulsing purple neon border */
+.investor-card{background:rgba(12,6,28,.75);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:1.5rem;position:relative;overflow:hidden;animation:investor-border 3s ease-in-out infinite;}
+.investor-card::before{content:'';position:absolute;inset:0;border-radius:1.5rem;padding:1px;background:linear-gradient(135deg,rgba(232,121,249,.6),rgba(129,140,248,.4),rgba(232,121,249,.6));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:investor-border 3s ease-in-out infinite;}
+.investor-card::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(232,121,249,.1),transparent 65%);pointer-events:none;}
+
+/* KEYFRAMES */
+@keyframes gf{0%{background-position:0% 50%}100%{background-position:400% 50%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes investor-border{0%,100%{box-shadow:0 0 20px rgba(232,121,249,.15),inset 0 0 20px rgba(232,121,249,.05)}50%{box-shadow:0 0 50px rgba(232,121,249,.4),inset 0 0 40px rgba(232,121,249,.08)}}
+@keyframes spin-slow{to{transform:rotate(360deg)}}
+
+/* FAQ ACCORDION */
+.faq-item{transition:border-color .3s, box-shadow .3s;}
+.faq-item.is-open{border-color:rgba(56,189,248,.25)!important;box-shadow:0 0 30px rgba(56,189,248,.07);}
+.faq-item.is-open .faq-chevron{transform:rotate(180deg);}
+.faq-item.is-open .faq-icon{background:rgba(56,189,248,.2)!important;border-color:rgba(56,189,248,.5)!important;}
+.faq-trigger:hover .faq-icon{background:rgba(56,189,248,.18)!important;}
+</style>
+</head>
+<body class="font-outfit">
+
+<div id="cur-ring"></div>
+<div id="cur-dot"></div>
+<canvas id="ptx"></canvas>
+<div class="orb w-[700px] h-[700px] opacity-[.18]" style="background:radial-gradient(circle,#38bdf8,transparent);top:-250px;left:-250px;"></div>
+<div class="orb w-[600px] h-[600px] opacity-[.12]" style="background:radial-gradient(circle,#818cf8,transparent);top:35%;right:-200px;"></div>
+<div class="orb w-[400px] h-[400px] opacity-[.08]" style="background:radial-gradient(circle,#e879f9,transparent);bottom:5%;left:25%;"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <span class="anim-text-gradient text-3xl font-black tracking-tighter pr-2">EQUO</span>
+  <div class="hidden md:flex items-center gap-8 text-sm text-slate-400 font-medium">
+    <a href="#features" class="hover:text-white transition-colors cursor-none">Funciones</a>
+    <a href="#pricing"  class="hover:text-white transition-colors cursor-none">Precios</a>
+    <a href="#faq"     class="hover:text-white transition-colors cursor-none">FAQ</a>
+    <a href="#pricing"  class="hover:text-white transition-colors cursor-none">Contacto</a>
+  </div>
+  <div class="flex items-center gap-3">
+    <button class="btn-ghost text-sm px-4 py-2">Iniciar sesión</button>
+    <button class="btn-neon text-sm px-5 py-2" id="btn-nav-cta" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Comenzar</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero" class="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-32 pb-24 z-10">
+  <div id="h-badge" class="badge badge-sky mb-8">✦ Finanzas personales &amp; gestión de negocios</div>
+
+  <!-- FIX 3: Logo más imponente con clamp agresivo -->
+  <h1 id="h-logo" class="anim-text-gradient font-black leading-none mb-5"
+      style="font-size:clamp(6rem,22vw,20rem);letter-spacing:-0.05em;line-height:0.9;padding-right:0.08em;overflow:visible;">EQUO</h1>
+
+  <p id="h-tag" class="text-white font-bold leading-tight mb-5"
+     style="font-size:clamp(1.4rem,3.5vw,2.4rem);max-width:780px;">
+    Domina tu flujo,<br/>sin importar el tamaño de tu mundo.
+  </p>
+  <p id="h-sub" class="text-slate-400 text-lg leading-relaxed mb-10" style="max-width:660px;">
+    La herramienta definitiva para personas que buscan orden y emprendedores que exigen precisión.
+    Finanzas personales y gestión de negocios en una sola interfaz de cristal.
+  </p>
+  <div id="h-cta" class="flex flex-col sm:flex-row items-center gap-4 mb-20">
+    <button class="btn-neon text-base px-10 py-4" id="btn-hero-cta"
+            onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">
+      ⚡ Comenzar Prueba Gratis
+    </button>
+    <button class="btn-ghost text-base px-8 py-4"
+            onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">
+      Ver cómo funciona →
+    </button>
+  </div>
+
+  <!-- ── HERO MOCKUP: Browser Frame macOS ── -->
+  <div id="h-preview" class="relative w-full max-w-4xl float-anim">
+
+    <!-- Glow halo behind the mockup -->
+    <div class="absolute inset-0 rounded-3xl pointer-events-none" aria-hidden="true"
+         style="background:radial-gradient(ellipse at 50% 60%,rgba(56,189,248,.18),transparent 70%);
+                filter:blur(32px);transform:translateY(12px) scale(.98);"></div>
+
+    <!-- Browser frame — drop-shadow glow: #38bdf8 @ 20% opacity -->
+    <div class="relative rounded-2xl overflow-hidden"
+         style="border:1px solid rgba(255,255,255,.1);
+                box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04);
+                background:rgba(15,23,42,.9);
+                filter:drop-shadow(0 0 32px rgba(56,189,248,.20));">  
+
+      <!-- macOS title bar -->
+      <div class="flex items-center gap-2 px-4"
+           style="height:36px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.06);">
+        <!-- Traffic lights -->
+        <div class="flex items-center gap-1.5">
+          <div style="width:12px;height:12px;border-radius:50%;background:#ff5f57;"></div>
+          <div style="width:12px;height:12px;border-radius:50%;background:#febc2e;"></div>
+          <div style="width:12px;height:12px;border-radius:50%;background:#28c840;"></div>
+        </div>
+        <!-- Fake URL bar -->
+        <div class="flex-1 mx-4">
+          <div class="mx-auto max-w-xs flex items-center gap-2 px-3 rounded-md text-xs text-slate-600"
+               style="background:rgba(255,255,255,.05);height:22px;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-600"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            <span>app.equo.io/dashboard</span>
+          </div>
+        </div>
+        <span class="anim-text-gradient text-xs font-bold pr-1">EQUO</span>
+      </div>
+
+      <!-- Video — aspect-ratio 16/9 prevents layout shift; poster = captura mientras carga -->
+      <div class="w-full relative" style="aspect-ratio:16/9;background:#0f172a;">
+        <video
+          id="video-hero-dashboard"
+          class="w-full h-full object-cover block absolute inset-0 rounded-b-2xl"
+          autoplay
+          muted
+          loop
+          playsinline
+          poster="assets/dashboard-general.webp"
+          onerror="this.style.display='none';document.getElementById('fallback-hero').style.display='flex';">
+          <source src="assets/dashboard-demo.mp4" type="video/mp4"/>
+          <!-- Fallback si el navegador no soporta video -->
+          Tu navegador no soporta video HTML5.
+        </video>
+        <!-- Fallback: oculto por defecto, visible solo si el video y el poster fallan -->
+        <div id="fallback-hero" class="absolute inset-0 flex flex-col items-center justify-center gap-3"
+             style="display:none;">
+          <div class="anim-text-gradient text-5xl font-black tracking-tighter pr-2">EQUO</div>
+          <p class="text-slate-600 text-sm">Dashboard · demo próximamente</p>
+          <div style="width:80px;height:2px;background:linear-gradient(90deg,#38bdf8,#818cf8);border-radius:9999px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30">
+    <span class="text-xs text-slate-500 tracking-widest uppercase">scroll</span>
+    <div class="w-px h-8 bg-gradient-to-b from-slate-500 to-transparent"></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     BENTO DUAL — FIX 2: Grid 4 col estricto + separadores integrados
+     ============================================================ -->
+<section id="features" class="relative z-10 py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+
+    <div class="text-center mb-20">
+      <div class="badge badge-indigo mb-6">Funcionalidades</div>
+      <h2 class="text-5xl sm:text-6xl font-black text-white mb-5" style="line-height:1.1;">
+        Una plataforma.<br/><span class="grad-text">Dos mundos.</span>
+      </h2>
+      <p class="text-slate-400 text-lg max-w-2xl mx-auto mb-8">
+        Ya seas un ahorrista disciplinado o el CEO de tu propia empresa, EQUO se adapta a tu realidad.
+      </p>
+      <div class="divider"></div>
+    </div>
+
+    <!-- ── ROW 1: Separador PERSONAS ── -->
+    <div class="section-sep mb-5">
+      <div class="section-sep-line"></div>
+      <div class="badge badge-sky shrink-0">👤 Para Personas</div>
+      <div class="section-sep-line"></div>
+    </div>
+
+    <!-- Grid fila 1: 3 tarjetas — Metas (lg:col-span-2), Gastos, Coach -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
+
+      <!-- Metas de Ahorro — lg:col-span-2 (tarjeta potente) -->
+      <div class="glass bento-card lg:col-span-2 p-7 relative overflow-hidden flex flex-col" style="min-height:280px;">
+        <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse at 0% 0%,rgba(56,189,248,.1),transparent 55%);"></div>
+        <div class="flex items-start gap-4 mb-4">
+          <div class="icon-box" style="background:rgba(56,189,248,.15);color:#38bdf8;">🎯</div>
+          <div>
+            <div class="badge badge-sky mb-1">Metas de Ahorro</div>
+            <h3 class="text-xl font-black text-white">Tu primer carro. Tu fondo de emergencia.</h3>
+          </div>
+        </div>
+        <p class="text-slate-500 text-sm mb-5">Define metas, aporta gradualmente y visualiza tu progreso en tiempo real.</p>
+        <div class="space-y-3 mt-auto">
+          <div class="glass-sm p-3">
+            <div class="flex justify-between text-xs mb-2"><span class="text-slate-400 font-medium">🚗 Mi primer carro</span><span style="color:#38bdf8;" class="font-bold">68%</span></div>
+            <div class="prog"><div class="prog-fill" style="width:68%;background:linear-gradient(90deg,#38bdf8,#7dd3fc);"></div></div>
+            <div class="flex justify-between text-xs mt-1.5 text-slate-600"><span>$6,800 / $10,000</span><span>4 meses restantes</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="glass-sm p-2.5">
+              <div class="flex justify-between text-xs mb-1.5"><span class="text-slate-500">🏖️ Vacaciones</span><span class="text-emerald-400 font-bold">91%</span></div>
+              <div class="prog"><div class="prog-fill" style="width:91%;background:linear-gradient(90deg,#10b981,#34d399);"></div></div>
+            </div>
+            <div class="glass-sm p-2.5">
+              <div class="flex justify-between text-xs mb-1.5"><span class="text-slate-500">🛡️ Emergencia</span><span style="color:#818cf8;" class="font-bold">34%</span></div>
+              <div class="prog"><div class="prog-fill" style="width:34%;background:linear-gradient(90deg,#818cf8,#c084fc);"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gastos del Mes -->
+      <div class="glass bento-card p-7 relative overflow-hidden" style="min-height:280px;">
+        <div class="icon-box mb-3" style="background:rgba(251,191,36,.12);color:#fbbf24;">📊</div>
+        <div class="badge badge-sky mb-3">Gastos del Mes</div>
+        <h3 class="text-lg font-black text-white mb-4">Control total de tu dinero</h3>
+        <div class="grid grid-cols-3 gap-2 mb-4">
+          <div class="glass-sm p-2 text-center"><div class="text-xs text-slate-500 mb-1">Comida</div><div class="text-sm font-bold text-amber-400">$320</div></div>
+          <div class="glass-sm p-2 text-center"><div class="text-xs text-slate-500 mb-1">Transp.</div><div class="text-sm font-bold" style="color:#38bdf8;">$85</div></div>
+          <div class="glass-sm p-2 text-center"><div class="text-xs text-slate-500 mb-1">Ocio</div><div class="text-sm font-bold text-emerald-400">$150</div></div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1 prog"><div class="prog-fill" style="width:62%;background:linear-gradient(90deg,#38bdf8,#818cf8);"></div></div>
+          <span class="text-xs text-slate-500 whitespace-nowrap">62% del budget</span>
+        </div>
+      </div>
+
+      <!-- Coach Financiero IA -->
+      <div class="glass bento-card p-7 relative overflow-hidden" style="min-height:280px;">
+        <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse at 100% 100%,rgba(129,140,248,.1),transparent 60%);"></div>
+        <div class="icon-box mb-3" style="background:rgba(129,140,248,.15);color:#818cf8;">🤖</div>
+        <div class="badge badge-indigo mb-3">Coach Financiero IA</div>
+        <h3 class="text-lg font-black text-white mb-4">Tu asesor personal 24/7</h3>
+        <div class="space-y-2.5">
+          <div class="glass-sm p-2.5 text-xs text-slate-400 rounded-xl rounded-tl-none">💡 Redujiste gastos un 12% este mes. ¡Vas muy bien!</div>
+          <div class="glass-sm p-2.5 text-xs text-slate-400 rounded-xl rounded-tl-none" style="border-color:rgba(56,189,248,.2);">🎯 Transfiere $200 este viernes para tu meta de vacaciones.</div>
+          <div class="glass-sm p-2.5 text-xs text-slate-400 rounded-xl rounded-tl-none" style="border-color:rgba(129,140,248,.2);">📈 Tu tasa de ahorro subió al 28%. Promedio saludable: 20%.</div>
+        </div>
+      </div>
+
+    </div><!-- /row1 -->
+
+    <!-- ── ROW 2: Separador EMPRENDEDORES ── -->
+    <div class="section-sep mb-5 mt-10">
+      <div class="section-sep-line"></div>
+      <div class="badge badge-indigo shrink-0">🏢 Para Emprendedores</div>
+      <div class="section-sep-line"></div>
+    </div>
+
+    <!-- Grid fila 2: Inventario, Métricas (lg:col-span-2), Cobranzas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+
+      <!-- Inventario Sync -->
+      <div class="glass bento-card p-5 relative overflow-hidden flex flex-col justify-between" style="min-height:280px;">
+        <!-- Glow decorativo fondo -->
+        <div class="absolute bottom-0 left-0 w-40 h-40 rounded-full pointer-events-none" aria-hidden="true"
+             style="background:radial-gradient(circle,rgba(56,189,248,.12),transparent 70%);filter:blur(20px);transform:translate(-30%,30%);"></div>
+
+        <div>
+          <div class="flex items-center gap-3 mb-3">
+            <div class="icon-box" style="background:rgba(56,189,248,.12);color:#38bdf8;">📦</div>
+            <div>
+              <div class="badge badge-sky mb-0.5">Inventario Sync</div>
+              <h3 class="text-base font-black text-white">Stock en tiempo real</h3>
+            </div>
+          </div>
+
+          <!-- Lista de productos -->
+          <div class="space-y-1.5 mb-3">
+            <div class="flex items-center justify-between glass-sm px-2.5 py-2">
+              <div><div class="text-xs font-semibold text-white">Camiseta Polo XL</div><div class="text-xs text-slate-600">SKU-001 · 12 u.</div></div>
+              <span class="badge badge-sky" style="font-size:.6rem;padding:.1rem .5rem;">En stock</span>
+            </div>
+            <div class="flex items-center justify-between glass-sm px-2.5 py-2">
+              <div><div class="text-xs font-semibold text-white">Tenis Sport Blanco</div><div class="text-xs text-slate-600">SKU-007 · 3 u.</div></div>
+              <span class="badge" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fbbf24;font-size:.6rem;padding:.1rem .5rem;">Bajo stock</span>
+            </div>
+            <div class="flex items-center justify-between glass-sm px-2.5 py-2">
+              <div><div class="text-xs font-semibold text-white">Gorra Snapback</div><div class="text-xs text-slate-600">SKU-012 · 0 u.</div></div>
+              <span class="badge badge-fuchsia" style="font-size:.6rem;padding:.1rem .5rem;">Sin stock</span>
+            </div>
+            <div class="flex items-center justify-between glass-sm px-2.5 py-2">
+              <div><div class="text-xs font-semibold text-white">Pantalón Cargo</div><div class="text-xs text-slate-600">SKU-004 · 8 u.</div></div>
+              <span class="badge badge-sky" style="font-size:.6rem;padding:.1rem .5rem;">En stock</span>
+            </div>
+            <div class="flex items-center justify-between glass-sm px-2.5 py-2">
+              <div><div class="text-xs font-semibold text-white">Bolso Cuero Negro</div><div class="text-xs text-slate-600">SKU-019 · 1 u.</div></div>
+              <span class="badge" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fbbf24;font-size:.6rem;padding:.1rem .5rem;">Bajo stock</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini-sección: Categorías Top -->
+        <div class="glass-sm p-3" style="border-color:rgba(56,189,248,.12);">
+          <div class="text-xs text-slate-500 font-medium mb-2 uppercase tracking-wider">Categorías Top</div>
+          <div class="grid grid-cols-3 gap-1.5 text-center">
+            <div class="glass-sm py-2">
+              <div class="text-base">👕</div>
+              <div class="text-xs text-slate-400 font-semibold">Ropa</div>
+              <div class="text-xs text-slate-600">20 u.</div>
+            </div>
+            <div class="glass-sm py-2">
+              <div class="text-base">👟</div>
+              <div class="text-xs text-slate-400 font-semibold">Calzado</div>
+              <div class="text-xs text-slate-600">4 u.</div>
+            </div>
+            <div class="glass-sm py-2">
+              <div class="text-base">🧢</div>
+              <div class="text-xs text-slate-400 font-semibold">Acces.</div>
+              <div class="text-xs text-slate-600">1 u.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Métricas 360° — lg:col-span-2 (tarjeta potente) -->
+      <div class="glass bento-card lg:col-span-2 relative overflow-hidden flex flex-col" style="min-height:280px;padding:1.25rem 1rem 1rem;">
+        <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse at 100% 0%,rgba(129,140,248,.12),transparent 55%);"></div>
+        <div class="flex items-start gap-4 mb-4">
+          <div class="icon-box" style="background:rgba(129,140,248,.15);color:#818cf8;">🧠</div>
+          <div>
+            <div class="badge badge-indigo mb-1">Métricas 360°</div>
+            <h3 class="text-xl font-black text-white">Cerebro Financiero</h3>
+          </div>
+        </div>
+        <p class="text-slate-500 text-sm mb-4">ROI, utilidad, rotación de inventario y flujo de caja en un solo panel inteligente.</p>
+
+        <!-- ── BENTO SCREENSHOT: Cerebro Financiero — efecto pantalla incrustada ── -->
+        <div class="relative group mb-3 rounded-xl overflow-hidden"
+             style="
+               /* Aspect ratio más alto = más gráfica visible */
+               aspect-ratio:16/10;
+               /* Inset top glow: simula pantalla real dentro del cristal */
+               box-shadow:
+                 inset 0 1px 0 rgba(129,140,248,.5),
+                 inset 0 0 24px rgba(129,140,248,.06),
+                 0 4px 20px rgba(0,0,0,.4);
+               border:1px solid rgba(129,140,248,.2);
+               background:#0b1120;
+             ">
+
+          <!-- Imagen principal -->
+          <img src="assets/cerebro-financiero.webp"
+               id="img-cerebro"
+               alt="Cerebro Financiero — gráficos de métricas avanzadas EQUO"
+               style="object-position:top center;"
+               class="w-full h-full object-cover block transition-transform duration-700 ease-out group-hover:scale-105"
+               loading="lazy"
+               onerror="this.style.display='none';document.getElementById('fallback-cerebro').style.display='flex';"/>
+
+          <!-- Máscara degradado inferior: la imagen se funde con el cristal -->
+          <div class="absolute inset-0 pointer-events-none rounded-xl" aria-hidden="true"
+               style="
+                 background:linear-gradient(
+                   to bottom,
+                   transparent 40%,
+                   rgba(15,23,42,.55) 75%,
+                   rgba(15,23,42,.92) 100%
+                 );
+               "></div>
+
+          <!-- Borde superior brillante: línea de luz que simula el bisel del cristal -->
+          <div class="absolute top-0 left-0 right-0 pointer-events-none" aria-hidden="true"
+               style="height:1px;background:linear-gradient(90deg,transparent,rgba(129,140,248,.7) 30%,rgba(56,189,248,.5) 70%,transparent);"></div>
+
+          <!-- Fallback: oculto por defecto, visible si la imagen falla -->
+          <div id="fallback-cerebro" class="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none"
+               style="display:none;">
+            <div class="text-3xl">📊</div>
+            <p class="text-slate-600 text-xs">Captura del Cerebro Financiero</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-auto">
+          <div class="glass-sm p-3"><div class="text-xs text-slate-500 mb-1">ROI Mensual</div><div class="text-2xl font-black grad-text">187%</div><div class="prog mt-2"><div class="prog-fill" style="width:74%;background:linear-gradient(90deg,#38bdf8,#818cf8);"></div></div></div>
+          <div class="glass-sm p-3"><div class="text-xs text-slate-500 mb-1">Utilidad Neta</div><div class="text-2xl font-black text-emerald-400">$12k</div><div class="prog mt-2"><div class="prog-fill" style="width:58%;background:linear-gradient(90deg,#10b981,#34d399);"></div></div></div>
+          <div class="glass-sm p-3"><div class="text-xs text-slate-500 mb-1">Capital Stock</div><div class="text-2xl font-black text-amber-400">$4.8k</div><div class="prog mt-2"><div class="prog-fill" style="width:40%;background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div></div></div>
+          <div class="glass-sm p-3"><div class="text-xs text-slate-500 mb-1">Margen Bruto</div><div class="text-2xl font-black" style="color:#818cf8;">64%</div><div class="prog mt-2"><div class="prog-fill" style="width:64%;background:linear-gradient(90deg,#818cf8,#c084fc);"></div></div></div>
+        </div>
+      </div>
+
+      <!-- Cobranzas -->
+      <div class="glass bento-card p-5 relative overflow-hidden flex flex-col justify-between" style="min-height:280px;">
+        <!-- Glow decorativo fondo -->
+        <div class="absolute top-0 right-0 w-36 h-36 rounded-full pointer-events-none" aria-hidden="true"
+             style="background:radial-gradient(circle,rgba(16,185,129,.15),transparent 70%);filter:blur(20px);transform:translate(25%,-25%);"></div>
+
+        <div>
+          <div class="flex items-center gap-3 mb-3">
+            <div class="icon-box" style="background:rgba(16,185,129,.12);color:#10b981;">💸</div>
+            <div>
+              <div class="badge badge-emerald mb-0.5">Cobranzas</div>
+              <h3 class="text-base font-black text-white">Cobros automatizados</h3>
+            </div>
+          </div>
+
+          <!-- Barras de progreso -->
+          <div class="space-y-2.5 mb-3">
+            <div>
+              <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">María G. — 3/6</span><span class="text-emerald-400 font-bold">$150 · 50%</span></div>
+              <div class="prog"><div class="prog-fill" style="width:50%;background:linear-gradient(90deg,#10b981,#34d399);"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Carlos R. — 1/4</span><span class="text-amber-400 font-bold">$80 · 25%</span></div>
+              <div class="prog"><div class="prog-fill" style="width:25%;background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Luis M. — 5/6</span><span style="color:#818cf8;" class="font-bold">$250 · 83%</span></div>
+              <div class="prog"><div class="prog-fill" style="width:83%;background:linear-gradient(90deg,#818cf8,#c084fc);"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Ana P. — 2/3</span><span style="color:#38bdf8;" class="font-bold">$770 · 67%</span></div>
+              <div class="prog"><div class="prog-fill" style="width:67%;background:linear-gradient(90deg,#38bdf8,#7dd3fc);"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini-resumen + alerta de próximo cobro -->
+        <div class="space-y-2">
+          <div class="glass-sm p-3 flex items-center justify-between" style="border-color:rgba(16,185,129,.15);">
+            <div>
+              <div class="text-xs text-slate-500">Total pendiente</div>
+              <div class="text-base font-black text-emerald-400">$1,250</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs text-slate-500">4 deudores activos</div>
+              <div class="prog mt-1.5" style="width:80px;"><div class="prog-fill" style="width:60%;background:linear-gradient(90deg,#10b981,#34d399);"></div></div>
+            </div>
+          </div>
+          <div class="glass-sm p-2.5 flex items-center gap-2.5" style="border-color:rgba(56,189,248,.2);">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs"
+                 style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">⏰</div>
+            <div>
+              <div class="text-xs font-semibold" style="color:#38bdf8;">Próximo cobro</div>
+              <div class="text-xs text-slate-500">María G. — En 2 horas · $50</div>
+            </div>
+            <div class="ml-auto">
+              <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /row2 -->
+  </div>
+</section>
+
+<!-- PRICING — FIX 4: Copys enfocados + Investor con borde neón pulsante -->
+<section id="pricing" class="relative z-10 py-32 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-20">
+      <div class="badge badge-fuchsia mb-6">Precios</div>
+      <h2 class="text-5xl sm:text-6xl font-black text-white mb-5" style="line-height:1.1;">
+        Elige tu nivel<br/><span class="grad-text">de claridad.</span>
+      </h2>
+      <p class="text-slate-400 text-lg max-w-xl mx-auto mb-8">Empieza con paz mental. Escala cuando tu negocio lo pida.</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+
+      <!-- PLAN PERSONAL — Paz mental y ahorro -->
+      <div class="glass pricing-glow bento-card flex flex-col p-8" style="min-height:580px;">
+        <div class="flex items-center gap-2 mb-6">
+          <div class="badge badge-sky">👤 Personal</div>
+        </div>
+        <div class="mb-1">
+          <span class="text-6xl font-black text-white">$9</span>
+          <span class="text-slate-400 text-lg">.99<span class="text-sm"> / mes</span></span>
+        </div>
+        <!-- FIX 4: Copy enfocado en PAZ MENTAL -->
+        <p class="text-slate-500 text-sm mb-2 mt-1 font-medium" style="color:#38bdf8;">Paz mental y ahorro</p>
+        <p class="text-slate-600 text-xs mb-8 leading-relaxed">Para el estudiante que quiere ahorrar para su primer carro o la persona que busca orden sin complicaciones.</p>
+        <ul class="space-y-3 mb-8 flex-1">
+          <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Registro de ingresos y gastos</li>
+          <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Metas de ahorro con progreso visual</li>
+          <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Balance acumulado mensual y anual</li>
+          <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Dashboard financiero personal</li>
+          <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Coach Financiero IA (esencial)</li>
+          <li class="flex items-start gap-3 text-sm text-slate-500"><span class="text-slate-700 mt-0.5">✗</span>Gestión de inventario</li>
+          <li class="flex items-start gap-3 text-sm text-slate-500"><span class="text-slate-700 mt-0.5">✗</span>Sistema de cobranzas y préstamos</li>
+          <li class="flex items-start gap-3 text-sm text-slate-500"><span class="text-slate-700 mt-0.5">✗</span>Métricas 360° avanzadas</li>
+        </ul>
+        <button class="btn-ghost w-full py-3" id="btn-buy-personal">Prueba Gratis</button>
+      </div>
+
+      <!-- PLAN EMPRENDEDOR — Escalabilidad y utilidades -->
+      <div class="relative flex flex-col bento-card" style="min-height:620px;">
+        <div class="absolute inset-0 rounded-3xl" style="padding:1px;background:linear-gradient(135deg,#38bdf8,#818cf8,#e879f9);z-index:0;border-radius:1.5rem;"></div>
+        <div class="relative z-10 flex flex-col h-full p-8" style="background:rgba(15,23,42,.88);backdrop-filter:blur(30px);border-radius:calc(1.5rem - 1px);">
+          <div class="flex items-center justify-between mb-6">
+            <div class="badge badge-indigo">🏢 Emprendedor</div>
+            <span class="text-xs font-bold px-3 py-1 rounded-full" style="background:linear-gradient(135deg,#38bdf8,#818cf8);color:#0f172a;">⭐ Más popular</span>
+          </div>
+          <div class="mb-1">
+            <span class="text-6xl font-black text-white">$19</span>
+            <span class="text-slate-400 text-lg">.99<span class="text-sm"> / mes</span></span>
+          </div>
+          <!-- FIX 4: Copy enfocado en ESCALABILIDAD -->
+          <p class="text-sm mb-2 mt-1 font-medium" style="color:#818cf8;">Escalabilidad y utilidades</p>
+          <p class="text-slate-500 text-xs mb-8 leading-relaxed">Para el dueño de negocio que necesita control total: ventas, inventario, deudas y análisis avanzado de utilidades.</p>
+          <ul class="space-y-3 mb-8 flex-1">
+            <li class="flex items-start gap-3 text-sm text-white"><span class="text-emerald-400 mt-0.5 font-bold">✓</span><strong>Todo del Plan Personal</strong></li>
+            <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Fase 2 completa — Cerebro Financiero</li>
+            <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Gestión de inventario avanzada</li>
+            <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Sistema de cobranzas con mora automática</li>
+            <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Métricas 360°: ROI, utilidad, rotación</li>
+            <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Soporte multidivisa USD / EUR / USDT</li>
+            <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Integración Binance Pay</li>
+            <li class="flex items-start gap-3 text-sm text-slate-300"><span class="text-emerald-400 mt-0.5 font-bold">✓</span>Soporte prioritario 24/7</li>
+          </ul>
+          <button class="btn-neon w-full py-4" id="btn-buy-pro">⚡ Activar Plan Emprendedor</button>
+        </div>
+      </div>
+
+      <!-- THE INVESTOR — Pulsing purple neon border -->
+      <div class="investor-card bento-card flex flex-col p-8" style="min-height:580px;">
+        <div class="flex items-center justify-between mb-6 relative z-10">
+          <div class="badge badge-fuchsia">🔮 Próximamente</div>
+          <div class="w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse"></div>
+        </div>
+        <div class="text-center mb-6 relative z-10">
+          <div class="text-7xl mb-3 select-none">🔐</div>
+          <h3 class="text-3xl font-black text-white mb-1">The Investor</h3>
+          <p class="text-xs font-bold tracking-widest text-fuchsia-400 uppercase">Clasificado</p>
+        </div>
+        <!-- FIX 4: Copy de riqueza total -->
+        <p class="text-slate-500 text-xs text-center mb-6 leading-relaxed relative z-10 italic">
+          "Sincronización con Criptos, Acciones y Dividendos.<br/>El siguiente nivel de tu riqueza."
+        </p>
+        <div class="glass-sm p-5 mb-6 flex-1 flex flex-col justify-center gap-4 relative z-10" style="border-color:rgba(232,121,249,.15);">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-base flex-shrink-0" style="background:rgba(232,121,249,.12);border:1px solid rgba(232,121,249,.25);">₿</div>
+            <div><div class="text-sm font-bold text-white">Sincronización Cripto</div><div class="text-xs text-slate-500">BTC, ETH, USDT en tiempo real</div></div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-base flex-shrink-0" style="background:rgba(232,121,249,.12);border:1px solid rgba(232,121,249,.25);">📈</div>
+            <div><div class="text-sm font-bold text-white">Portafolio de Acciones</div><div class="text-xs text-slate-500">Seguimiento de dividendos y rendimiento</div></div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-base flex-shrink-0" style="background:rgba(232,121,249,.12);border:1px solid rgba(232,121,249,.25);">💎</div>
+            <div><div class="text-sm font-bold text-white">Riqueza Centralizada</div><div class="text-xs text-slate-500">Todo tu patrimonio, en un solo lugar</div></div>
+          </div>
+        </div>
+        <button class="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all cursor-none relative z-10"
+                style="border:1px solid rgba(232,121,249,.35);color:#e879f9;background:rgba(232,121,249,.07);"
+                onmouseover="this.style.background='rgba(232,121,249,.15)';this.style.boxShadow='0 0 30px rgba(232,121,249,.35)'"
+                onmouseout="this.style.background='rgba(232,121,249,.07)';this.style.boxShadow='none'"
+                id="btn-investor-notify">
+          🔔 Notificarme cuando salga
+        </button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FAQ — Preguntas Frecuentes (Acordeón de cristal + GSAP)
+     ============================================================ -->
+<section id="faq" class="relative z-10 py-32 px-6">
+  <div class="max-w-3xl mx-auto">
+
+    <div class="text-center mb-16">
+      <div class="badge badge-sky mb-6">✦ Soporte</div>
+      <h2 class="text-5xl sm:text-6xl font-black text-white mb-5" style="line-height:1.1;">
+        Preguntas<br/><span class="grad-text">Frecuentes.</span>
+      </h2>
+      <p class="text-slate-400 text-lg max-w-xl mx-auto mb-8">
+        Todo lo que necesitas saber para empezar con claridad total.
+      </p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="space-y-4" id="faq-list">
+
+      <!-- Item 1 -->
+      <div class="faq-item glass" style="border-radius:1.25rem;overflow:hidden;">
+        <button class="faq-trigger w-full flex items-center justify-between p-6 text-left cursor-none" aria-expanded="false">
+          <span class="text-white font-bold text-base pr-4">¿Qué es EQUO?</span>
+          <div class="faq-icon flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300" style="background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);">
+            <svg class="faq-chevron w-4 h-4 transition-transform duration-300" style="color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </button>
+        <div class="faq-body" style="max-height:0;overflow:hidden;transition:max-height 0.45s cubic-bezier(0.4,0,0.2,1);">
+          <p class="px-6 pb-6 text-slate-400 text-sm leading-relaxed">
+            Un ecosistema financiero modular diseñado para dar claridad a tus finanzas personales y potencia a tu negocio.
+          </p>
+        </div>
+      </div>
+
+      <!-- Item 2 -->
+      <div class="faq-item glass" style="border-radius:1.25rem;overflow:hidden;">
+        <button class="faq-trigger w-full flex items-center justify-between p-6 text-left cursor-none" aria-expanded="false">
+          <span class="text-white font-bold text-base pr-4">¿Cómo funciona la prueba gratuita?</span>
+          <div class="faq-icon flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300" style="background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);">
+            <svg class="faq-chevron w-4 h-4 transition-transform duration-300" style="color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </button>
+        <div class="faq-body" style="max-height:0;overflow:hidden;transition:max-height 0.45s cubic-bezier(0.4,0,0.2,1);">
+          <p class="px-6 pb-6 text-slate-400 text-sm leading-relaxed">
+            Obtienes acceso total a todas las herramientas de la Fase 1 y Fase 2 durante el periodo de prueba para que experimentes el control total antes de decidir.
+          </p>
+        </div>
+      </div>
+
+      <!-- Item 3 -->
+      <div class="faq-item glass" style="border-radius:1.25rem;overflow:hidden;">
+        <button class="faq-trigger w-full flex items-center justify-between p-6 text-left cursor-none" aria-expanded="false">
+          <span class="text-white font-bold text-base pr-4">¿Es seguro manejar mis datos aquí?</span>
+          <div class="faq-icon flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300" style="background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);">
+            <svg class="faq-chevron w-4 h-4 transition-transform duration-300" style="color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </button>
+        <div class="faq-body" style="max-height:0;overflow:hidden;transition:max-height 0.45s cubic-bezier(0.4,0,0.2,1);">
+          <p class="px-6 pb-6 text-slate-400 text-sm leading-relaxed">
+            Absolutamente. Usamos encriptación de grado bancario y la infraestructura de Firebase para asegurar que tu información sea privada y solo tuya.
+          </p>
+        </div>
+      </div>
+
+      <!-- Item 4 -->
+      <div class="faq-item glass" style="border-radius:1.25rem;overflow:hidden;">
+        <button class="faq-trigger w-full flex items-center justify-between p-6 text-left cursor-none" aria-expanded="false">
+          <span class="text-white font-bold text-base pr-4">¿Puedo pagar con Cripto?</span>
+          <div class="faq-icon flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300" style="background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);">
+            <svg class="faq-chevron w-4 h-4 transition-transform duration-300" style="color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </button>
+        <div class="faq-body" style="max-height:0;overflow:hidden;transition:max-height 0.45s cubic-bezier(0.4,0,0.2,1);">
+          <p class="px-6 pb-6 text-slate-400 text-sm leading-relaxed">
+            Sí, estamos integrados con Binance Pay para que puedas gestionar tu suscripción de forma rápida y segura con USDT.
+          </p>
+        </div>
+      </div>
+
+      <!-- Item 5 -->
+      <div class="faq-item glass" style="border-radius:1.25rem;overflow:hidden;">
+        <button class="faq-trigger w-full flex items-center justify-between p-6 text-left cursor-none" aria-expanded="false">
+          <span class="text-white font-bold text-base pr-4">¿Cuál es la diferencia entre el Plan Personal y el Emprendedor?</span>
+          <div class="faq-icon flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300" style="background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);">
+            <svg class="faq-chevron w-4 h-4 transition-transform duration-300" style="color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </button>
+        <div class="faq-body" style="max-height:0;overflow:hidden;transition:max-height 0.45s cubic-bezier(0.4,0,0.2,1);">
+          <p class="px-6 pb-6 text-slate-400 text-sm leading-relaxed">
+            El Personal se enfoca en ahorro y balance diario; el Emprendedor desbloquea gestión de inventario, ventas, cobranzas y métricas de negocio avanzadas.
+          </p>
+        </div>
+      </div>
+
+    </div><!-- /faq-list -->
+
+    <!-- CTA inferior -->
+    <div class="text-center mt-14">
+      <p class="text-slate-500 text-sm mb-4">¿Tienes otra pregunta? Estamos aquí para ayudarte.</p>
+      <button class="btn-ghost text-sm px-8 py-3 cursor-none"
+              onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">
+        Comenzar Prueba Gratis →
+      </button>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="relative z-10 border-t py-16 px-6" style="border-color:rgba(255,255,255,.06);">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
+      <div>
+        <span class="anim-text-gradient text-4xl font-black tracking-tighter block mb-2">EQUO</span>
+        <p class="text-slate-600 text-sm max-w-xs">Claridad financiera para tu vida y tu negocio.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-x-16 gap-y-3 text-sm text-slate-500">
+        <a href="#" class="hover:text-slate-300 transition-colors cursor-none">Privacidad</a>
+        <a href="#" class="hover:text-slate-300 transition-colors cursor-none">Términos de Uso</a>
+        <a href="#" class="hover:text-slate-300 transition-colors cursor-none">Cookies</a>
+        <a href="#" class="hover:text-slate-300 transition-colors cursor-none">Documentación</a>
+        <a href="#" class="hover:text-slate-300 transition-colors cursor-none">Soporte</a>
+        <a href="#" class="hover:text-slate-300 transition-colors cursor-none">Contacto</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="#" class="w-10 h-10 glass-sm rounded-xl flex items-center justify-center hover:border-sky-400/50 transition-all cursor-none">
+          <svg width="15" height="15" fill="currentColor" class="text-slate-500" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+        </a>
+        <a href="#" class="w-10 h-10 glass-sm rounded-xl flex items-center justify-center hover:border-sky-400/50 transition-all cursor-none">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+        <a href="#" class="w-10 h-10 glass-sm rounded-xl flex items-center justify-center hover:border-sky-400/50 transition-all cursor-none">
+          <svg width="15" height="15" fill="currentColor" class="text-slate-500" viewBox="0 0 24 24"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="border-t pt-8 text-center text-slate-700 text-xs" style="border-color:rgba(255,255,255,.04);">
+      © 2026 EQUO. Todos los derechos reservados. Hecho con precisión para emprendedores.
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT — FIX 1: window.load + gsap.from() sin opacity:0 en CSS
+     ============================================================ -->
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+// ── CURSOR LERP ──────────────────────────────────────────────
+const ring = document.getElementById('cur-ring');
+const dot  = document.getElementById('cur-dot');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+(function lerp(){
+  rx+=(mx-rx)*.1; ry+=(my-ry)*.1;
+  ring.style.left=rx+'px'; ring.style.top=ry+'px';
+  dot.style.left=mx+'px';  dot.style.top=my+'px';
+  requestAnimationFrame(lerp);
+})();
+document.querySelectorAll('button,a,.glass,.glass-sm,.investor-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ring.style.width='60px';ring.style.height='60px';ring.style.borderColor='rgba(129,140,248,.9)';ring.style.background='rgba(129,140,248,.05)';});
+  el.addEventListener('mouseleave',()=>{ring.style.width='44px';ring.style.height='44px';ring.style.borderColor='rgba(56,189,248,.55)';ring.style.background='transparent';});
+});
+
+// ── PARTICLES ────────────────────────────────────────────────
+const cvs=document.getElementById('ptx');
+const ctx=cvs.getContext('2d');
+function resize(){cvs.width=innerWidth;cvs.height=innerHeight;}
+resize(); window.addEventListener('resize',resize);
+const pts=Array.from({length:70},()=>({
+  x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+  vx:(Math.random()-.5)*.35,  vy:(Math.random()-.5)*.35,
+  r:Math.random()*1.4+.4,     a:Math.random()*.35+.1
+}));
+(function draw(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  pts.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0||p.x>cvs.width)  p.vx*=-1;
+    if(p.y<0||p.y>cvs.height) p.vy*=-1;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(56,189,248,${p.a})`; ctx.fill();
+  });
+  pts.forEach((a,i)=>pts.slice(i+1).forEach(b=>{
+    const d=Math.hypot(a.x-b.x,a.y-b.y);
+    if(d<130){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+      ctx.strokeStyle=`rgba(56,189,248,${.07*(1-d/130)})`;ctx.lineWidth=.5;ctx.stroke();}
+  }));
+  requestAnimationFrame(draw);
+})();
+
+// ── FIX 1: GSAP hero — wrapeado en window.load para eliminar flash ──
+// Los elementos hero NO tienen opacity:0 en CSS → visibles por defecto
+// gsap.from() anima DESDE el estado oculto, sin parpadeo si JS carga lento
+window.addEventListener('load', () => {
+  gsap.from('#nav', { y:-70, opacity:0, duration:.8, ease:'power3.out', delay:.05 });
+
+  const tl = gsap.timeline({ defaults:{ ease:'power3.out' } });
+  tl.from('#h-badge',   { y:30,  opacity:0, duration:.6 }, .2)
+    .from('#h-logo',    { y:70,  opacity:0, duration:1.1, scale:.95, transformOrigin:'center center' }, .3)
+    .from('#h-tag',     { y:40,  opacity:0, duration:.8 }, .6)
+    .from('#h-sub',     { y:30,  opacity:0, duration:.7 }, .82)
+    .from('#h-cta',     { y:25,  opacity:0, duration:.6 }, .98)
+    .from('#h-preview', { y:50,  opacity:0, duration:1,   scale:.97 }, 1.15);
+
+  // Chart bars
+  gsap.utils.toArray('.chart-bar').forEach((el,i)=>{
+    gsap.from(el,{scaleY:0,duration:.6,delay:.05*i,ease:'power2.out'});
+  });
+
+  // Scroll reveal — bento cards & pricing
+  gsap.utils.toArray('.bento-card').forEach(el=>{
+    gsap.from(el,{
+      y:45, opacity:0, duration:.85, ease:'power3.out',
+      scrollTrigger:{trigger:el,start:'top 88%',toggleActions:'play none none none'}
+    });
+  });
+
+  // Section headers
+  gsap.utils.toArray('.section-sep,.text-center').forEach(el=>{
+    gsap.from(el,{
+      y:30, opacity:0, duration:.7, ease:'power3.out',
+      scrollTrigger:{trigger:el,start:'top 90%',toggleActions:'play none none none'}
+    });
+  });
+
+  // Progress bars
+  gsap.utils.toArray('.prog-fill').forEach(el=>{
+    const w=el.style.width;
+    el.style.width='0%';
+    gsap.to(el,{
+      width:w, duration:1.4, ease:'power2.out',
+      scrollTrigger:{trigger:el,start:'top 92%'}
+    });
+  });
+
+  // FAQ Section reveal
+  gsap.utils.toArray('.faq-item').forEach((el, i) => {
+    gsap.from(el, {
+      y: 35, opacity: 0, duration: .7, ease: 'power3.out',
+      delay: i * 0.07,
+      scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none none' }
+    });
+  });
+});
+
+// ── FAQ ACCORDION LOGIC ──────────────────────────────────────
+document.querySelectorAll('.faq-trigger').forEach(trigger => {
+  trigger.addEventListener('click', () => {
+    const item = trigger.closest('.faq-item');
+    const body = item.querySelector('.faq-body');
+    const isOpen = item.classList.contains('is-open');
+
+    // Close all
+    document.querySelectorAll('.faq-item.is-open').forEach(openItem => {
+      openItem.classList.remove('is-open');
+      openItem.querySelector('.faq-trigger').setAttribute('aria-expanded', 'false');
+      openItem.querySelector('.faq-body').style.maxHeight = '0';
+    });
+
+    // Toggle current
+    if (!isOpen) {
+      item.classList.add('is-open');
+      trigger.setAttribute('aria-expanded', 'true');
+      body.style.maxHeight = body.scrollHeight + 'px';
+      // GSAP micro-bounce on the icon
+      gsap.from(item.querySelector('.faq-chevron'), {
+        rotation: -15, duration: .4, ease: 'elastic.out(1,.5)'
+      });
+    }
+  });
+});
+
+// ── NAVBAR SCROLL ────────────────────────────────────────────
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>{
+  if(scrollY>80){
+    nav.style.background='rgba(15,23,42,.92)';
+    nav.style.backdropFilter='blur(24px)';
+    nav.style.boxShadow='0 4px 40px rgba(0,0,0,.4)';
+    nav.style.borderBottom='1px solid rgba(255,255,255,.06)';
+  } else {
+    nav.style.background='transparent';
+    nav.style.boxShadow='none';
+    nav.style.borderBottom='none';
+  }
+});
+
+// ── BINANCE PAY HOOKS ────────────────────────────────────────
+// TODO: Replace alerts with actual Binance Pay integration
+document.getElementById('btn-buy-personal').addEventListener('click',()=>{
+  console.log('[EQUO] Binance Pay — Plan Personal ($9.99)');
+  alert('Redirigiendo a Binance Pay — Plan Personal');
+});
+document.getElementById('btn-buy-pro').addEventListener('click',()=>{
+  console.log('[EQUO] Binance Pay — Plan Emprendedor ($19.99)');
+  alert('Redirigiendo a Binance Pay — Plan Emprendedor');
+});
+document.getElementById('btn-investor-notify').addEventListener('click',()=>{
+  alert('¡Te notificaremos cuando The Investor esté disponible!');
+});
+</script>
+</body>
+</html>
