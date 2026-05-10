@@ -11,6 +11,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script>tailwind.config={theme:{extend:{fontFamily:{outfit:['Outfit','sans-serif']}}}}</script>
+<!-- Firebase Compat SDK (solo Auth — para verificar sesión en la landing) -->
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+<script src="js/firebase-init.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
@@ -902,17 +906,52 @@ window.addEventListener('scroll',()=>{
   }
 });
 
-// ── BINANCE PAY HOOKS ────────────────────────────────────────
-// TODO: Replace alerts with actual Binance Pay integration
-document.getElementById('btn-buy-personal').addEventListener('click',()=>{
-  console.log('[EQUO] Binance Pay — Plan Personal ($9.99)');
-  alert('Redirigiendo a Binance Pay — Plan Personal');
+// ── BOTONES DE PRICING ───────────────────────────────────────
+
+/**
+ * Plan Personal — Prueba Gratis
+ * No requiere pago. Redirige directamente al formulario de registro
+ * en app.html con el parámetro ?action=register.
+ */
+document.getElementById('btn-buy-personal').addEventListener('click', () => {
+  window.location.href = 'app.html?action=register';
 });
-document.getElementById('btn-buy-pro').addEventListener('click',()=>{
-  console.log('[EQUO] Binance Pay — Plan Emprendedor ($19.99)');
-  alert('Redirigiendo a Binance Pay — Plan Emprendedor');
+
+/**
+ * Plan Emprendedor — Pago con Binance Pay
+ * 1. Verifica si el usuario ya tiene sesión activa.
+ * 2a. Con sesión → va directo al flujo de pago.
+ * 2b. Sin sesión  → lleva al registro con parámetros de plan.
+ */
+document.getElementById('btn-buy-pro').addEventListener('click', () => {
+  const checkAndRedirect = (user) => {
+    if (user) {
+      // Usuario autenticado: ir al pago directamente
+      window.location.href = 'https://equo.app/pay/entrepreneur';
+    } else {
+      // Sin sesión: registrar primero con plan intent
+      window.location.href = 'app.html?action=register&plan=entrepreneur';
+    }
+  };
+
+  // Intentar leer el estado de auth a través de window.auth (firebase-init.js)
+  if (window.auth) {
+    const user = window.auth.currentUser;
+    if (user !== undefined) {
+      // Estado sincrónico disponible
+      checkAndRedirect(user);
+    } else {
+      // Esperar callback async (primera carga)
+      window.auth.onAuthStateChanged((u) => { checkAndRedirect(u); }, { once: true });
+    }
+  } else {
+    // Firebase no cargado: registrar primero
+    window.location.href = 'app.html?action=register&plan=entrepreneur';
+  }
 });
-document.getElementById('btn-investor-notify').addEventListener('click',()=>{
+
+document.getElementById('btn-investor-notify').addEventListener('click', () => {
+  // TODO: conectar con lista de espera real (Firestore / Mailchimp)
   alert('¡Te notificaremos cuando The Investor esté disponible!');
 });
 </script>

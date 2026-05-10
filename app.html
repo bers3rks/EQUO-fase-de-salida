@@ -733,6 +733,49 @@
         }
 
         auth.onAuthStateChanged((user) => { currentUser = user; window.currentUser = user; authReady = true; resolveAppStart(); });
+
+        /* ── DEEP LINK: ?action=register ──────────────────────────────────
+         * Detecta si la landing envió al usuario aquí para registrarse.
+         * Si ?action=register → muestra auth-screen en modo registro.
+         * Si ?plan=entrepreneur → guarda el intent para usarlo post-registro.
+         * ─────────────────────────────────────────────────────────────── */
+        (function handleDeepLink() {
+            const params = new URLSearchParams(window.location.search);
+            const action = params.get('action');
+            const plan   = params.get('plan');
+
+            if (action === 'register') {
+                // Guardar intent de plan si viene con ?plan=
+                if (plan) sessionStorage.setItem('equo-plan-intent', plan);
+
+                // Esperar a que el DOM de auth esté disponible, luego mostrar modo registro
+                window.addEventListener('DOMContentLoaded', () => {
+                    const authScreen = document.getElementById('auth-screen');
+                    const registerBtn = document.querySelector('[data-i18n="registerBtn"]');
+
+                    if (authScreen) {
+                        authScreen.classList.remove('hidden');
+                        authScreen.style.display = 'flex';
+                    }
+
+                    // Mostrar visualmente que está en modo "registro" con un highlight suave
+                    if (registerBtn) {
+                        setTimeout(() => {
+                            registerBtn.style.color = '#38bdf8';
+                            registerBtn.style.fontWeight = '700';
+                            registerBtn.style.textDecoration = 'underline';
+                        }, 600);
+                    }
+
+                    // Focus en el campo email para UX fluida
+                    const emailInput = document.getElementById('auth-email');
+                    if (emailInput) setTimeout(() => emailInput.focus(), 700);
+
+                    // Limpiar el parámetro de URL para no re-triggear en refresh
+                    history.replaceState({}, '', window.location.pathname);
+                }, { once: true });
+            }
+        })();
         async function resolveAppStart() {
             if (!authReady) return;
             if (currentUser) {
