@@ -920,7 +920,7 @@ window.addEventListener('scroll',()=>{
  * en app.html con el parámetro ?action=register.
  */
 document.getElementById('btn-buy-personal').addEventListener('click', () => {
-  window.location.href = 'app.html?action=register';
+  window.location.href = '/app?action=register';
 });
 
 /**
@@ -929,7 +929,7 @@ document.getElementById('btn-buy-personal').addEventListener('click', () => {
  * Si el usuario ya tiene sesión, app.html lo detecta y lo lleva al muro de pago.
  */
 document.getElementById('btn-buy-pro').addEventListener('click', () => {
-  window.location.href = 'app.html?action=register&plan=entrepreneur';
+  window.location.href = '/app?action=register&plan=entrepreneur';
 });
 
 document.getElementById('btn-investor-notify').addEventListener('click', () => {
