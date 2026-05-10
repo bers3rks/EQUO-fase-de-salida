@@ -326,8 +326,13 @@ async function setPlan(uid,plan){
   const labels={personal:'Personal ($9.99)',entrepreneur:'Entrepreneur ($19.99)'};
   confirm(`Cambiar plan de este usuario a "${labels[plan]}"?`,async()=>{
     try {
-      await db.collection('users').doc(uid).set({plan,planUpdated:new Date().toISOString()},{merge:true});
-      toast('success',`Plan actualizado a ${plan}`);
+      await db.collection('users').doc(uid).set({
+        plan,
+        planStatus: plan,
+        isPaid: true,           // acceso garantizado — fuente de verdad
+        planUpdated: new Date().toISOString()
+      },{merge:true});
+      toast('success',`Plan actualizado a ${plan} ✓`);
       loadUsers();
     } catch(e){ toast('error','Error: '+e.message); }
   });
@@ -337,7 +342,13 @@ async function activateTrial(uid){
   confirm('Activar período de prueba de 3 días para este usuario?',async()=>{
     const trialEnd=new Date(Date.now()+3*24*60*60*1000).toISOString();
     try {
-      await db.collection('users').doc(uid).set({plan:'trial',trialEnd,planUpdated:new Date().toISOString()},{merge:true});
+      await db.collection('users').doc(uid).set({
+        plan:'trial',
+        planStatus:'trial',
+        isPaid: false,
+        trialEndDate: trialEnd,
+        planUpdated: new Date().toISOString()
+      },{merge:true});
       toast('success','Prueba de 3 días activada');
       loadUsers();
     } catch(e){ toast('error','Error: '+e.message); }
@@ -347,7 +358,12 @@ async function activateTrial(uid){
 async function cancelPlan(uid){
   confirm('Cancelar suscripción de este usuario y revertir a plan Free?',async()=>{
     try {
-      await db.collection('users').doc(uid).set({plan:'free',planUpdated:new Date().toISOString()},{merge:true});
+      await db.collection('users').doc(uid).set({
+        plan:'free',
+        planStatus:'free',
+        isPaid: false,
+        planUpdated: new Date().toISOString()
+      },{merge:true});
       toast('info','Suscripción cancelada — plan Free asignado');
       loadUsers();
     } catch(e){ toast('error','Error: '+e.message); }

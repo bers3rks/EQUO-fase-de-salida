@@ -197,26 +197,74 @@
     <canvas id="particles"></canvas>
     <div id="toast-container"></div>
 
-    <!-- Pantalla de Suscripción Expirada -->
+    <!-- Pantalla de Suscripción Expirada — Liquid Crystal Wall -->
     <div id="expired-screen">
-      <div class="expired-card text-center">
-        <div class="w-16 h-16 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center mx-auto mb-5">
+      <div class="expired-card">
+
+        <!-- Orb decorativo -->
+        <div style="position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:160px;height:160px;background:radial-gradient(circle,rgba(239,68,68,.18),transparent 70%);border-radius:50%;pointer-events:none"></div>
+
+        <!-- Icono principal -->
+        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3)">
           <i class="fa-solid fa-lock text-red-400 text-2xl"></i>
         </div>
-        <h1 class="text-xl font-extrabold text-white mb-2">Acceso Expirado</h1>
-        <p class="text-sm text-gray-400 mb-1">Tu período de prueba de <span class="text-amber-400 font-bold">3 días</span> ha finalizado.</p>
-        <p class="text-xs text-gray-500 mb-6">Elige un plan para continuar usando EQUO y proteger tus datos financieros.</p>
+
+        <!-- Branding -->
+        <p class="text-[10px] font-bold uppercase tracking-[.25em] text-red-400/70 mb-2">EQUO &mdash; Acceso Restringido</p>
+        <h1 class="text-2xl font-extrabold text-white mb-2 leading-tight">Tu prueba de <span class="text-amber-400">3 días</span><br>ha terminado.</h1>
+        <p class="text-xs text-gray-500 mb-7 leading-relaxed">Elige un plan para proteger tus datos<br>financieros y continuar usando EQUO.</p>
+
+        <!-- Separador -->
+        <div class="flex items-center gap-3 mb-5">
+          <div class="flex-1 h-px" style="background:rgba(255,255,255,.06)"></div>
+          <span class="text-[9px] text-gray-600 font-bold uppercase tracking-widest">Selecciona tu plan</span>
+          <div class="flex-1 h-px" style="background:rgba(255,255,255,.06)"></div>
+        </div>
+
         <!-- Planes -->
         <div class="flex flex-col gap-3 mb-6">
-          <button id="btn-pay-personal" onclick="window.open('https://equo.app/pay/personal','_blank')" class="w-full py-3 rounded-xl font-bold text-white text-sm border border-sky-500/40 hover:border-sky-500 transition" style="background:linear-gradient(135deg,rgba(56,189,248,.15),rgba(14,165,233,.1))">
-            <i class="fa-solid fa-user mr-2 text-sky-400"></i>Plan Personal &mdash; <span class="text-sky-300">$9.99/mes</span>
+          <!-- Plan Personal -->
+          <button id="btn-pay-personal" onclick="window.open('https://equo.app/pay/personal','_blank')" class="w-full text-left px-5 py-4 rounded-xl border transition-all" style="background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(14,165,233,.04));border-color:rgba(56,189,248,.25)" onmouseover="this.style.borderColor='rgba(56,189,248,.6)'" onmouseout="this.style.borderColor='rgba(56,189,248,.25)'">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25)">
+                  <i class="fa-solid fa-user text-sky-400 text-xs"></i>
+                </div>
+                <div>
+                  <p class="font-bold text-white text-sm">Plan Personal</p>
+                  <p class="text-[10px] text-sky-400/70">Para finanzas individuales</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-extrabold text-sky-300 text-lg leading-none">$9.99</p>
+                <p class="text-[9px] text-gray-600">/mes</p>
+              </div>
+            </div>
           </button>
-          <button id="btn-pay-entrepreneur" onclick="window.open('https://equo.app/pay/entrepreneur','_blank')" class="w-full py-3 rounded-xl font-bold text-white text-sm border border-violet-500/40 hover:border-violet-500 transition" style="background:linear-gradient(135deg,rgba(129,140,248,.15),rgba(99,102,241,.1))">
-            <i class="fa-solid fa-briefcase mr-2 text-violet-400"></i>Plan Entrepreneur &mdash; <span class="text-violet-300">$19.99/mes</span>
+
+          <!-- Plan Entrepreneur -->
+          <button id="btn-pay-entrepreneur" onclick="window.open('https://equo.app/pay/entrepreneur','_blank')" class="w-full text-left px-5 py-4 rounded-xl border transition-all" style="background:linear-gradient(135deg,rgba(129,140,248,.08),rgba(99,102,241,.04));border-color:rgba(129,140,248,.25)" onmouseover="this.style.borderColor='rgba(129,140,248,.6)'" onmouseout="this.style.borderColor='rgba(129,140,248,.25)'">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.25)">
+                  <i class="fa-solid fa-briefcase text-violet-400 text-xs"></i>
+                </div>
+                <div>
+                  <p class="font-bold text-white text-sm">Plan Entrepreneur</p>
+                  <p class="text-[10px] text-violet-400/70">Negocios + inventario + cobros</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-extrabold text-violet-300 text-lg leading-none">$19.99</p>
+                <p class="text-[9px] text-gray-600">/mes</p>
+              </div>
+            </div>
           </button>
         </div>
-        <p class="text-[10px] text-gray-600 mb-4">Si ya pagaste, espera la activación o contacta a soporte.</p>
-        <button onclick="auth.signOut().then(()=>location.reload())" class="text-[11px] text-gray-500 hover:text-red-400 transition underline">
+
+        <!-- Footer -->
+        <p class="text-[10px] text-gray-600 mb-4">Si ya pagaste, tu acceso se activa en minutos.<br>Contáctanos si tienes problemas: <span class="text-sky-500">soporte@equo.app</span></p>
+        <button onclick="window.auth.signOut().then(()=>location.reload())" class="text-[11px] text-gray-600 hover:text-red-400 transition underline">
           <i class="fa-solid fa-right-from-bracket mr-1"></i>Cerrar sesión
         </button>
       </div>
@@ -714,38 +762,42 @@
             try {
                 const snap = await db.collection('users').doc(uid).get();
                 const data = snap.exists ? snap.data() : {};
-                const role   = data.role        || 'user';
-                const plan   = data.plan        || data.planStatus || 'trial';
+                const role     = data.role     || 'user';
+                const plan     = data.plan     || data.planStatus || 'trial';
+                const isPaid   = data.isPaid   === true;
                 const trialEnd = data.trialEndDate || data.trialEnd || null;
 
-                // Admins y planes pagados: acceso libre
+                // 1. Admins: siempre acceso total
                 if (role === 'admin') return true;
-                if (plan === 'personal' || plan === 'entrepreneur') return true;
 
-                // Evaluar trial
+                // 2. Planes pagados activos (isPaid es la fuente de verdad)
+                if (isPaid && (plan === 'personal' || plan === 'entrepreneur')) return true;
+
+                // 3. Trial sin isPaid: evaluar fecha
                 if (plan === 'trial' || plan === 'free') {
                     if (trialEnd) {
                         const now = new Date();
                         const end = new Date(trialEnd);
                         if (now <= end) return true; // Trial vigente
                     } else {
-                        // Sin trialEndDate: usuario antiguo, conceder acceso y fijar fecha
+                        // Usuario legacy sin trialEndDate: asignar trial ahora
                         const newEnd = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
                         await db.collection('users').doc(uid).set(
-                            { trialEndDate: newEnd, plan: 'trial' }, { merge: true }
+                            { trialEndDate: newEnd, plan: 'trial', planStatus: 'trial', isPaid: false },
+                            { merge: true }
                         );
                         return true;
                     }
                 }
 
-                // Acceso denegado: mostrar pantalla de bloqueo
+                // 4. Acceso denegado: mostrar wall de suscripción
                 const expiredScreen = document.getElementById('expired-screen');
                 if (expiredScreen) expiredScreen.classList.add('show');
                 return false;
 
             } catch (e) {
                 console.warn('[EQUO] checkAccess error:', e.message);
-                return true; // En caso de error de red, no bloquear
+                return true; // Fallo silencioso: no bloquear por error de red
             }
         }
         async function loadUserData(uid, yr) {
@@ -784,15 +836,16 @@
             const e = $('auth-email').value, p = $('auth-password').value;
             try {
                 const cred = await auth.createUserWithEmailAndPassword(e, p);
-                // Guardar trial de 3 días desde el momento del registro
+                // Guardar perfil de trial completo desde el momento del registro
                 const trialEndDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
                 await db.collection('users').doc(cred.user.uid).set({
-                    email: e,
-                    plan: 'trial',
-                    planStatus: 'trial',
-                    trialEndDate,
+                    email:        e,
+                    plan:         'trial',
+                    planStatus:   'trial',
+                    isPaid:       false,          // fuente de verdad de pago
+                    trialEndDate,                  // fecha exacta de expiración
                     registeredAt: new Date().toISOString(),
-                    lastSeen: new Date().toISOString()
+                    lastSeen:     new Date().toISOString()
                 }, { merge: true });
             } catch(err) { $('auth-error').innerText = err.message; $('auth-error').classList.remove('hidden'); }
         }
