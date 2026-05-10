@@ -671,6 +671,14 @@
                     appData = buildDefault(yr);
                     if (yr === currentSystemYear) await db.collection("users").doc(docId).set(appData);
                 }
+                // Persistir email y lastSeen en cada login (merge: nunca borra datos financieros)
+                // Esto asegura que el Panel Admin siempre vea el correo real del usuario.
+                const emailMeta = {
+                    email: currentUser.email || '',
+                    lastSeen: new Date().toISOString()
+                };
+                db.collection("users").doc(docId).set(emailMeta, { merge: true })
+                  .catch(e => console.warn('[EQUO] No se pudo actualizar email/lastSeen:', e.message));
             } catch (e) { showToast('error', 'Error', 'Data load failed.'); appData = buildDefault(yr); }
         }
         const save = () => {

@@ -235,7 +235,11 @@ async function loadUsers(){
     docs.forEach(doc=>{
       const d=doc.data();
       const uid=doc.id;
-      const email=d.email||d.profileEmail||'—';
+      // Prioridad: campo email (guardado por loadUserData) → profileEmail → UID como fallback
+      const email = d.email || d.profileEmail || null;
+      const displayEmail = email
+        ? `<p class="font-bold text-white text-[11px]">${email}${roleBadge}</p><p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid.slice(0,22)}…</p>`
+        : `<p class="font-bold text-amber-400/80 text-[10px] italic">Sin email registrado${roleBadge}</p><p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid}</p>`;
       const plan=d.plan||'free';
       const role=d.role||'user';
       const lastSeen=d.lastSeen||(d.year?d.year+'':null);
@@ -255,19 +259,16 @@ async function loadUsers(){
 
       const tr=document.createElement('tr');
       tr.innerHTML=`
-        <td>
-          <p class="font-bold text-white text-[11px]">${email}${roleBadge}</p>
-          <p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid.slice(0,20)}…</p>
-        </td>
+        <td>${displayEmail}</td>
         <td>${planBadge}</td>
-        <td class="text-gray-500 text-[10px]">${lastSeen||'—'}</td>
+        <td class="text-gray-500 text-[10px]">${lastSeen ? lastSeen.slice(0,16).replace('T',' ') : '—'}</td>
         <td>
           <div class="flex flex-wrap gap-1.5">
             <button onclick="setPlan('${uid}','personal')"    class="adm-btn btn-personal">Personal</button>
             <button onclick="setPlan('${uid}','entrepreneur')" class="adm-btn btn-entrepreneur">Entrepreneur</button>
             <button onclick="activateTrial('${uid}')"         class="adm-btn btn-trial"><i class="fa-solid fa-hourglass-half"></i> Prueba</button>
             <button onclick="cancelPlan('${uid}')"            class="adm-btn btn-reset"><i class="fa-solid fa-ban"></i> Cancelar</button>
-            <button onclick="sendReset('${uid}','${email}')"  class="adm-btn btn-mail"><i class="fa-solid fa-key"></i> Reset</button>
+            <button onclick="sendReset('${uid}','${email||''}')"  class="adm-btn btn-mail${!email?' opacity-40':''}"><i class="fa-solid fa-key"></i> Reset</button>
           </div>
         </td>`;
       tbody.appendChild(tr);
