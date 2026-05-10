@@ -215,53 +215,94 @@
         .glow-fail { filter: drop-shadow(0 0 4px rgba(248,113,113,0.8)); }
         .glow-pend { filter: drop-shadow(0 0 4px rgba(251,191,36,0.8)); }
 
-        /* Panel Switch — estilo industrial cuadrado */
+        /* ── Panel Switch — Liquid Crystal Industrial ───────────────── */
         .panel-switch-wrap {
-            display: inline-flex; align-items: center; gap: 6px;
-            background: rgba(0,0,0,.45); backdrop-filter: blur(12px);
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(0,0,0,.2);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255,255,255,.1);
             border-radius: 6px; padding: 5px 6px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 4px 16px rgba(0,0,0,.4);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.06),
+                inset 0 -1px 0 rgba(0,0,0,.2),
+                0 4px 20px rgba(0,0,0,.35);
         }
         .panel-switch-btn {
             display: inline-flex; align-items: center; justify-content: center;
             width: 38px; height: 34px;
-            border-radius: 4px;          /* cuadrado industrial */
-            font-size: 14px;
-            color: rgba(255,255,255,.4);
-            background: transparent; border: 1px solid transparent;
-            transition: all .22s cubic-bezier(.4,0,.2,1);
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 400;
+            /* Inactivo oscuro: gris azulado refinado */
+            color: #6b7fa3;
+            background: transparent;
+            border: 1px solid transparent;
+            transition: all .2s cubic-bezier(.4,0,.2,1);
             position: relative;
         }
-        .panel-switch-btn:hover:not(.panel-locked) {
-            color: rgba(255,255,255,.75);
-            background: rgba(255,255,255,.06);
-            border-color: rgba(255,255,255,.1);
+        /* Hover: cristal se aclara */
+        .panel-switch-btn:hover:not(.panel-locked):not(.active-panel) {
+            color: rgba(255,255,255,.8);
+            background: rgba(255,255,255,.07);
+            border-color: rgba(255,255,255,.12);
         }
-        /* Activo: cristal esmerilado profundo + glow del ícono */
+        /* Activo: gradiente de marca sky→violet — borde degradado simulado con outline+shadow */
         .panel-switch-btn.active-panel {
             color: #38bdf8;
-            background: rgba(56,189,248,.12);
-            border-color: rgba(56,189,248,.35);
+            background: linear-gradient(135deg, rgba(56,189,248,.13), rgba(129,140,248,.10));
+            border-color: rgba(56,189,248,.45);
             box-shadow:
-                inset 0 1px 0 rgba(56,189,248,.15),
-                0 0 0 1px rgba(56,189,248,.08),
-                0 0 14px -2px rgba(56,189,248,.45);
+                inset 0 1px 0 rgba(56,189,248,.18),
+                inset 0 0 8px rgba(129,140,248,.08),
+                0 0 0 1px rgba(129,140,248,.08),
+                0 0 16px -3px rgba(56,189,248,.5);
         }
-        /* Separador vertical entre botones */
+        /* Separador entre botones */
         .panel-switch-divider {
-            width: 1px; height: 20px;
-            background: rgba(255,255,255,.08);
+            width: 1px; height: 18px;
+            background: linear-gradient(to bottom, transparent, rgba(255,255,255,.1) 40%, rgba(255,255,255,.1) 60%, transparent);
             flex-shrink: 0;
         }
         /* Candado */
-        .panel-switch-btn.panel-locked { color: rgba(255,255,255,.25); cursor: not-allowed; }
+        .panel-switch-btn.panel-locked { color: rgba(255,255,255,.2); cursor: not-allowed; }
         .panel-switch-btn.panel-locked .lock-icon { display: inline !important; }
         .panel-switch-btn .lock-icon {
             display: none; font-size: 8px;
             position: absolute; top: 4px; right: 4px;
-            color: rgba(251,191,36,.85);
+            color: rgba(251,191,36,.9);
         }
+
+        /* ── Light Mode overrides del Panel Switch ───────────────── */
+        .light-mode .panel-switch-wrap {
+            background: rgba(255,255,255,.45);
+            border-color: rgba(0,0,0,.1);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.9),
+                0 2px 12px rgba(0,0,0,.08);
+        }
+        /* Inactivos en claro: gris azulado elegante */
+        .light-mode .panel-switch-btn {
+            color: #64748b;
+        }
+        .light-mode .panel-switch-btn:hover:not(.panel-locked):not(.active-panel) {
+            color: #334155;
+            background: rgba(0,0,0,.05);
+            border-color: rgba(0,0,0,.1);
+        }
+        /* Activo en claro: azul vibrante #0284c7 */
+        .light-mode .panel-switch-btn.active-panel {
+            color: #0284c7;
+            background: linear-gradient(135deg, rgba(2,132,199,.12), rgba(99,102,241,.08));
+            border-color: rgba(2,132,199,.5);
+            box-shadow:
+                inset 0 1px 0 rgba(2,132,199,.2),
+                0 0 0 1px rgba(99,102,241,.1),
+                0 0 14px -3px rgba(2,132,199,.4);
+        }
+        .light-mode .panel-switch-divider {
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,.1) 40%, rgba(0,0,0,.1) 60%, transparent);
+        }
+        .light-mode .panel-switch-btn.panel-locked { color: rgba(0,0,0,.2); }
 
         /* Modal Upgrade — Liquid Crystal */
         #upgrade-modal {
