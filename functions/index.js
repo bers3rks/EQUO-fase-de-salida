@@ -198,23 +198,25 @@ exports.queryBinancePayment = onCall({ enforceAppCheck: false }, async (request)
 
     if (orderStatus === 'PAID') {
       // ✅ Pago confirmado — activar plan en Firestore
-      const planKey    = plan || 'entrepreneur';
-      const planStatus = planKey;
+      const planKey   = plan || 'entrepreneur';
+      const now       = new Date().toISOString();
+      const subEnd    = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 días exactos
 
       await db.collection('users').doc(uid).set({
-        isPaid:       true,
-        plan:         planKey,
-        planStatus,
-        selectedPlan: planKey,
-        trialEndDate: null,   // eliminar restricción de prueba
-        paidAt:       new Date().toISOString(),
-        lastPaymentId: merchantOrderId,
+        isPaid:              true,
+        plan:                planKey,
+        planStatus:          planKey,
+        selectedPlan:        planKey,
+        trialEndDate:        null,    // eliminar restricción de prueba
+        subscriptionDate:    now,     // fecha de pago
+        subscriptionEndDate: subEnd,  // vencimiento en 30 días
+        paidAt:              now,
+        lastPaymentId:       merchantOrderId,
       }, { merge: true });
 
       // Actualizar registro de pago
       await db.collection('payments').doc(merchantOrderId).set({
-        status:  'PAID',
-        paidAt:  new Date().toISOString(),
+        status: 'PAID', paidAt: now,
       }, { merge: true });
 
       return { orderStatus: 'PAID', planActivated: true };
@@ -225,6 +227,42 @@ exports.queryBinancePayment = onCall({ enforceAppCheck: false }, async (request)
 
   } catch (err) {
     console.error('[EQUO] queryBinancePayment error:', err);
+    throw new HttpsError('internal', err.message);
+  }
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// Cloud Function 3: adminDeleteUser
+// Elimina un usuario de Firebase Auth desde el servidor (Admin SDK).
+// Solo puede ser llamada por usuarios con role:'admin' en Firestore.
+// ───────────────────────────────────────────────────────────────────────────
+const { getAuth } = require('firebase-admin/auth');
+
+exports.adminDeleteUser = onCall({ enforceAppCheck: false }, async (request) => {
+  // 1. Verificar que quien llama está autenticado
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'No autenticado.');
+  }
+
+  // 2. Verificar que quien llama es admin en Firestore (server-side, no confiar en el cliente)
+  const callerSnap = await db.collection('users').doc(request.auth.uid).get();
+  const callerRole = (callerSnap.exists && callerSnap.data().role) || 'user';
+  if (callerRole !== 'admin') {
+    throw new HttpsError('permission-denied', 'Solo administradores pueden eliminar usuarios.');
+  }
+
+  const { uid } = request.data;
+  if (!uid) {
+    throw new HttpsError('invalid-argument', 'uid es requerido.');
+  }
+
+  // 3. Eliminar de Firebase Auth (Admin SDK)
+  try {
+    await getAuth().deleteUser(uid);
+    console.log(`[EQUO Admin] Usuario ${uid} eliminado de Auth por ${request.auth.uid}`);
+    return { success: true, message: `Usuario ${uid} eliminado.` };
+  } catch (err) {
+    console.error('[EQUO Admin] Error al eliminar usuario:', err);
     throw new HttpsError('internal', err.message);
   }
 });
