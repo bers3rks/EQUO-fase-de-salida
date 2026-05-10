@@ -2549,6 +2549,49 @@
         </button>
       </div>
 
+        <div class="mx-5 my-1 border-t" style="border-color:rgba(255,255,255,0.06)"></div>
+
+      <!-- ── SUSCRIPCIÓN ── -->
+      <div class="px-5 pt-3 pb-4">
+        <div class="flex items-center justify-between mb-2.5">
+          <p class="text-[9px] font-bold uppercase tracking-widest text-sky-400/70"><i class="fa-solid fa-crown mr-1"></i>Suscripción</p>
+          <!-- Etiqueta 'Recomendado' -->
+          <span class="text-[8px] font-bold px-2 py-0.5 tracking-wider"
+                style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24">
+            ★ Recomendado
+          </span>
+        </div>
+
+        <!-- Estado del plan actual -->
+        <div id="settings-plan-info" class="mb-2.5 px-3 py-2.5 text-[10px]"
+             style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)">
+          <div class="flex items-center justify-between">
+            <span class="text-gray-500">Plan actual</span>
+            <span id="settings-plan-badge" class="font-bold text-sky-400">—</span>
+          </div>
+          <div id="settings-sub-expiry" class="mt-1 text-gray-600 hidden">
+            <i class="fa-regular fa-calendar mr-1"></i>
+            <span id="settings-sub-expiry-text"></span>
+          </div>
+        </div>
+
+        <!-- Botón dinámico: activo → abre upgrade-modal / inactivo → plan actual -->
+        <button id="settings-plan-btn"
+                onclick="openSettingsPlanModal()"
+                class="btn-float w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-white border transition-all"
+                style="background:linear-gradient(135deg,rgba(56,189,248,.18),rgba(129,140,248,.18));border-color:rgba(129,140,248,.35)">
+          <div class="w-7 h-7 flex items-center justify-center flex-shrink-0"
+               style="background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3)">
+            <i id="settings-plan-icon" class="fa-solid fa-arrows-rotate text-violet-400 text-xs"></i>
+          </div>
+          <div class="text-left flex-1">
+            <p id="settings-plan-btn-label" class="font-bold text-white text-xs">Cambiar de Plan</p>
+            <p class="text-[9px] text-violet-300/60 mt-0.5">Plan Emprendedor — $19.99 / mes</p>
+          </div>
+          <i id="settings-plan-chevron" class="fa-solid fa-chevron-right ml-auto text-[9px] text-violet-400 opacity-60"></i>
+        </button>
+      </div>
+
     </div><!-- /scroll -->
   </div>
 </div><!-- /settings-modal -->
@@ -2573,6 +2616,103 @@ function openSettingsModal() {
     }
     // Sincronizar estado del toggle de tema
     _syncSettingsThemeUI();
+    // Cargar estado del plan del usuario desde Firestore
+    if (user) _loadSettingsPlanStatus(user.uid);
+}
+
+/**
+ * _loadSettingsPlanStatus(uid)
+ * Lee el plan del usuario desde Firestore y actualiza el botón de suscripción
+ * en el modal de Ajustes (se llama cada vez que se abre el modal).
+ */
+async function _loadSettingsPlanStatus(uid) {
+    try {
+        const snap     = await db.collection('users').doc(uid).get();
+        const data     = snap.exists ? snap.data() : {};
+        const plan     = data.plan || data.planStatus || 'trial';
+        const isPaid   = data.isPaid === true;
+        const subEnd   = data.subscriptionEndDate || null;
+
+        // Actualizar badge del plan actual
+        const badge = $('settings-plan-badge');
+        if (badge) {
+            const planLabels = {
+                entrepreneur: '⭐ Emprendedor',
+                personal:     '✦ Personal',
+                trial:        '⏳ Prueba',
+                free:         'Free',
+                expired:      '🔒 Expirado',
+            };
+            badge.textContent = planLabels[plan] || plan;
+            const colors = {
+                entrepreneur: '#818cf8',
+                personal:     '#38bdf8',
+                trial:        '#fbbf24',
+                expired:      '#f87171',
+            };
+            badge.style.color = colors[plan] || '#94a3b8';
+        }
+
+        // Mostrar fecha de vencimiento si aplica
+        const expiryDiv  = $('settings-sub-expiry');
+        const expiryText = $('settings-sub-expiry-text');
+        if (subEnd && expiryDiv && expiryText) {
+            const daysLeft = Math.ceil((new Date(subEnd) - new Date()) / 86400000);
+            if (daysLeft > 0) {
+                expiryText.textContent = `Vence en ${daysLeft} días`;
+                expiryDiv.classList.remove('hidden');
+                expiryDiv.style.color = daysLeft <= 7 ? '#fb923c' : '#64748b';
+            } else {
+                expiryText.textContent = 'Suscripción vencida';
+                expiryDiv.classList.remove('hidden');
+                expiryDiv.style.color = '#f87171';
+            }
+        } else if (expiryDiv) {
+            expiryDiv.classList.add('hidden');
+        }
+
+        // Configurar botón: Entrepreneur pagado → deshabilitado con corona
+        const btn      = $('settings-plan-btn');
+        const btnLabel = $('settings-plan-btn-label');
+        const btnIcon  = $('settings-plan-icon');
+        const chevron  = $('settings-plan-chevron');
+
+        if (isPaid && plan === 'entrepreneur') {
+            // Plan activo — botón deshabilitado
+            if (btn) {
+                btn.disabled = true;
+                btn.style.opacity = '0.55';
+                btn.style.cursor  = 'not-allowed';
+                btn.style.background = 'linear-gradient(135deg,rgba(129,140,248,.1),rgba(56,189,248,.1))';
+            }
+            if (btnLabel) btnLabel.textContent = 'Plan Emprendedor Activo';
+            if (btnIcon)  btnIcon.className = 'fa-solid fa-crown text-amber-400 text-xs';
+            if (chevron)  chevron.style.display = 'none';
+        } else {
+            // Plan inferior → botón activo para hacer upgrade
+            if (btn) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor  = '';
+                btn.style.background = 'linear-gradient(135deg,rgba(56,189,248,.18),rgba(129,140,248,.18))';
+            }
+            if (btnLabel) btnLabel.textContent = 'Cambiar de Plan';
+            if (btnIcon)  btnIcon.className = 'fa-solid fa-arrows-rotate text-violet-400 text-xs';
+            if (chevron)  chevron.style.display = '';
+        }
+    } catch(e) {
+        console.warn('[EQUO Settings] No se pudo cargar el plan:', e.message);
+    }
+}
+
+/** openSettingsPlanModal — cierra Ajustes y abre el modal de upgrade */
+function openSettingsPlanModal() {
+    closeSettingsModal();
+    // Pequeño delay para que la animación de cierre se vea
+    setTimeout(() => {
+        const upgradeModal = document.getElementById('upgrade-modal');
+        if (upgradeModal) upgradeModal.classList.add('show');
+    }, 200);
 }
 function closeSettingsModal() {
     const modal = $('settings-modal');
@@ -2688,6 +2828,8 @@ window.openChangePassword  = openChangePassword;
 window.saveNewPassword     = saveNewPassword;
 window.openBugReport       = openBugReport;
 window.submitBugReport     = submitBugReport;
+window.openSettingsPlanModal = openSettingsPlanModal;
+window._loadSettingsPlanStatus = _loadSettingsPlanStatus;
 
 /* Admin */
 function openAdminPanel() {

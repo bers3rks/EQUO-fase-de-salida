@@ -440,7 +440,7 @@ async function deleteUser(uid, label) {
         } catch (fnErr) {
           // La función no está disponible aún — marcar como eliminado igualmente
           console.warn('[Admin] adminDeleteUser CF no disponible:', fnErr.message);
-          toast('info', `Firestore limpiado. Auth requiere deploy de Cloud Functions.`);
+          toast('info', `Datos borrados. La cuenta de acceso se eliminará tras el deploy de funciones.`);
         }
 
         // 3. Remover la fila de la tabla sin recargar todo
