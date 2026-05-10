@@ -235,27 +235,34 @@ async function loadUsers(){
     docs.forEach(doc=>{
       const d=doc.data();
       const uid=doc.id;
-      // Prioridad: campo email (guardado por loadUserData) → profileEmail → UID como fallback
-      const email = d.email || d.profileEmail || null;
-      const displayEmail = email
-        ? `<p class="font-bold text-white text-[11px]">${email}${roleBadge}</p><p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid.slice(0,22)}…</p>`
-        : `<p class="font-bold text-amber-400/80 text-[10px] italic">Sin email registrado${roleBadge}</p><p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid}</p>`;
-      const plan=d.plan||'free';
-      const role=d.role||'user';
-      const lastSeen=d.lastSeen||(d.year?d.year+'':null);
-      const isToday=lastSeen&&lastSeen.startsWith(today);
+
+      // 1. Datos brutos primero
+      const email    = d.email || d.profileEmail || null;
+      const plan     = d.plan  || 'free';
+      const role     = d.role  || 'user';
+      const lastSeen = d.lastSeen || (d.year ? d.year+'' : null);
+
+      // 2. Contadores de métricas
+      const isToday = lastSeen && lastSeen.startsWith(today);
       if(isToday) totalActive++;
       if(plan==='trial') totalTrial++;
       if(plan==='entrepreneur') totalEnt++;
 
-      const planBadge={
-        personal: '<span class="badge badge-personal"><i class="fa-solid fa-user"></i> Personal</span>',
-        entrepreneur:'<span class="badge badge-entrepreneur"><i class="fa-solid fa-briefcase"></i> Entrepreneur</span>',
-        trial:'<span class="badge badge-trial"><i class="fa-solid fa-hourglass-half"></i> Prueba</span>',
-        free:'<span class="badge badge-free">Free</span>',
-      }[plan]||`<span class="badge badge-free">${plan}</span>`;
+      // 3. Badges (deben declararse ANTES de displayEmail que los consume)
+      const roleBadge  = role==='admin'
+        ? '<span class="badge badge-admin ml-1"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
+        : '';
+      const planBadge  = {
+        personal:     '<span class="badge badge-personal"><i class="fa-solid fa-user"></i> Personal</span>',
+        entrepreneur: '<span class="badge badge-entrepreneur"><i class="fa-solid fa-briefcase"></i> Entrepreneur</span>',
+        trial:        '<span class="badge badge-trial"><i class="fa-solid fa-hourglass-half"></i> Prueba</span>',
+        free:         '<span class="badge badge-free">Free</span>',
+      }[plan] || `<span class="badge badge-free">${plan}</span>`;
 
-      const roleBadge=role==='admin'?'<span class="badge badge-admin ml-1"><i class="fa-solid fa-shield-halved"></i> Admin</span>':'';
+      // 4. displayEmail usa roleBadge — ahora ya está definido
+      const displayEmail = email
+        ? `<p class="font-bold text-white text-[11px]">${email}${roleBadge}</p><p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid.slice(0,24)}…</p>`
+        : `<p class="font-bold text-amber-400/80 text-[10px] italic">Sin email registrado${roleBadge}</p><p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid}</p>`;
 
       const tr=document.createElement('tr');
       tr.innerHTML=`
