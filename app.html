@@ -24,6 +24,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-functions-compat.js"></script>
     <!-- Firebase Init centralizado (expone window.db, window.auth, window.userRole) -->
     <script src="js/firebase-init.js"></script>
 
@@ -118,6 +119,72 @@
         /* Glassmorphism UI */
         .glass-card { background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 1.25rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); transition: all 0.4s ease; }
         .glass-login { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
+
+        /* ── Modal de Pago Binance Pay ────────────────────────────────── */
+        #binance-pay-modal {
+            position: fixed; inset: 0; z-index: 100002;
+            display: none; align-items: center; justify-content: center;
+            background: rgba(4,8,20,.85); backdrop-filter: blur(18px);
+        }
+        #binance-pay-modal.show { display: flex; }
+        .bp-card {
+            background: rgba(8,14,30,.97);
+            backdrop-filter: blur(48px); -webkit-backdrop-filter: blur(48px);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 0; /* bordes cuadrados */
+            width: 100%; max-width: 420px;
+            box-shadow: 0 0 0 1px rgba(56,189,248,.07), 0 40px 100px rgba(0,0,0,.9);
+            overflow: hidden;
+            animation: bpSlide .45s cubic-bezier(.175,.885,.32,1.275) forwards;
+        }
+        @keyframes bpSlide {
+            0%   { opacity:0; transform:translateY(28px) scale(.97); }
+            100% { opacity:1; transform:translateY(0)   scale(1); }
+        }
+        .bp-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,.05);
+            background: rgba(255,255,255,.02);
+        }
+        .bp-body   { padding: 1.5rem; }
+        .bp-qr-wrap {
+            background: #fff;
+            border: none;
+            border-radius: 0;
+            padding: 14px;
+            display: inline-block;
+            box-shadow: 0 0 40px rgba(56,189,248,.2);
+            position: relative;
+        }
+        .bp-qr-wrap img { display: block; width: 180px; height: 180px; }
+        /* Animación de escaneo */
+        .bp-qr-wrap::after {
+            content: '';
+            position: absolute; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+            animation: qrScan 2s ease-in-out infinite;
+            top: 0;
+        }
+        @keyframes qrScan { 0%,100% { top:14px; opacity:.8; } 50% { top:calc(100% - 17px); opacity:1; } }
+        /* Confirmação pago */
+        .bp-success-icon {
+            display: none; flex-direction: column; align-items: center; gap: 1rem;
+            padding: 2rem 0;
+        }
+        .bp-success-icon.show { display: flex; }
+        @keyframes bpCheck {
+            0%   { stroke-dashoffset: 100; opacity: 0; }
+            60%  { opacity: 1; }
+            100% { stroke-dashoffset: 0; }
+        }
+        .bp-check-circle { animation: bpPulse 1s ease forwards; }
+        @keyframes bpPulse {
+            0%   { transform: scale(0); opacity: 0; }
+            60%  { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .bp-check-path { stroke-dasharray: 100; stroke-dashoffset: 100; animation: bpCheck .8s .3s ease forwards; }
         
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"], input[type="text"], input[type="email"], input[type="password"] { -moz-appearance: textfield; }
@@ -345,8 +412,8 @@
                 </div>
             </div>
 
-            <!-- Botón de pago real -->
-            <button onclick="window.open('https://equo.app/pay/entrepreneur','_blank')"
+            <!-- Botón de pago real — abre el modal con QR de Binance Pay -->
+            <button onclick="openBinanceModal('entrepreneur')"
                     class="w-full py-3.5 rounded-xl font-bold text-sm mb-3 flex items-center justify-center gap-2 transition-all"
                     style="background:linear-gradient(135deg,#38bdf8,#818cf8);color:#0f172a;box-shadow:0 0 30px rgba(129,140,248,.3);"
                     onmouseover="this.style.boxShadow='0 0 50px rgba(129,140,248,.5)'"
@@ -379,6 +446,125 @@
 
         </div>
     </div><!-- /payment-wall -->
+
+    <!-- ================================================================
+         MODAL BINANCE PAY — Pasarela de pago real (QR + polling)
+         Se abre desde el payment-wall o desde los botones de compra
+    ================================================================ -->
+    <div id="binance-pay-modal">
+        <div class="bp-card">
+
+            <!-- Header -->
+            <div class="bp-header">
+                <div class="flex items-center gap-2.5">
+                    <!-- Logo Binance Pay -->
+                    <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" fill="#F0B90B"/>
+                        <path d="M16 7l2.83 2.83L12.66 16l6.17 6.17L16 25l-9-9 9-9zm0 0" fill="#fff" opacity=".9"/>
+                        <path d="M7 16l2.83-2.83L12.66 16l-2.83 2.83L7 16zm14.17-2.83L24 16l-2.83 2.83L18.34 16l2.83-2.83z" fill="#fff"/>
+                    </svg>
+                    <div>
+                        <p class="text-xs font-bold text-white leading-none">Binance Pay</p>
+                        <p class="text-[9px] text-gray-600 leading-none mt-0.5">Pago seguro · USDT</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Countdown -->
+                    <div id="bp-countdown" class="text-[10px] font-mono text-amber-400 hidden">
+                        <i class="fa-solid fa-clock mr-1"></i><span id="bp-timer">15:00</span>
+                    </div>
+                    <button onclick="closeBinanceModal()" class="text-gray-600 hover:text-white transition text-sm">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="bp-body">
+
+                <!-- Estado: cargando -->
+                <div id="bp-loading" class="text-center py-12">
+                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4" style="background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.2)">
+                        <i class="fa-solid fa-spinner fa-spin text-amber-400 text-xl"></i>
+                    </div>
+                    <p class="text-sm text-gray-400">Generando orden de pago...</p>
+                    <p class="text-[10px] text-gray-700 mt-1">Conectando con Binance Pay</p>
+                </div>
+
+                <!-- Estado: QR listo -->
+                <div id="bp-qr-view" class="hidden text-center">
+
+                    <!-- Plan info -->
+                    <div id="bp-plan-badge" class="inline-flex items-center gap-2 px-3 py-1.5 mb-5 text-[10px] font-bold uppercase tracking-wider"
+                         style="background:rgba(240,185,11,.08);border:1px solid rgba(240,185,11,.2);color:#f0b90b">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span id="bp-plan-label">Plan Emprendedor — $19.99 USDT</span>
+                    </div>
+
+                    <!-- QR Code -->
+                    <div class="flex justify-center mb-4">
+                        <div class="bp-qr-wrap">
+                            <img id="bp-qr-img" src="" alt="QR de pago Binance Pay" width="180" height="180">
+                        </div>
+                    </div>
+
+                    <!-- Instrucciones -->
+                    <p class="text-xs text-gray-500 mb-1">Escanea con la app de <span class="text-amber-400 font-semibold">Binance</span></p>
+                    <p class="text-[10px] text-gray-700 mb-5">Finanzas → Binance Pay → Escanear QR</p>
+
+                    <!-- Botón de pago directo (mobile deeplink) -->
+                    <a id="bp-deeplink-btn" href="#" target="_blank"
+                       class="flex items-center justify-center gap-2 w-full py-3.5 font-bold text-sm mb-3 transition-all"
+                       style="background:#f0b90b;color:#0a0f1e;border:none;"
+                       onmouseover="this.style.background='#f5c842'"
+                       onmouseout="this.style.background='#f0b90b'">
+                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                            <rect width="32" height="32" fill="#0a0f1e"/>
+                            <path d="M16 7l2.83 2.83L12.66 16l6.17 6.17L16 25l-9-9 9-9zm0 0" fill="#f0b90b" opacity=".9"/>
+                        </svg>
+                        Pagar desde la App de Binance
+                    </a>
+
+                    <!-- Estado del polling -->
+                    <div class="flex items-center justify-center gap-2 text-[10px] text-gray-700">
+                        <div class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></div>
+                        <span id="bp-poll-status">Verificando pago automáticamente...</span>
+                    </div>
+                </div>
+
+                <!-- Estado: Error -->
+                <div id="bp-error-view" class="hidden text-center py-10">
+                    <i class="fa-solid fa-triangle-exclamation text-red-400 text-3xl mb-3"></i>
+                    <p class="text-sm text-red-300 font-semibold mb-1">Error al generar la orden</p>
+                    <p id="bp-error-msg" class="text-[11px] text-gray-600 mb-5">Inténtalo de nuevo.</p>
+                    <button onclick="closeBinanceModal()" class="text-xs text-gray-500 hover:text-white underline transition">
+                        Cerrar y volver
+                    </button>
+                </div>
+
+                <!-- Estado: Pago Exitoso ✅ -->
+                <div id="bp-success-view" class="bp-success-icon">
+                    <svg width="80" height="80" viewBox="0 0 80 80">
+                        <circle class="bp-check-circle" cx="40" cy="40" r="36"
+                                fill="none" stroke="#10b981" stroke-width="4" opacity=".15"/>
+                        <circle cx="40" cy="40" r="36"
+                                fill="none" stroke="#10b981" stroke-width="3"
+                                stroke-dasharray="226" stroke-dashoffset="0" opacity=".6"/>
+                        <polyline class="bp-check-path"
+                                  points="24,42 35,53 57,29"
+                                  fill="none" stroke="#10b981" stroke-width="5"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div class="text-center">
+                        <p class="text-xl font-extrabold text-white">¡Pago Exitoso!</p>
+                        <p class="text-sm text-emerald-400 mt-1">Tu plan ha sido activado</p>
+                        <p class="text-[10px] text-gray-600 mt-3">Accediendo al dashboard...</p>
+                    </div>
+                </div>
+
+            </div><!-- /bp-body -->
+        </div><!-- /bp-card -->
+    </div><!-- /binance-pay-modal -->
 
     <!-- ============================================================
          APP SHELL (visible tras login) — Header siempre presente
@@ -1102,6 +1288,214 @@
                 if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-flask mr-2"></i>Simular Pago Exitoso'; }
             }
         }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // BINANCE PAY — Pasarela de pago real
+        // Llama a Firebase Cloud Functions para crear/verificar órdenes.
+        // Las claves API permanecen en el servidor (NUNCA en el cliente).
+        // ═══════════════════════════════════════════════════════════════════
+
+        let _bpPollInterval = null;
+        let _bpCountdownInterval = null;
+        let _bpCurrentOrder = null; // { prepayId, merchantOrderId, plan }
+
+        /**
+         * openBinanceModal(plan)
+         * Abre el modal de pago, llama a la Cloud Function createBinanceOrder
+         * y muestra el QR cuando la orden esté lista.
+         * @param {string} plan - 'personal' | 'entrepreneur'
+         */
+        async function openBinanceModal(plan = 'entrepreneur') {
+            const modal = document.getElementById('binance-pay-modal');
+            if (!modal) return;
+
+            // Mostrar modal en estado de carga
+            _setBpView('loading');
+            modal.classList.add('show');
+
+            try {
+                // Obtener instancia de functions (firebase-functions-compat)
+                const functions = firebase.functions();
+
+                // Llamar a la Cloud Function (server-side, firma HMAC-SHA512 segura)
+                const createOrder = functions.httpsCallable('createBinanceOrder');
+                const result = await createOrder({ plan });
+                const order  = result.data;
+
+                // Guardar datos de la orden para el polling
+                _bpCurrentOrder = {
+                    prepayId:       order.prepayId,
+                    merchantOrderId: order.merchantOrderId,
+                    plan,
+                };
+
+                // Actualizar UI con el QR
+                const planLabels = {
+                    personal:     'Plan Personal — $9.99 USDT',
+                    entrepreneur: 'Plan Emprendedor — $19.99 USDT',
+                };
+                document.getElementById('bp-plan-label').textContent = planLabels[plan] || planLabels.entrepreneur;
+                document.getElementById('bp-qr-img').src = order.qrcodeLink;
+                document.getElementById('bp-deeplink-btn').href = order.deeplink || order.checkoutUrl;
+
+                _setBpView('qr');
+
+                // Iniciar countdown de 15 minutos
+                _startBpCountdown(15 * 60);
+
+                // Iniciar polling cada 3 segundos
+                _startBpPolling();
+
+            } catch (err) {
+                console.error('[EQUO] openBinanceModal error:', err);
+                document.getElementById('bp-error-msg').textContent = err.message || 'Error de conexión con Binance Pay.';
+                _setBpView('error');
+            }
+        }
+
+        /**
+         * _setBpView(view)
+         * Controla qué vista está visible dentro del modal.
+         * @param {'loading'|'qr'|'error'|'success'} view
+         */
+        function _setBpView(view) {
+            const views = { loading: 'bp-loading', qr: 'bp-qr-view', error: 'bp-error-view', success: 'bp-success-view' };
+            Object.entries(views).forEach(([k, id]) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (k === view) {
+                    el.classList.remove('hidden');
+                    if (k === 'success') el.classList.add('show');
+                } else {
+                    el.classList.add('hidden');
+                    if (k === 'success') el.classList.remove('show');
+                }
+            });
+        }
+
+        /**
+         * _startBpPolling()
+         * Verifica el estado de la orden cada 3 segundos.
+         */
+        function _startBpPolling() {
+            _stopBpPolling(); // limpiar cualquier intervalo previo
+
+            _bpPollInterval = setInterval(async () => {
+                if (!_bpCurrentOrder || !currentUser) return;
+                try {
+                    const functions   = firebase.functions();
+                    const queryPayment = functions.httpsCallable('queryBinancePayment');
+                    const result = await queryPayment({
+                        prepayId:        _bpCurrentOrder.prepayId,
+                        merchantOrderId: _bpCurrentOrder.merchantOrderId,
+                        plan:            _bpCurrentOrder.plan,
+                    });
+
+                    const { orderStatus, planActivated } = result.data;
+
+                    // Actualizar texto de estado
+                    const statusEl = document.getElementById('bp-poll-status');
+                    if (statusEl) {
+                        const statusMap = {
+                            PENDING:  'Esperando pago...',
+                            INITIAL:  'Orden generada — esperando pago...',
+                            PAID:     '¡Pago recibido! Activando plan...',
+                            CANCELED: 'Orden cancelada.',
+                            ERROR:    'Error en la transacción.',
+                        };
+                        statusEl.textContent = statusMap[orderStatus] || `Estado: ${orderStatus}`;
+                    }
+
+                    if (planActivated || orderStatus === 'PAID') {
+                        _stopBpPolling();
+                        _stopBpCountdown();
+                        // Mostrar pantalla de éxito
+                        _confirmPaymentUI();
+                    } else if (orderStatus === 'CANCELED' || orderStatus === 'ERROR') {
+                        _stopBpPolling();
+                        document.getElementById('bp-error-msg').textContent = 'La orden fue cancelada o expiró. Intenta de nuevo.';
+                        _setBpView('error');
+                    }
+
+                } catch (pollErr) {
+                    console.warn('[EQUO] Poll error:', pollErr.message);
+                    // No detener el polling por error puntual de red
+                }
+            }, 3000);
+        }
+
+        function _stopBpPolling() {
+            if (_bpPollInterval) { clearInterval(_bpPollInterval); _bpPollInterval = null; }
+        }
+
+        /**
+         * _startBpCountdown(seconds)
+         * Muestra un contador regresivo en el header del modal.
+         */
+        function _startBpCountdown(seconds) {
+            const timerEl    = document.getElementById('bp-timer');
+            const countEl    = document.getElementById('bp-countdown');
+            if (countEl) countEl.classList.remove('hidden');
+
+            let remaining = seconds;
+            _bpCountdownInterval = setInterval(() => {
+                remaining--;
+                const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+                const s = String(remaining % 60).padStart(2, '0');
+                if (timerEl) timerEl.textContent = `${m}:${s}`;
+
+                if (remaining <= 0) {
+                    _stopBpCountdown();
+                    _stopBpPolling();
+                    document.getElementById('bp-error-msg').textContent = 'La orden expiró (15 min). Genera una nueva.';
+                    _setBpView('error');
+                }
+            }, 1000);
+        }
+
+        function _stopBpCountdown() {
+            if (_bpCountdownInterval) { clearInterval(_bpCountdownInterval); _bpCountdownInterval = null; }
+            const countEl = document.getElementById('bp-countdown');
+            if (countEl) countEl.classList.add('hidden');
+        }
+
+        /**
+         * _confirmPaymentUI()
+         * Animación de confirmación + desbloqueo del dashboard.
+         */
+        function _confirmPaymentUI() {
+            _setBpView('success');
+            // Vibración táctil (móvil)
+            if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
+            // Ocultar el muro de pago si estaba visible
+            const wall = document.getElementById('payment-wall');
+            if (wall) wall.classList.remove('show');
+
+            // Cerrar modal y abrir dashboard tras 2.5s
+            setTimeout(() => {
+                closeBinanceModal();
+                const shell = $('app-shell');
+                if (shell) {
+                    shell.classList.remove('hidden');
+                    shell.style.display = 'flex';
+                }
+                initApp();
+                showToast('success', '¡Plan Activado!', 'Bienvenido a EQUO. Tu suscripción está activa.');
+            }, 2500);
+        }
+
+        /**
+         * closeBinanceModal()
+         * Cierra el modal y limpia todos los intervalos activos.
+         */
+        function closeBinanceModal() {
+            _stopBpPolling();
+            _stopBpCountdown();
+            _bpCurrentOrder = null;
+            const modal = document.getElementById('binance-pay-modal');
+            if (modal) modal.classList.remove('show');
+        }
+
         async function loadUserData(uid, yr) {
             try {
                 const docId = yearDocId(uid, yr);
