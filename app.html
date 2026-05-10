@@ -1588,93 +1588,48 @@
         }
 
         // ═══════════════════════════════════════════════════════════════════
-        // BINANCE PAY — Pasarela de pago real
-        // Llama a /api/binance (Vercel Serverless Function) para crear/verificar
-        // órdenes. Las claves API permanecen en el servidor (NUNCA en el cliente).
+        // BINANCE PAY — Modo Manual (API en pausa)
+        // El modal muestra instrucciones estáticas y el botón de notificación.
+        // La activación la realiza el admin desde admin.html.
         // ═══════════════════════════════════════════════════════════════════
 
-        let _bpPollInterval = null;
-        let _bpCountdownInterval = null;
-        let _bpCurrentOrder = null; // { prepayId, merchantOrderId, plan }
-
-        /**
-         * _getBearerToken()
-         * Obtiene el Firebase ID Token del usuario autenticado.
-         * El token se envía al servidor para que /api/binance autentique la petición.
-         */
-        async function _getBearerToken() {
-            const user = auth.currentUser;
-            if (!user) throw new Error('No hay sesión activa.');
-            return user.getIdToken();
-        }
-
-        /**
-         * _callBinanceApi(action, body)
-         * Wrapper genérico para llamar a /api/binance con el token de Firebase.
-         */
-        async function _callBinanceApi(action, body) {
-            const token = await _getBearerToken();
-            const res = await fetch(`/api/binance?action=${action}`, {
-                method:  'POST',
-                headers: {
-                    'Content-Type':  'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify(body),
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
-            return data;
-        }
+        let _bpCurrentOrder = null; // { plan } — solo guarda el plan para enviarNotificacionPago
 
         /**
          * openBinanceModal(plan)
-         * Abre el modal de pago, llama a /api/binance?action=createOrder
-         * y muestra el QR cuando la orden esté lista.
+         * Modo manual: abre el modal directamente en la vista de instrucciones.
+         * NO realiza ningún fetch ni contacta la API — cero errores en consola.
          * @param {string} plan - 'personal' | 'entrepreneur'
          */
-        async function openBinanceModal(plan = 'entrepreneur') {
+        function openBinanceModal(plan = 'entrepreneur') {
             const modal = document.getElementById('binance-pay-modal');
             if (!modal) return;
 
-            // Mostrar modal en estado de carga
-            _setBpView('loading');
+            // Guardar el plan seleccionado para enviarNotificacionPago()
+            _bpCurrentOrder = { plan };
+
+            // Actualizar etiqueta del plan
+            const planLabels = {
+                personal:     'Plan Personal — $9.99 USDT',
+                entrepreneur: 'Plan Emprendedor — $19.99 USDT',
+            };
+            const planLabel = document.getElementById('bp-plan-label');
+            if (planLabel) planLabel.textContent = planLabels[plan] || planLabels.entrepreneur;
+
+            // Mostrar instrucciones de pago manual (sin QR dinámico por ahora)
+            const qrImg = document.getElementById('bp-qr-img');
+            if (qrImg) qrImg.src = ''; // sin imagen hasta tener la API activa
+
+            const deeplink = document.getElementById('bp-deeplink-btn');
+            if (deeplink) deeplink.href = 'https://app.binance.com/en/pay';
+
+            // Actualizar texto de estado — modo manual
+            const statusEl = document.getElementById('bp-poll-status');
+            if (statusEl) statusEl.textContent = 'Sigue las instrucciones y notifícanos cuando pagues.';
+
+            // Ir directamente a la vista del QR (con instrucciones manuales)
+            _setBpView('qr');
             modal.classList.add('show');
-
-            try {
-                // Llamar a la Vercel Serverless Function (firma HMAC-SHA512 en el servidor)
-                const order = await _callBinanceApi('createOrder', { plan });
-
-                // Guardar datos de la orden para el polling
-                _bpCurrentOrder = {
-                    prepayId:        order.prepayId,
-                    merchantOrderId: order.merchantOrderId,
-                    plan,
-                };
-
-                // Actualizar UI con el QR
-                const planLabels = {
-                    personal:     'Plan Personal — $9.99 USDT',
-                    entrepreneur: 'Plan Emprendedor — $19.99 USDT',
-                };
-                document.getElementById('bp-plan-label').textContent = planLabels[plan] || planLabels.entrepreneur;
-                document.getElementById('bp-qr-img').src = order.qrcodeLink;
-                document.getElementById('bp-deeplink-btn').href = order.deeplink || order.checkoutUrl;
-
-                _setBpView('qr');
-
-                // Iniciar countdown de 15 minutos
-                _startBpCountdown(15 * 60);
-
-                // Iniciar polling cada 3 segundos
-                _startBpPolling();
-
-            } catch (err) {
-                console.error('[EQUO] openBinanceModal error:', err);
-                document.getElementById('bp-error-msg').textContent = err.message || 'Error de conexión con Binance Pay.';
-                _setBpView('error');
-            }
         }
 
         /**
@@ -1697,89 +1652,14 @@
             });
         }
 
-        /**
-         * _startBpPolling()
-         * Verifica el estado de la orden cada 3 segundos llamando a /api/binance.
-         */
-        function _startBpPolling() {
-            _stopBpPolling(); // limpiar cualquier intervalo previo
-
-            _bpPollInterval = setInterval(async () => {
-                if (!_bpCurrentOrder || !currentUser) return;
-                try {
-                    const result = await _callBinanceApi('queryPayment', {
-                        prepayId:        _bpCurrentOrder.prepayId,
-                        merchantOrderId: _bpCurrentOrder.merchantOrderId,
-                        plan:            _bpCurrentOrder.plan,
-                    });
-
-                    const { orderStatus, planActivated } = result;
-
-                    // Actualizar texto de estado
-                    const statusEl = document.getElementById('bp-poll-status');
-                    if (statusEl) {
-                        const statusMap = {
-                            PENDING:  'Esperando pago...',
-                            INITIAL:  'Orden generada — esperando pago...',
-                            PAID:     '¡Pago recibido! Activando plan...',
-                            CANCELED: 'Orden cancelada.',
-                            ERROR:    'Error en la transacción.',
-                        };
-                        statusEl.textContent = statusMap[orderStatus] || `Estado: ${orderStatus}`;
-                    }
-
-                    if (planActivated || orderStatus === 'PAID') {
-                        _stopBpPolling();
-                        _stopBpCountdown();
-                        // Mostrar pantalla de éxito
-                        _confirmPaymentUI();
-                    } else if (orderStatus === 'CANCELED' || orderStatus === 'ERROR') {
-                        _stopBpPolling();
-                        document.getElementById('bp-error-msg').textContent = 'La orden fue cancelada o expiró. Intenta de nuevo.';
-                        _setBpView('error');
-                    }
-
-                } catch (pollErr) {
-                    console.warn('[EQUO] Poll error:', pollErr.message);
-                    // No detener el polling por error puntual de red
-                }
-            }, 3000);
-        }
-
-        function _stopBpPolling() {
-            if (_bpPollInterval) { clearInterval(_bpPollInterval); _bpPollInterval = null; }
-        }
-
-        /**
-         * _startBpCountdown(seconds)
-         * Muestra un contador regresivo en el header del modal.
-         */
-        function _startBpCountdown(seconds) {
-            const timerEl    = document.getElementById('bp-timer');
-            const countEl    = document.getElementById('bp-countdown');
-            if (countEl) countEl.classList.remove('hidden');
-
-            let remaining = seconds;
-            _bpCountdownInterval = setInterval(() => {
-                remaining--;
-                const m = String(Math.floor(remaining / 60)).padStart(2, '0');
-                const s = String(remaining % 60).padStart(2, '0');
-                if (timerEl) timerEl.textContent = `${m}:${s}`;
-
-                if (remaining <= 0) {
-                    _stopBpCountdown();
-                    _stopBpPolling();
-                    document.getElementById('bp-error-msg').textContent = 'La orden expiró (15 min). Genera una nueva.';
-                    _setBpView('error');
-                }
-            }, 1000);
-        }
-
+        // _stopBpPolling y _stopBpCountdown se mantienen como no-ops seguros
+        // para que closeBinanceModal() no falle si los llama.
+        function _stopBpPolling()   { /* API en pausa — nada que detener */ }
         function _stopBpCountdown() {
-            if (_bpCountdownInterval) { clearInterval(_bpCountdownInterval); _bpCountdownInterval = null; }
             const countEl = document.getElementById('bp-countdown');
             if (countEl) countEl.classList.add('hidden');
         }
+
 
         /**
          * _confirmPaymentUI()

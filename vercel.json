@@ -1,11 +1,5 @@
 {
   "cleanUrls": true,
-  "functions": {
-    "api/binance.js": {
-      "memory": 256,
-      "maxDuration": 30
-    }
-  },
   "rewrites": [
     { "source": "/app",   "destination": "/app.html"   },
     { "source": "/admin", "destination": "/admin.html" }
