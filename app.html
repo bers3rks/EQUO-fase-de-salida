@@ -821,32 +821,37 @@
 
         auth.onAuthStateChanged((user) => { currentUser = user; window.currentUser = user; authReady = true; resolveAppStart(); });
 
-        /* ── DEEP LINK: ?action=register ──────────────────────────────────
-         * Detecta si la landing envió al usuario aquí para registrarse.
-         * Si ?action=register → abre auth-screen en el tab de Crear Cuenta.
-         * Si ?plan=entrepreneur → guarda el intent para usarlo post-registro.
+        /* ── DEEP LINK: ?action=register | ?action=login ──────────────────
+         * Detecta si la landing envió al usuario aquí con una intención.
+         * ?action=register → abre el tab de Crear Cuenta (con stagger GSAP).
+         * ?action=login    → abre el tab de Iniciar Sesión (foco en email).
+         * ?plan=           → guarda el intent de plan para post-registro.
          * ─────────────────────────────────────────────────────────────── */
         (function handleDeepLink() {
             const params = new URLSearchParams(window.location.search);
-            const action = params.get('action');
-            const plan   = params.get('plan');
+            const action = params.get('action'); // 'register' | 'login' | null
+            const plan   = params.get('plan');   // 'entrepreneur' | null
 
-            if (action === 'register') {
-                // Guardar intent de plan si viene con ?plan=
-                if (plan) sessionStorage.setItem('equo-plan-intent', plan);
+            if (!action) return; // Sin parámetro: comportamiento normal
 
-                // Esperar a que el DOM esté listo
-                document.addEventListener('DOMContentLoaded', () => {
-                    // Abrir directamente el tab de registro
-                    // (onAuthStateChanged resuelve si hay sesión activa → va al dashboard)
-                    setTimeout(() => {
+            // Guardar intent de plan si viene con ?plan=
+            if (plan) sessionStorage.setItem('equo-plan-intent', plan);
+
+            // Limpiar la URL para evitar re-trigger en refresh
+            history.replaceState({}, '', window.location.pathname);
+
+            // Esperar a que el DOM esté listo para usar switchAuthTab
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    if (action === 'register') {
+                        // Abrir tab de Crear Cuenta con animación stagger
                         if (typeof switchAuthTab === 'function') switchAuthTab('register');
-                    }, 350);
-
-                    // Limpiar el parámetro de URL para no re-triggear en refresh
-                    history.replaceState({}, '', window.location.pathname);
-                }, { once: true });
-            }
+                    } else if (action === 'login') {
+                        // Abrir tab de Iniciar Sesión con foco en email
+                        if (typeof switchAuthTab === 'function') switchAuthTab('login');
+                    }
+                }, 350);
+            }, { once: true });
         })();
 
         async function resolveAppStart() {
