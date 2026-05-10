@@ -76,6 +76,22 @@
         #settings-modal, #settings-modal * { cursor: auto !important; }
         #settings-modal button, #settings-modal input, #settings-modal textarea { cursor: pointer !important; }
 
+        /* Pantalla de suscripción expirada */
+        #expired-screen {
+            position: fixed; inset: 0; z-index: 99998;
+            display: none; align-items: center; justify-content: center;
+            background: radial-gradient(ellipse at 50% 60%, rgba(239,68,68,.12) 0%, #0a0f1e 70%);
+            backdrop-filter: blur(4px);
+        }
+        #expired-screen.show { display: flex; }
+        .expired-card {
+            background: rgba(15,23,42,.97); backdrop-filter: blur(32px);
+            border: 1px solid rgba(239,68,68,.2); border-radius: 1.5rem;
+            padding: 2.5rem 2rem; max-width: 420px; width: 100%;
+            box-shadow: 0 0 60px rgba(239,68,68,.1), 0 32px 80px rgba(0,0,0,.8);
+            animation: settingsIn .4s cubic-bezier(.175,.885,.32,1.275) forwards;
+        }
+
         /* Glassmorphism UI */
         .glass-card { background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 1.25rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); transition: all 0.4s ease; }
         .glass-login { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
@@ -180,6 +196,31 @@
     <div id="premium-cursor"></div>
     <canvas id="particles"></canvas>
     <div id="toast-container"></div>
+
+    <!-- Pantalla de Suscripción Expirada -->
+    <div id="expired-screen">
+      <div class="expired-card text-center">
+        <div class="w-16 h-16 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center mx-auto mb-5">
+          <i class="fa-solid fa-lock text-red-400 text-2xl"></i>
+        </div>
+        <h1 class="text-xl font-extrabold text-white mb-2">Acceso Expirado</h1>
+        <p class="text-sm text-gray-400 mb-1">Tu período de prueba de <span class="text-amber-400 font-bold">3 días</span> ha finalizado.</p>
+        <p class="text-xs text-gray-500 mb-6">Elige un plan para continuar usando EQUO y proteger tus datos financieros.</p>
+        <!-- Planes -->
+        <div class="flex flex-col gap-3 mb-6">
+          <button id="btn-pay-personal" onclick="window.open('https://equo.app/pay/personal','_blank')" class="w-full py-3 rounded-xl font-bold text-white text-sm border border-sky-500/40 hover:border-sky-500 transition" style="background:linear-gradient(135deg,rgba(56,189,248,.15),rgba(14,165,233,.1))">
+            <i class="fa-solid fa-user mr-2 text-sky-400"></i>Plan Personal &mdash; <span class="text-sky-300">$9.99/mes</span>
+          </button>
+          <button id="btn-pay-entrepreneur" onclick="window.open('https://equo.app/pay/entrepreneur','_blank')" class="w-full py-3 rounded-xl font-bold text-white text-sm border border-violet-500/40 hover:border-violet-500 transition" style="background:linear-gradient(135deg,rgba(129,140,248,.15),rgba(99,102,241,.1))">
+            <i class="fa-solid fa-briefcase mr-2 text-violet-400"></i>Plan Entrepreneur &mdash; <span class="text-violet-300">$19.99/mes</span>
+          </button>
+        </div>
+        <p class="text-[10px] text-gray-600 mb-4">Si ya pagaste, espera la activación o contacta a soporte.</p>
+        <button onclick="auth.signOut().then(()=>location.reload())" class="text-[11px] text-gray-500 hover:text-red-400 transition underline">
+          <i class="fa-solid fa-right-from-bracket mr-1"></i>Cerrar sesión
+        </button>
+      </div>
+    </div>
 
     <!-- ============================================================
          APP SHELL (visible tras login) — Header siempre presente
@@ -649,6 +690,9 @@
             if (currentUser) {
                 $('auth-screen').classList.add('hidden');
                 await loadUserData(currentUser.uid, currentSystemYear);
+                // Verificar acceso ANTES de mostrar el dashboard
+                const hasAccess = await checkAccess(currentUser.uid);
+                if (!hasAccess) return; // checkAccess() ya mostró la pantalla de bloqueo
                 $('app-shell').classList.remove('hidden');
                 $('app-shell').style.display = 'flex';
                 initApp();
@@ -657,6 +701,51 @@
                 $('auth-screen').classList.remove('hidden');
                 gsap.fromTo('#auth-screen', {opacity:0}, {opacity:1, duration:1});
                 appData = buildDefault();
+            }
+        }
+
+        /**
+         * checkAccess(uid)
+         * Verifica si el usuario tiene un plan activo o su prueba vigente.
+         * Retorna true si puede acceder, false si fue bloqueado.
+         * Roles especiales ('admin') nunca son bloqueados.
+         */
+        async function checkAccess(uid) {
+            try {
+                const snap = await db.collection('users').doc(uid).get();
+                const data = snap.exists ? snap.data() : {};
+                const role   = data.role        || 'user';
+                const plan   = data.plan        || data.planStatus || 'trial';
+                const trialEnd = data.trialEndDate || data.trialEnd || null;
+
+                // Admins y planes pagados: acceso libre
+                if (role === 'admin') return true;
+                if (plan === 'personal' || plan === 'entrepreneur') return true;
+
+                // Evaluar trial
+                if (plan === 'trial' || plan === 'free') {
+                    if (trialEnd) {
+                        const now = new Date();
+                        const end = new Date(trialEnd);
+                        if (now <= end) return true; // Trial vigente
+                    } else {
+                        // Sin trialEndDate: usuario antiguo, conceder acceso y fijar fecha
+                        const newEnd = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+                        await db.collection('users').doc(uid).set(
+                            { trialEndDate: newEnd, plan: 'trial' }, { merge: true }
+                        );
+                        return true;
+                    }
+                }
+
+                // Acceso denegado: mostrar pantalla de bloqueo
+                const expiredScreen = document.getElementById('expired-screen');
+                if (expiredScreen) expiredScreen.classList.add('show');
+                return false;
+
+            } catch (e) {
+                console.warn('[EQUO] checkAccess error:', e.message);
+                return true; // En caso de error de red, no bloquear
             }
         }
         async function loadUserData(uid, yr) {
@@ -691,7 +780,22 @@
         };
 
         async function handleAuth() { let em = $('auth-email').value, p = $('auth-password').value; try { await auth.signInWithEmailAndPassword(em, p); } catch(err) { $('auth-error').innerText = "Credenciales incorrectas."; $('auth-error').classList.remove('hidden'); } }
-        async function handleRegister() { let e = $('auth-email').value, p = $('auth-password').value; try { await auth.createUserWithEmailAndPassword(e, p); } catch(err) { $('auth-error').innerText = err.message; $('auth-error').classList.remove('hidden'); } }
+        async function handleRegister() {
+            const e = $('auth-email').value, p = $('auth-password').value;
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(e, p);
+                // Guardar trial de 3 días desde el momento del registro
+                const trialEndDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+                await db.collection('users').doc(cred.user.uid).set({
+                    email: e,
+                    plan: 'trial',
+                    planStatus: 'trial',
+                    trialEndDate,
+                    registeredAt: new Date().toISOString(),
+                    lastSeen: new Date().toISOString()
+                }, { merge: true });
+            } catch(err) { $('auth-error').innerText = err.message; $('auth-error').classList.remove('hidden'); }
+        }
         function handleLogout() { auth.signOut(); location.reload(); }
 
         function showToast(type, title, msg) {

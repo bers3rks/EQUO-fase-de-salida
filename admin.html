@@ -86,7 +86,7 @@ tr:hover td { background:rgba(56,189,248,.02); }
 
   <!-- MÉTRICAS -->
   <div class="px-6 max-w-[1300px] mx-auto w-full mt-2">
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 fade-up">
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 fade-up">
       <div class="glass-card stat-card">
         <p class="text-[9px] font-bold uppercase tracking-widest text-gray-500"><i class="fa-solid fa-users mr-1 text-sky-400"></i>Total Usuarios</p>
         <p id="metric-total" class="text-2xl font-extrabold text-white">—</p>
@@ -103,6 +103,10 @@ tr:hover td { background:rgba(56,189,248,.02); }
         <p class="text-[9px] font-bold uppercase tracking-widest text-gray-500"><i class="fa-solid fa-briefcase mr-1 text-violet-400"></i>Entrepreneur</p>
         <p id="metric-ent" class="text-2xl font-extrabold text-violet-400">—</p>
       </div>
+      <div class="glass-card stat-card">
+        <p class="text-[9px] font-bold uppercase tracking-widest text-gray-500"><i class="fa-solid fa-credit-card mr-1 text-emerald-400"></i>Planes Pagados</p>
+        <p id="metric-paid" class="text-2xl font-extrabold text-emerald-300">—</p>
+      </div>
     </div>
   </div>
 
@@ -117,14 +121,15 @@ tr:hover td { background:rgba(56,189,248,.02); }
         <table>
           <thead>
             <tr>
-              <th>UID / Email</th>
+              <th>Email / UID</th>
               <th>Plan</th>
-              <th>Último acceso</th>
+              <th>Trial / Expira</th>
+              <th>Activo</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody id="users-tbody">
-            <tr><td colspan="4" class="text-center py-12"><div class="spinner mx-auto"></div></td></tr>
+            <tr><td colspan="5" class="text-center py-12"><div class="spinner mx-auto"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -224,10 +229,10 @@ async function loadUsers(){
     // Agrupar: solo docs principales (sin _year_)
     const docs=snap.docs.filter(d=>!d.id.includes('_year_'));
 
-    let totalTrial=0, totalEnt=0, totalActive=0;
+    let totalTrial=0, totalEnt=0, totalActive=0, totalPaid=0;
 
     if(docs.length===0){
-      tbody.innerHTML='<tr><td colspan="4" class="text-center py-10 text-gray-500 text-xs">No hay usuarios registrados.</td></tr>';
+      tbody.innerHTML='<tr><td colspan="5" class="text-center py-10 text-gray-500 text-xs">No hay usuarios registrados.</td></tr>';
       return;
     }
 
@@ -241,14 +246,31 @@ async function loadUsers(){
       const plan     = d.plan  || 'free';
       const role     = d.role  || 'user';
       const lastSeen = d.lastSeen || (d.year ? d.year+'' : null);
+      const trialEnd = d.trialEndDate || d.trialEnd || null;
 
-      // 2. Contadores de métricas
+      // 2. Calcular días restantes de trial
+      let trialCell = '—';
+      if (plan === 'personal' || plan === 'entrepreneur') {
+        trialCell = '<span class="badge badge-personal"><i class="fa-solid fa-infinity"></i> Activo</span>';
+      } else if (trialEnd) {
+        const daysLeft = Math.ceil((new Date(trialEnd) - new Date()) / 86400000);
+        if (daysLeft > 1) {
+          trialCell = `<span class="badge badge-trial"><i class="fa-solid fa-hourglass-half"></i> ${daysLeft}d restantes</span>`;
+        } else if (daysLeft === 1) {
+          trialCell = `<span class="badge badge-trial" style="border-color:rgba(239,68,68,.5);color:#f87171"><i class="fa-solid fa-triangle-exclamation"></i> Último día</span>`;
+        } else {
+          trialCell = `<span class="badge badge-free" style="border-color:rgba(239,68,68,.4);color:#f87171"><i class="fa-solid fa-lock"></i> Expirado</span>`;
+        }
+      }
+
+      // 3. Contadores
       const isToday = lastSeen && lastSeen.startsWith(today);
       if(isToday) totalActive++;
-      if(plan==='trial') totalTrial++;
+      if(plan==='trial' || plan==='free') totalTrial++;
       if(plan==='entrepreneur') totalEnt++;
+      if(plan==='personal' || plan==='entrepreneur') totalPaid++;
 
-      // 3. Badges (deben declararse ANTES de displayEmail que los consume)
+      // 4. Badges
       const roleBadge  = role==='admin'
         ? '<span class="badge badge-admin ml-1"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
         : '';
@@ -259,23 +281,26 @@ async function loadUsers(){
         free:         '<span class="badge badge-free">Free</span>',
       }[plan] || `<span class="badge badge-free">${plan}</span>`;
 
-      // 4. displayEmail usa roleBadge — ahora ya está definido
+      // 5. displayEmail usa roleBadge — declarado antes
       const displayEmail = email
         ? `<p class="font-bold text-white text-[11px]">${email}${roleBadge}</p><p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid.slice(0,24)}…</p>`
-        : `<p class="font-bold text-amber-400/80 text-[10px] italic">Sin email registrado${roleBadge}</p><p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid}</p>`;
+        : `<p class="font-bold text-amber-400/80 text-[10px] italic">Sin email${roleBadge}</p><p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid}</p>`;
+
+      const lastSeenFmt = lastSeen ? lastSeen.slice(0,16).replace('T',' ') : '—';
 
       const tr=document.createElement('tr');
       tr.innerHTML=`
         <td>${displayEmail}</td>
         <td>${planBadge}</td>
-        <td class="text-gray-500 text-[10px]">${lastSeen ? lastSeen.slice(0,16).replace('T',' ') : '—'}</td>
+        <td>${trialCell}</td>
+        <td class="text-gray-500 text-[10px]">${lastSeenFmt}</td>
         <td>
           <div class="flex flex-wrap gap-1.5">
             <button onclick="setPlan('${uid}','personal')"    class="adm-btn btn-personal">Personal</button>
             <button onclick="setPlan('${uid}','entrepreneur')" class="adm-btn btn-entrepreneur">Entrepreneur</button>
             <button onclick="activateTrial('${uid}')"         class="adm-btn btn-trial"><i class="fa-solid fa-hourglass-half"></i> Prueba</button>
             <button onclick="cancelPlan('${uid}')"            class="adm-btn btn-reset"><i class="fa-solid fa-ban"></i> Cancelar</button>
-            <button onclick="sendReset('${uid}','${email||''}')"  class="adm-btn btn-mail${!email?' opacity-40':''}"><i class="fa-solid fa-key"></i> Reset</button>
+            <button onclick="sendReset('${uid}','${email||''}')" class="adm-btn btn-mail${!email?' opacity-40':''}"><i class="fa-solid fa-key"></i> Reset</button>
           </div>
         </td>`;
       tbody.appendChild(tr);
@@ -286,6 +311,7 @@ async function loadUsers(){
     document.getElementById('metric-active').textContent=totalActive;
     document.getElementById('metric-trial').textContent=totalTrial;
     document.getElementById('metric-ent').textContent=totalEnt;
+    const mp=document.getElementById('metric-paid'); if(mp) mp.textContent=totalPaid;
     status.innerHTML=`<i class="fa-solid fa-circle-check text-emerald-400"></i> ${docs.length} usuarios cargados`;
 
   } catch(e){
