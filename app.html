@@ -1849,24 +1849,80 @@
         async function loadUserData(uid, yr) {
             try {
                 const docId = yearDocId(uid, yr);
-                const doc = await db.collection("users").doc(docId).get();
+                const doc   = await db.collection('users').doc(docId).get();
+
                 if (doc.exists) {
-                    appData = doc.data();
-                    if (!appData.globalDebts) { appData.globalDebts=[]; appData.globalLoans=[]; appData.months.forEach(m=>{m.debtPayments={}; m.loanPayments={};}); }
-                    appData.year = yr;
+                    const raw = doc.data();
+
+                    // ── Validación de estructura ──────────────────────────────────
+                    // El documento puede existir (creado al registrarse con datos de
+                    // perfil: email, plan, isPaid) pero sin la estructura financiera
+                    // de meses. En ese caso buildDefault() la genera y preservamos
+                    // los campos de perfil ya existentes con merge.
+                    if (!Array.isArray(raw.months) || raw.months.length === 0) {
+                        console.warn('[EQUO] Doc existe pero sin estructura financiera. Inicializando...');
+                        appData = buildDefault(yr);
+
+                        // Preservar campos de perfil que ya existen en Firestore
+                        // (email, plan, planStatus, isPaid, trialEndDate, name, etc.)
+                        const profileKeys = [
+                            'email','name','phone','role','plan','planStatus',
+                            'isPaid','trialEndDate','subscriptionEndDate',
+                            'subscriptionDate','selectedPlan','promoCode','profilePhone'
+                        ];
+                        profileKeys.forEach(k => { if (raw[k] !== undefined) appData[k] = raw[k]; });
+
+                        appData.year = yr;
+
+                        // Persistir estructura en Firestore para futuras sesiones
+                        if (yr === currentSystemYear) {
+                            db.collection('users').doc(docId)
+                              .set(appData, { merge: true })
+                              .catch(e => console.warn('[EQUO] No se pudo persistir estructura base:', e.message));
+                        }
+                    } else {
+                        // Documento completo — carga normal
+                        appData = raw;
+                        appData.year = yr;
+
+                        // ── Seguridad en el loop ──────────────────────────────────
+                        // Inicializar debtPayments/loanPayments solo si months existe
+                        // y realmente es un array (evita TypeError en cuentas nuevas)
+                        if (!appData.globalDebts) {
+                            appData.globalDebts = [];
+                            appData.globalLoans  = [];
+                            if (Array.isArray(appData.months)) {
+                                appData.months.forEach(m => {
+                                    if (!m.debtPayments) m.debtPayments = {};
+                                    if (!m.loanPayments) m.loanPayments = {};
+                                });
+                            }
+                        }
+                    }
+
                 } else {
+                    // Documento nuevo — buildDefault completo
                     appData = buildDefault(yr);
-                    if (yr === currentSystemYear) await db.collection("users").doc(docId).set(appData);
+                    if (yr === currentSystemYear) {
+                        await db.collection('users').doc(docId).set(appData);
+                    }
                 }
-                // Persistir email y lastSeen en cada login (merge: nunca borra datos financieros)
-                // Esto asegura que el Panel Admin siempre vea el correo real del usuario.
+
+                // Persistir email y lastSeen en cada login
+                // (merge: nunca borra datos financieros ni de perfil)
                 const emailMeta = {
-                    email: currentUser.email || '',
+                    email:    currentUser.email || '',
                     lastSeen: new Date().toISOString()
                 };
-                db.collection("users").doc(docId).set(emailMeta, { merge: true })
+                db.collection('users').doc(docId)
+                  .set(emailMeta, { merge: true })
                   .catch(e => console.warn('[EQUO] No se pudo actualizar email/lastSeen:', e.message));
-            } catch (e) { showToast('error', 'Error', 'Data load failed.'); appData = buildDefault(yr); }
+
+            } catch (e) {
+                console.error('[EQUO] loadUserData error:', e);
+                showToast('error', 'Error de carga', 'No se pudieron cargar tus datos. Intenta recargar la página.');
+                appData = buildDefault(yr);
+            }
         }
         const save = () => {
             if (currentUser) {
