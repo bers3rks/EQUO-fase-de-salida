@@ -924,36 +924,12 @@ document.getElementById('btn-buy-personal').addEventListener('click', () => {
 });
 
 /**
- * Plan Emprendedor — Pago con Binance Pay
- * 1. Verifica si el usuario ya tiene sesión activa.
- * 2a. Con sesión → va directo al flujo de pago.
- * 2b. Sin sesión  → lleva al registro con parámetros de plan.
+ * Plan Emprendedor — Flujo de registro con plan intent
+ * Siempre va al registro con ?plan=entrepreneur.
+ * Si el usuario ya tiene sesión, app.html lo detecta y lo lleva al muro de pago.
  */
 document.getElementById('btn-buy-pro').addEventListener('click', () => {
-  const checkAndRedirect = (user) => {
-    if (user) {
-      // Usuario autenticado: ir al pago directamente
-      window.location.href = 'https://equo.app/pay/entrepreneur';
-    } else {
-      // Sin sesión: registrar primero con plan intent
-      window.location.href = 'app.html?action=register&plan=entrepreneur';
-    }
-  };
-
-  // Intentar leer el estado de auth a través de window.auth (firebase-init.js)
-  if (window.auth) {
-    const user = window.auth.currentUser;
-    if (user !== undefined) {
-      // Estado sincrónico disponible
-      checkAndRedirect(user);
-    } else {
-      // Esperar callback async (primera carga)
-      window.auth.onAuthStateChanged((u) => { checkAndRedirect(u); }, { once: true });
-    }
-  } else {
-    // Firebase no cargado: registrar primero
-    window.location.href = 'app.html?action=register&plan=entrepreneur';
-  }
+  window.location.href = 'app.html?action=register&plan=entrepreneur';
 });
 
 document.getElementById('btn-investor-notify').addEventListener('click', () => {

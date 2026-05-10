@@ -92,6 +92,29 @@
             animation: settingsIn .4s cubic-bezier(.175,.885,.32,1.275) forwards;
         }
 
+        /* Muro de Pago — Plan Emprendedor */
+        #payment-wall {
+            position: fixed; inset: 0; z-index: 99997;
+            display: none; align-items: center; justify-content: center;
+            background: radial-gradient(ellipse at 30% 30%, rgba(129,140,248,.14) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 80%, rgba(56,189,248,.1) 0%, transparent 55%),
+                        #080e1a;
+            backdrop-filter: blur(6px);
+        }
+        #payment-wall.show { display: flex; }
+        .payment-wall-card {
+            background: rgba(10,18,38,.96); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(129,140,248,.2); border-radius: 1.5rem;
+            padding: 2.5rem 2rem; max-width: 440px; width: 100%; position: relative; overflow: hidden;
+            box-shadow: 0 0 80px rgba(129,140,248,.12), 0 32px 80px rgba(0,0,0,.85);
+            animation: settingsIn .5s cubic-bezier(.175,.885,.32,1.275) forwards;
+        }
+        .payment-wall-card::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(129,140,248,.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
         /* Glassmorphism UI */
         .glass-card { background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 1.25rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); transition: all 0.4s ease; }
         .glass-login { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
@@ -269,6 +292,93 @@
         </button>
       </div>
     </div>
+
+    <!-- ================================================================
+         MURO DE PAGO — Plan Emprendedor (pending_payment)
+         Se muestra cuando el usuario se registró con intent entrepreneur
+         pero aún no ha completado el pago.
+    ================================================================ -->
+    <div id="payment-wall">
+        <div class="payment-wall-card">
+
+            <!-- Glow decorativo -->
+            <div style="position:absolute;top:-80px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(129,140,248,.15),transparent 70%);border-radius:50%;pointer-events:none"></div>
+
+            <!-- Header -->
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4" style="background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.3)">
+                    <i class="fa-solid fa-briefcase text-violet-400 text-2xl"></i>
+                </div>
+                <p class="text-[10px] font-bold uppercase tracking-[.25em] text-violet-400/70 mb-1">EQUO — Plan Emprendedor</p>
+                <h1 class="text-2xl font-extrabold text-white leading-tight">
+                    Casi listo, <span id="pw-username" class="text-violet-300">usuario</span>.
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">Completa tu suscripción para acceder al dashboard.</p>
+            </div>
+
+            <!-- Precio y features -->
+            <div class="rounded-xl p-4 mb-5" style="background:rgba(129,140,248,.06);border:1px solid rgba(129,140,248,.15)">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="font-extrabold text-white text-3xl leading-none">$19<span class="text-gray-400 text-base font-semibold">.99</span></p>
+                        <p class="text-[10px] text-gray-600 mt-0.5">por mes · cancela cuando quieras</p>
+                    </div>
+                    <span class="text-[10px] font-bold px-2.5 py-1 rounded-full" style="background:linear-gradient(135deg,rgba(56,189,248,.2),rgba(129,140,248,.2));border:1px solid rgba(129,140,248,.35);color:#818cf8">⭐ Emprendedor</span>
+                </div>
+                <div class="space-y-1.5">
+                    <div class="flex items-center gap-2 text-xs text-gray-400">
+                        <i class="fa-solid fa-check text-emerald-400 text-[10px] w-3"></i>
+                        Fase 2 completa — Cerebro Financiero + Inventario
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-gray-400">
+                        <i class="fa-solid fa-check text-emerald-400 text-[10px] w-3"></i>
+                        Sistema de cobranzas con mora automática
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-gray-400">
+                        <i class="fa-solid fa-check text-emerald-400 text-[10px] w-3"></i>
+                        Métricas 360°: ROI, utilidad, rotación de inventario
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-gray-400">
+                        <i class="fa-solid fa-check text-emerald-400 text-[10px] w-3"></i>
+                        Soporte multidivisa USD / EUR / USDT
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón de pago real -->
+            <button onclick="window.open('https://equo.app/pay/entrepreneur','_blank')"
+                    class="w-full py-3.5 rounded-xl font-bold text-sm mb-3 flex items-center justify-center gap-2 transition-all"
+                    style="background:linear-gradient(135deg,#38bdf8,#818cf8);color:#0f172a;box-shadow:0 0 30px rgba(129,140,248,.3);"
+                    onmouseover="this.style.boxShadow='0 0 50px rgba(129,140,248,.5)'"
+                    onmouseout="this.style.boxShadow='0 0 30px rgba(129,140,248,.3)'">
+                <i class="fa-solid fa-bolt"></i>
+                Pagar con Binance Pay — $19.99
+            </button>
+
+            <!-- Separador DEV -->
+            <div class="flex items-center gap-2 my-3">
+                <div class="flex-1 h-px" style="background:rgba(255,255,255,.05)"></div>
+                <span class="text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:#fbbf24">⚠ DEV ONLY</span>
+                <div class="flex-1 h-px" style="background:rgba(255,255,255,.05)"></div>
+            </div>
+
+            <!-- Botón simulación (solo testing) -->
+            <button id="btn-simulate-pay" onclick="simulatePayment()"
+                    class="w-full py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+                    style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);color:#fbbf24;"
+                    onmouseover="this.style.background='rgba(245,158,11,.16)'"
+                    onmouseout="this.style.background='rgba(245,158,11,.08)'">
+                <i class="fa-solid fa-flask"></i>
+                Simular Pago Exitoso
+            </button>
+
+            <!-- Cerrar sesión -->
+            <button onclick="window.auth.signOut().then(()=>location.reload())" class="text-[11px] text-gray-700 hover:text-red-400 transition underline block w-full text-center mt-4">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i>Cerrar sesión
+            </button>
+
+        </div>
+    </div><!-- /payment-wall -->
 
     <!-- ============================================================
          APP SHELL (visible tras login) — Header siempre presente
@@ -887,18 +997,25 @@
 
         /**
          * checkAccess(uid)
-         * Verifica si el usuario tiene un plan activo o su prueba vigente.
-         * Retorna true si puede acceder, false si fue bloqueado.
-         * Roles especiales ('admin') nunca son bloqueados.
+         * Verifica acceso según el estado del plan del usuario.
+         * Retorna true si puede entrar al dashboard, false si fue bloqueado.
+         * Flujo:
+         *   admin           → siempre pasa
+         *   isPaid=true     → pasa (plan activo pagado)
+         *   pending_payment → muestra muro de PAGO EMPRENDEDOR
+         *   trial vigente   → pasa
+         *   trial expirado  → muestra muro de SUSCRIPCIÓN EXPIRADA
          */
         async function checkAccess(uid) {
             try {
                 const snap = await db.collection('users').doc(uid).get();
                 const data = snap.exists ? snap.data() : {};
-                const role     = data.role     || 'user';
-                const plan     = data.plan     || data.planStatus || 'trial';
-                const isPaid   = data.isPaid   === true;
-                const trialEnd = data.trialEndDate || data.trialEnd || null;
+                const role        = data.role        || 'user';
+                const plan        = data.plan        || data.planStatus || 'trial';
+                const planStatus  = data.planStatus  || plan;
+                const isPaid      = data.isPaid      === true;
+                const trialEnd    = data.trialEndDate || data.trialEnd || null;
+                const userName    = data.name        || data.email?.split('@')[0] || 'usuario';
 
                 // 1. Admins: siempre acceso total
                 if (role === 'admin') return true;
@@ -906,7 +1023,13 @@
                 // 2. Planes pagados activos (isPaid es la fuente de verdad)
                 if (isPaid && (plan === 'personal' || plan === 'entrepreneur')) return true;
 
-                // 3. Trial sin isPaid: evaluar fecha
+                // 3. Pendiente de pago Emprendedor — mostrar muro de pago
+                if (planStatus === 'pending_payment') {
+                    showPaymentWall(userName);
+                    return false;
+                }
+
+                // 4. Trial: evaluar fecha
                 if (plan === 'trial' || plan === 'free') {
                     if (trialEnd) {
                         const now = new Date();
@@ -923,7 +1046,7 @@
                     }
                 }
 
-                // 4. Acceso denegado: mostrar wall de suscripción
+                // 5. Acceso denegado: trial expirado — mostrar muro de suscripción
                 const expiredScreen = document.getElementById('expired-screen');
                 if (expiredScreen) expiredScreen.classList.add('show');
                 return false;
@@ -931,6 +1054,52 @@
             } catch (e) {
                 console.warn('[EQUO] checkAccess error:', e.message);
                 return true; // Fallo silencioso: no bloquear por error de red
+            }
+        }
+
+        /**
+         * showPaymentWall(userName)
+         * Muestra el muro de pago premium para el Plan Emprendedor.
+         */
+        function showPaymentWall(userName) {
+            const wall = document.getElementById('payment-wall');
+            if (!wall) return;
+            // Inyectar nombre dinámico
+            const nameEl = wall.querySelector('#pw-username');
+            if (nameEl) nameEl.textContent = userName;
+            wall.classList.add('show');
+        }
+
+        /**
+         * simulatePayment()
+         * SOLO PARA PRUEBAS DE DESARROLLO.
+         * Activa isPaid:true y planStatus:'entrepreneur' en Firestore
+         * para verificar que el dashboard se desbloquea correctamente.
+         */
+        async function simulatePayment() {
+            if (!currentUser) return;
+            const btn = document.getElementById('btn-simulate-pay');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Activando...'; }
+            try {
+                await db.collection('users').doc(currentUser.uid).set({
+                    isPaid:      true,
+                    plan:        'entrepreneur',
+                    planStatus:  'entrepreneur',
+                    paidAt:      new Date().toISOString()
+                }, { merge: true });
+                // Ocultar muro y recargar el dashboard
+                const wall = document.getElementById('payment-wall');
+                if (wall) wall.classList.remove('show');
+                showToast('success', '¡Pago Simulado!', 'Plan Entrepreneur activado. Bienvenido al dashboard.');
+                setTimeout(() => {
+                    const shell = $('app-shell');
+                    shell.classList.remove('hidden');
+                    shell.style.display = 'flex';
+                    initApp();
+                }, 1500);
+            } catch(e) {
+                showToast('error', 'Error', 'No se pudo simular el pago: ' + e.message);
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-flask mr-2"></i>Simular Pago Exitoso'; }
             }
         }
         async function loadUserData(uid, yr) {
@@ -989,7 +1158,6 @@
             const errEl = $('auth-error');
             errEl.classList.add('hidden');
 
-            // Validaciones básicas
             if (!email)          { errEl.innerText = 'El correo es obligatorio.'; errEl.classList.remove('hidden'); return; }
             if (pass.length < 6) { errEl.innerText = 'La contraseña debe tener al menos 6 caracteres.'; errEl.classList.remove('hidden'); return; }
 
@@ -997,40 +1165,41 @@
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Creando cuenta...'; }
 
             try {
-                // 1. Crear cuenta en Firebase Auth
                 const cred = await auth.createUserWithEmailAndPassword(email, pass);
-
-                // 2. Actualizar displayName en Firebase Auth
                 if (name) await cred.user.updateProfile({ displayName: name });
 
-                // 3. Calcular trial: exactamente 3 días desde ahora
+                // Detectar intent de plan desde sessionStorage (guardado por deep-link handler)
+                const planIntent = sessionStorage.getItem('equo-plan-intent') || '';
+                const isEntrepreneur = planIntent === 'entrepreneur';
+
                 const trialEndDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
 
-                // 4. Construir perfil completo de Firestore
+                // Perfil base para TODOS los usuarios
                 const profile = {
                     email,
-                    name:         name   || '',
-                    profilePhone: phone  || '',
-                    plan:         'trial',
-                    planStatus:   'trial',
+                    name:         name  || '',
+                    profilePhone: phone || '',
                     isPaid:       false,
                     trialEndDate,
                     registeredAt: new Date().toISOString(),
                     lastSeen:     new Date().toISOString()
                 };
 
-                // 5. Código promocional (solo si fue ingresado)
+                if (isEntrepreneur) {
+                    // Plan Emprendedor: pendiente de pago, no usar trial
+                    profile.plan         = 'entrepreneur';
+                    profile.planStatus   = 'pending_payment';
+                    profile.selectedPlan = 'entrepreneur';
+                    sessionStorage.removeItem('equo-plan-intent');
+                } else {
+                    // Plan Personal: trial de 3 días
+                    profile.plan       = 'trial';
+                    profile.planStatus = 'trial';
+                }
+
                 if (promo) profile.promoCode = promo;
 
-                // 6. Guardar en Firestore (merge:true como siempre)
                 await db.collection('users').doc(cred.user.uid).set(profile, { merge: true });
-
-                // 7. Si llegó con ?plan=entrepreneur guardado en sessionStorage, mostrar toast de pago
-                const planIntent = sessionStorage.getItem('equo-plan-intent');
-                if (planIntent === 'entrepreneur') {
-                    sessionStorage.removeItem('equo-plan-intent');
-                    setTimeout(() => showToast('info', '¡Bienvenido!', 'Tu cuenta fue creada. Activa el Plan Entrepreneur para desbloquear todas las funciones.'), 2000);
-                }
 
             } catch(err) {
                 const msg = err.code === 'auth/email-already-in-use'
