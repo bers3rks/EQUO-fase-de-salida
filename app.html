@@ -148,6 +148,11 @@
             background: rgba(255,255,255,.02);
         }
         .bp-body   { padding: 1.5rem; }
+        @media (max-width: 480px) {
+            .bp-card { max-width: 100%; border-radius: 0; margin: 0; }
+            #binance-pay-modal { align-items: flex-end; }
+            .bp-body { padding: 1.25rem 1rem; }
+        }
         .bp-qr-wrap {
             background: #fff;
             border: none;
@@ -647,8 +652,7 @@
     </div><!-- /upgrade-modal -->
 
     <!-- ================================================================
-         MODAL BINANCE PAY — Pasarela de pago real (QR + polling)
-         Se abre desde el payment-wall o desde los botones de compra
+         MODAL BINANCE PAY — Pago manual con enlace dinámico por plan
     ================================================================ -->
     <div id="binance-pay-modal">
         <div class="bp-card">
@@ -656,7 +660,6 @@
             <!-- Header -->
             <div class="bp-header">
                 <div class="flex items-center gap-2.5">
-                    <!-- Logo Binance Pay -->
                     <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
                         <rect width="32" height="32" fill="#F0B90B"/>
                         <path d="M16 7l2.83 2.83L12.66 16l6.17 6.17L16 25l-9-9 9-9zm0 0" fill="#fff" opacity=".9"/>
@@ -667,103 +670,133 @@
                         <p class="text-[9px] text-gray-600 leading-none mt-0.5">Pago seguro · USDT</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <!-- Countdown -->
-                    <div id="bp-countdown" class="text-[10px] font-mono text-amber-400 hidden">
-                        <i class="fa-solid fa-clock mr-1"></i><span id="bp-timer">15:00</span>
-                    </div>
-                    <button onclick="closeBinanceModal()" class="text-gray-600 hover:text-white transition text-sm">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
+                <button onclick="closeBinanceModal()" class="text-gray-600 hover:text-white transition text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
 
             <!-- Body -->
             <div class="bp-body">
 
-                <!-- Estado: cargando -->
-                <div id="bp-loading" class="text-center py-12">
-                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4" style="background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.2)">
-                        <i class="fa-solid fa-spinner fa-spin text-amber-400 text-xl"></i>
-                    </div>
-                    <p class="text-sm text-gray-400">Generando orden de pago...</p>
-                    <p class="text-[10px] text-gray-700 mt-1">Conectando con Binance Pay</p>
-                </div>
+                <!-- ── Vista principal ── -->
+                <div id="bp-qr-view" class="hidden">
 
-                <!-- Estado: QR listo -->
-                <div id="bp-qr-view" class="hidden text-center">
-
-                    <!-- Plan info -->
-                    <div id="bp-plan-badge" class="inline-flex items-center gap-2 px-3 py-1.5 mb-5 text-[10px] font-bold uppercase tracking-wider"
-                         style="background:rgba(240,185,11,.08);border:1px solid rgba(240,185,11,.2);color:#f0b90b">
-                        <i class="fa-solid fa-bolt"></i>
-                        <span id="bp-plan-label">Plan Emprendedor — $19.99 USDT</span>
-                    </div>
-
-                    <!-- QR Code -->
-                    <div class="flex justify-center mb-4">
-                        <div class="bp-qr-wrap">
-                            <img id="bp-qr-img" src="" alt="QR de pago Binance Pay" width="180" height="180">
+                    <!-- Badge plan -->
+                    <div class="text-center mb-4">
+                        <div id="bp-plan-badge"
+                             class="inline-flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider"
+                             style="background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.25);color:#f0b90b">
+                            <svg width="11" height="11" viewBox="0 0 32 32" fill="none">
+                                <rect width="32" height="32" fill="#F0B90B" rx="3"/>
+                                <path d="M16 7l2.83 2.83L12.66 16l6.17 6.17L16 25l-9-9 9-9z" fill="#fff" opacity=".9"/>
+                            </svg>
+                            <span id="bp-plan-label">Plan Emprendedor — $19.99 USDT</span>
                         </div>
                     </div>
 
-                    <!-- Instrucciones -->
-                    <p class="text-xs text-gray-500 mb-1">Escanea con la app de <span class="text-amber-400 font-semibold">Binance</span></p>
-                    <p class="text-[10px] text-gray-700 mb-5">Finanzas → Binance Pay → Escanear QR</p>
+                    <!-- QR + Info: stack en móvil, fila en sm+ -->
+                    <div class="flex flex-col sm:flex-row gap-4 items-center justify-center mb-5">
 
-                    <!-- Botón de pago directo (mobile deeplink) -->
-                    <a id="bp-deeplink-btn" href="#" target="_blank"
-                       class="flex items-center justify-center gap-2 w-full py-3.5 font-bold text-sm mb-3 transition-all"
-                       style="background:#f0b90b;color:#0a0f1e;border:none;"
-                       onmouseover="this.style.background='#f5c842'"
-                       onmouseout="this.style.background='#f0b90b'">
+                        <!-- QR glassmorphism -->
+                        <div class="flex-shrink-0 text-center">
+                            <div style="background:#fff;border:1px solid rgba(255,255,255,.18);padding:10px;
+                                        box-shadow:0 0 28px rgba(240,185,11,.22),0 8px 28px rgba(0,0,0,.55);
+                                        position:relative;overflow:hidden;display:inline-block;">
+                                <img id="bp-qr-img" src="assets/qr-pago.jpg"
+                                     alt="QR Binance Pay — Bers3rks"
+                                     style="display:block;width:148px;height:148px;object-fit:cover;">
+                                <div style="position:absolute;left:0;right:0;height:2px;
+                                            background:linear-gradient(90deg,transparent,#f0b90b,transparent);
+                                            animation:qrScan 2s ease-in-out infinite;top:10px;"></div>
+                            </div>
+                            <p class="text-[9px] text-gray-600 mt-1.5">
+                                <i class="fa-solid fa-mobile-screen mr-1"></i>Escanea con la app Binance
+                            </p>
+                        </div>
+
+                        <!-- Info lateral -->
+                        <div class="flex-1 w-full sm:w-auto">
+
+                            <!-- Binance ID + copiar -->
+                            <p class="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-1.5">
+                                <i class="fa-solid fa-id-badge mr-1 text-amber-400"></i>Binance ID del destinatario
+                            </p>
+                            <div class="flex items-center gap-2 mb-4"
+                                 style="background:rgba(240,185,11,.06);border:1px solid rgba(240,185,11,.22);padding:9px 12px;">
+                                <span class="font-extrabold text-white text-sm tracking-wide flex-1 select-all">Bers3rks</span>
+                                <button id="bp-copy-btn" onclick="copyBinanceId()"
+                                        class="flex-shrink-0 text-[9px] font-bold px-2.5 py-1.5 transition-all"
+                                        style="background:rgba(240,185,11,.15);border:1px solid rgba(240,185,11,.4);color:#f0b90b;"
+                                        onmouseover="this.style.background='rgba(240,185,11,.3)'"
+                                        onmouseout="this.style.background='rgba(240,185,11,.15)'">
+                                    <i class="fa-regular fa-copy mr-1"></i>Copiar
+                                </button>
+                            </div>
+
+                            <!-- Pasos -->
+                            <ol class="space-y-2">
+                                <li class="flex items-start gap-2 text-[10px] text-gray-400">
+                                    <span class="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-extrabold mt-px"
+                                          style="background:rgba(240,185,11,.2);color:#f0b90b">1</span>
+                                    Abre <strong class="text-white mx-0.5">Binance App</strong> → Pay → Enviar
+                                </li>
+                                <li class="flex items-start gap-2 text-[10px] text-gray-400">
+                                    <span class="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-extrabold mt-px"
+                                          style="background:rgba(240,185,11,.2);color:#f0b90b">2</span>
+                                    Busca el ID <strong class="text-amber-400 mx-0.5">Bers3rks</strong> o escanea el QR
+                                </li>
+                                <li class="flex items-start gap-2 text-[10px] text-gray-400">
+                                    <span class="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-extrabold mt-px"
+                                          style="background:rgba(240,185,11,.2);color:#f0b90b">3</span>
+                                    Envía el monto exacto en <strong class="text-white mx-0.5">USDT</strong> y notifícanos
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- CTA principal: enlace dinámico por plan -->
+                    <a id="bp-pay-link" href="https://s.binance.com/4YBPpoKu" target="_blank" rel="noopener"
+                       class="flex items-center justify-center gap-2.5 w-full font-extrabold text-sm mb-3 transition-all"
+                       style="background:#f0b90b;color:#0a0f1e;padding:14px;text-decoration:none;display:flex;"
+                       onmouseover="this.style.background='#fcd535';this.style.boxShadow='0 0 28px rgba(240,185,11,.5)'"
+                       onmouseout="this.style.background='#f0b90b';this.style.boxShadow='none'">
                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
                             <rect width="32" height="32" fill="#0a0f1e"/>
-                            <path d="M16 7l2.83 2.83L12.66 16l6.17 6.17L16 25l-9-9 9-9zm0 0" fill="#f0b90b" opacity=".9"/>
+                            <path d="M16 7l2.83 2.83L12.66 16l6.17 6.17L16 25l-9-9 9-9z" fill="#f0b90b" opacity=".9"/>
+                            <path d="M7 16l2.83-2.83L12.66 16l-2.83 2.83L7 16zm14.17-2.83L24 16l-2.83 2.83L18.34 16l2.83-2.83z" fill="#f0b90b"/>
                         </svg>
-                        Pagar desde la App de Binance
+                        <span id="bp-pay-link-label">Abrir Binance Pay — $19.99 USDT</span>
                     </a>
 
-                    <!-- Estado del polling -->
-                    <div class="flex items-center justify-center gap-2 text-[10px] text-gray-700 mb-4">
-                        <div class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></div>
-                        <span id="bp-poll-status">Verificando pago automáticamente...</span>
-                    </div>
-
                     <!-- Separador -->
-                    <div class="flex items-center gap-2 my-1">
-                        <div class="flex-1 h-px" style="background:rgba(255,255,255,.05)"></div>
-                        <span class="text-[8px] font-bold uppercase tracking-widest text-gray-700">o si ya pagaste</span>
-                        <div class="flex-1 h-px" style="background:rgba(255,255,255,.05)"></div>
+                    <div class="flex items-center gap-2 my-3">
+                        <div class="flex-1 h-px" style="background:rgba(255,255,255,.06)"></div>
+                        <span class="text-[8px] font-bold uppercase tracking-widest text-gray-700">ya pagué</span>
+                        <div class="flex-1 h-px" style="background:rgba(255,255,255,.06)"></div>
                     </div>
 
-                    <!-- Botón notificación manual -->
+                    <!-- Botón de confirmación manual -->
                     <button id="bp-notify-btn" onclick="enviarNotificacionPago()"
-                            class="w-full mt-3 py-2.5 text-xs font-bold flex items-center justify-center gap-2 transition-all"
-                            style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);color:#34d399;"
-                            onmouseover="this.style.background='rgba(52,211,153,.16)'"
+                            class="w-full py-3 text-xs font-bold flex items-center justify-center gap-2 transition-all"
+                            style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);color:#34d399;"
+                            onmouseover="this.style.background='rgba(52,211,153,.2)'"
                             onmouseout="this.style.background='rgba(52,211,153,.08)'">
                         <i class="fa-solid fa-paper-plane"></i>
-                        Ya realicé el pago — Notificar al administrador
+                        Ya realicé el pago — Notificar a Bers3rks
                     </button>
 
-                    <!-- Mensaje de confirmación (oculto hasta enviar) -->
-                    <div id="bp-notify-sent" class="hidden mt-3 py-2.5 px-3 text-[11px] font-semibold text-emerald-400 text-center"
-                         style="background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.18)">
-                        <i class="fa-solid fa-circle-check mr-1.5"></i>
-                        Solicitud enviada. Tu cuenta será activada en breve.
+                    <!-- Mensaje de éxito tras notificar -->
+                    <div id="bp-notify-sent" class="hidden mt-3 py-3 px-3 text-center"
+                         style="background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.22)">
+                        <i class="fa-solid fa-circle-check text-emerald-400 text-2xl mb-1.5 block"></i>
+                        <p class="text-xs font-extrabold text-emerald-400">¡Solicitud recibida!</p>
+                        <p class="text-[10px] text-gray-500 mt-0.5 leading-relaxed">
+                            Bers3rks activará tu cuenta en minutos.<br>
+                            <span class="text-gray-600">Puedes cerrar este modal.</span>
+                        </p>
                     </div>
-                </div>
 
-                <!-- Estado: Error -->
-                <div id="bp-error-view" class="hidden text-center py-10">
-                    <i class="fa-solid fa-triangle-exclamation text-red-400 text-3xl mb-3"></i>
-                    <p class="text-sm text-red-300 font-semibold mb-1">Error al generar la orden</p>
-                    <p id="bp-error-msg" class="text-[11px] text-gray-600 mb-5">Inténtalo de nuevo.</p>
-                    <button onclick="closeBinanceModal()" class="text-xs text-gray-500 hover:text-white underline transition">
-                        Cerrar y volver
-                    </button>
-                </div>
+                </div><!-- /bp-qr-view -->
 
                 <!-- Estado: Pago Exitoso ✅ -->
                 <div id="bp-success-view" class="bp-success-icon">
@@ -773,8 +806,7 @@
                         <circle cx="40" cy="40" r="36"
                                 fill="none" stroke="#10b981" stroke-width="3"
                                 stroke-dasharray="226" stroke-dashoffset="0" opacity=".6"/>
-                        <polyline class="bp-check-path"
-                                  points="24,42 35,53 57,29"
+                        <polyline class="bp-check-path" points="24,42 35,53 57,29"
                                   fill="none" stroke="#10b981" stroke-width="5"
                                   stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -783,6 +815,25 @@
                         <p class="text-sm text-emerald-400 mt-1">Tu plan ha sido activado</p>
                         <p class="text-[10px] text-gray-600 mt-3">Accediendo al dashboard...</p>
                     </div>
+                </div>
+
+                <!-- Estado: Error -->
+                <div id="bp-error-view" class="hidden text-center py-10">
+                    <i class="fa-solid fa-triangle-exclamation text-red-400 text-3xl mb-3"></i>
+                    <p class="text-sm text-red-300 font-semibold mb-1">Algo salió mal</p>
+                    <p id="bp-error-msg" class="text-[11px] text-gray-600 mb-5">Inténtalo de nuevo.</p>
+                    <button onclick="closeBinanceModal()" class="text-xs text-gray-500 hover:text-white underline transition">
+                        Cerrar y volver
+                    </button>
+                </div>
+
+                <!-- Estado: cargando (reservado para API) -->
+                <div id="bp-loading" class="hidden text-center py-12">
+                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4"
+                         style="background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.2)">
+                        <i class="fa-solid fa-spinner fa-spin text-amber-400 text-xl"></i>
+                    </div>
+                    <p class="text-sm text-gray-400">Generando orden de pago...</p>
                 </div>
 
             </div><!-- /bp-body -->
@@ -1605,32 +1656,65 @@
             const modal = document.getElementById('binance-pay-modal');
             if (!modal) return;
 
-            // Guardar el plan seleccionado para enviarNotificacionPago()
+            // Guardar el plan para enviarNotificacionPago()
             _bpCurrentOrder = { plan };
 
-            // Actualizar etiqueta del plan
-            const planLabels = {
-                personal:     'Plan Personal — $9.99 USDT',
-                entrepreneur: 'Plan Emprendedor — $19.99 USDT',
+            // ── Configuración por plan ────────────────────────────────────
+            const PLAN_CFG = {
+                personal:     { label: 'Plan Personal — $9.99 USDT',      link: 'https://s.binance.com/XG4Sll3h', linkLabel: 'Abrir Binance Pay — $9.99 USDT'  },
+                entrepreneur: { label: 'Plan Emprendedor — $19.99 USDT',  link: 'https://s.binance.com/4YBPpoKu', linkLabel: 'Abrir Binance Pay — $19.99 USDT' },
             };
+            const cfg = PLAN_CFG[plan] || PLAN_CFG.entrepreneur;
+
+            // Etiqueta del plan
             const planLabel = document.getElementById('bp-plan-label');
-            if (planLabel) planLabel.textContent = planLabels[plan] || planLabels.entrepreneur;
+            if (planLabel) planLabel.textContent = cfg.label;
 
-            // Mostrar instrucciones de pago manual (sin QR dinámico por ahora)
-            const qrImg = document.getElementById('bp-qr-img');
-            if (qrImg) qrImg.src = ''; // sin imagen hasta tener la API activa
+            // Enlace dinámico de pago
+            const payLink = document.getElementById('bp-pay-link');
+            if (payLink) payLink.href = cfg.link;
+            const payLinkLabel = document.getElementById('bp-pay-link-label');
+            if (payLinkLabel) payLinkLabel.textContent = cfg.linkLabel;
 
-            const deeplink = document.getElementById('bp-deeplink-btn');
-            if (deeplink) deeplink.href = 'https://app.binance.com/en/pay';
+            // Resetear estado del botón de notificación
+            const notifyBtn  = document.getElementById('bp-notify-btn');
+            const notifySent = document.getElementById('bp-notify-sent');
+            if (notifyBtn)  { notifyBtn.disabled = false; notifyBtn.classList.remove('hidden');
+                              notifyBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Ya realicé el pago — Notificar a Bers3rks'; }
+            if (notifySent) notifySent.classList.add('hidden');
 
-            // Actualizar texto de estado — modo manual
-            const statusEl = document.getElementById('bp-poll-status');
-            if (statusEl) statusEl.textContent = 'Sigue las instrucciones y notifícanos cuando pagues.';
-
-            // Ir directamente a la vista del QR (con instrucciones manuales)
+            // Mostrar directamente la vista de pago (sin pantalla de carga)
             _setBpView('qr');
             modal.classList.add('show');
         }
+
+        /**
+         * copyBinanceId()
+         * Copia "Bers3rks" al portapapeles y muestra feedback visual en el botón.
+         */
+        function copyBinanceId() {
+            const btn = document.getElementById('bp-copy-btn');
+            navigator.clipboard.writeText('Bers3rks').then(() => {
+                if (btn) {
+                    const orig = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i>¡Copiado!';
+                    btn.style.background = 'rgba(52,211,153,.25)';
+                    btn.style.borderColor = 'rgba(52,211,153,.6)';
+                    btn.style.color = '#34d399';
+                    setTimeout(() => {
+                        btn.innerHTML = orig;
+                        btn.style.background = 'rgba(240,185,11,.15)';
+                        btn.style.borderColor = 'rgba(240,185,11,.4)';
+                        btn.style.color = '#f0b90b';
+                    }, 2000);
+                }
+            }).catch(() => {
+                // Fallback para navegadores sin clipboard API
+                if (btn) { btn.innerHTML = '<i class="fa-solid fa-xmark mr-1"></i>Error'; }
+            });
+        }
+        window.copyBinanceId = copyBinanceId;
+
 
         /**
          * _setBpView(view)
