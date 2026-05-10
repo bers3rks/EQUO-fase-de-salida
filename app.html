@@ -485,31 +485,118 @@
          Z-INDEX SUPREMO: MODALES AL FINAL DEL DOM
          ========================================== -->
          
-    <!-- Auth Screen -->
-    <div id="auth-screen" class="fixed inset-0 z-[100000] hidden flex flex-col items-center justify-center p-4 min-h-screen overflow-hidden">
-        <div class="absolute top-1/4 left-[15%] w-96 h-96 bg-sky-500/20 rounded-full blur-3xl orb-pulse mix-blend-screen pointer-events-none"></div>
-        <div class="absolute bottom-1/4 right-[15%] w-96 h-96 bg-blue-600/20 rounded-full blur-3xl orb-pulse mix-blend-screen pointer-events-none" style="animation-delay: 2s;"></div>
+    <!-- ================================================================
+         AUTH SCREEN — Liquid Crystal (Login + Registro Premium)
+         Nunca coexiste con app-shell (display mutuamente exclusivo)
+    ================================================================ -->
+    <div id="auth-screen" class="fixed inset-0 z-[100000] hidden flex-col items-center justify-center p-4 min-h-screen overflow-y-auto"
+         style="background:radial-gradient(ellipse at 30% 20%,rgba(56,189,248,.12),transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(129,140,248,.1),transparent 55%),#080e1a;">
 
-        <div class="glass-login relative z-10 p-10 w-full max-w-sm text-center mx-auto">
-            <div class="flex items-center justify-center mb-8">
-                <span class="text-6xl font-extrabold anim-text-gradient font-['Outfit'] tracking-tight">EQUO</span>
+        <!-- Orbs decorativos -->
+        <div class="absolute top-1/4 left-[15%] w-80 h-80 bg-sky-500/10 rounded-full blur-3xl orb-pulse mix-blend-screen pointer-events-none"></div>
+        <div class="absolute bottom-1/4 right-[15%] w-80 h-80 bg-violet-600/10 rounded-full blur-3xl orb-pulse mix-blend-screen pointer-events-none" style="animation-delay:2s"></div>
+
+        <!-- Card principal -->
+        <div id="auth-card" class="relative z-10 w-full max-w-[400px] mx-auto my-8"
+             style="background:rgba(10,18,38,.92);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.08);border-radius:1.5rem;box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 0 1px rgba(56,189,248,.06);">
+
+            <!-- Header de la tarjeta -->
+            <div class="px-8 pt-8 pb-6 text-center">
+                <span class="text-5xl font-extrabold anim-text-gradient font-['Outfit'] tracking-tight block mb-1">EQUO</span>
+                <p id="auth-subtitle" class="text-xs text-gray-500 tracking-widest uppercase font-semibold">Acceso Seguro</p>
             </div>
-            <div id="auth-error" class="hidden bg-red-900/40 border border-red-500/50 text-red-200 text-xs p-2 rounded mb-4"></div>
-            
-            <form id="loginForm" onsubmit="event.preventDefault(); handleAuth();" class="w-full">
-                <div class="relative mb-4">
-                    <i class="fa-solid fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
-                    <input type="email" id="auth-email" class="glass-input !py-3 !pl-10 text-sm font-medium" data-i18n-placeholder="emailPh" placeholder="Correo electrónico" required>
+
+            <!-- Selector Login / Registro -->
+            <div class="px-8 mb-6">
+                <div class="flex bg-white/[.04] border border-white/[.07] rounded-xl p-1">
+                    <button id="tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all" style="background:linear-gradient(135deg,rgba(56,189,248,.2),rgba(129,140,248,.2));border:1px solid rgba(56,189,248,.3);color:#38bdf8;">Iniciar Sesión</button>
+                    <button id="tab-register" onclick="switchAuthTab('register')" class="flex-1 py-2 text-xs font-bold rounded-lg text-gray-500 transition-all hover:text-white">Crear Cuenta</button>
                 </div>
-                <div class="relative mb-8">
-                    <i class="fa-solid fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
-                    <input type="password" id="auth-password" class="glass-input !py-3 !pl-10 text-sm font-medium" data-i18n-placeholder="passPh" placeholder="Contraseña" required>
+            </div>
+
+            <!-- Error banner -->
+            <div id="auth-error" class="hidden mx-8 mb-4 bg-red-900/40 border border-red-500/50 text-red-200 text-xs p-2.5 rounded-xl"></div>
+
+            <!-- ── VISTA: LOGIN ── -->
+            <div id="view-login" class="px-8 pb-8">
+                <form id="loginForm" onsubmit="event.preventDefault(); handleAuth();" class="space-y-3">
+                    <div class="relative">
+                        <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                        <input type="email" id="auth-email" class="glass-input !py-3 !pl-10 text-sm font-medium" placeholder="Correo electrónico" required>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                        <input type="password" id="auth-password" class="glass-input !py-3 !pl-10 text-sm font-medium" placeholder="Contraseña" required>
+                        <button type="button" onclick="togglePwdVisibility('auth-password','eye-login')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition">
+                            <i id="eye-login" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                    <button type="submit" id="btn-login-submit" class="btn-float w-full py-3 rounded-xl text-white font-bold shadow-lg mt-2" style="background:linear-gradient(135deg,#38bdf8,#818cf8);box-shadow:0 0 24px rgba(56,189,248,.25);">Iniciar Sesión</button>
+                </form>
+                <button type="button" onclick="switchAuthTab('register')" class="text-xs text-gray-600 hover:text-sky-400 transition block w-full text-center mt-4 tracking-wide">¿No tienes cuenta? <span class="text-sky-400 font-semibold">Crear cuenta gratis</span></button>
+            </div>
+
+            <!-- ── VISTA: REGISTRO PREMIUM ── -->
+            <div id="view-register" class="px-8 pb-8 hidden">
+                <!-- Badge trial -->
+                <div class="flex items-center justify-center mb-5">
+                    <span class="text-[10px] font-bold tracking-widest uppercase px-3 py-1.5 rounded-full" style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);color:#38bdf8;"><i class="fa-solid fa-gift mr-1.5"></i>3 días de prueba gratis · Sin tarjeta</span>
                 </div>
-                <button type="submit" class="btn-float w-full py-3 rounded-lg theme-bg-gradient text-white font-bold shadow-lg mb-4 hover:shadow-[0_0_20px_rgba(56,189,248,0.5)]" data-i18n="loginBtn">Iniciar Sesión</button>
-            </form>
-            <button type="button" onclick="handleRegister()" class="text-xs text-sky-200 hover:text-white transition block w-full tracking-wide" data-i18n="registerBtn">¿No tienes cuenta? Regístrate</button>
-        </div>
-    </div>
+
+                <div class="space-y-3" id="register-fields">
+
+                    <!-- Nombre Completo -->
+                    <div class="relative register-field" style="opacity:0;transform:translateY(12px);">
+                        <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                        <input type="text" id="reg-name" class="glass-input !py-3 !pl-10 text-sm" placeholder="Nombre completo">
+                    </div>
+
+                    <!-- Correo Electrónico -->
+                    <div class="relative register-field" style="opacity:0;transform:translateY(12px);">
+                        <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                        <input type="email" id="reg-email" class="glass-input !py-3 !pl-10 text-sm" placeholder="Correo electrónico" required>
+                    </div>
+
+                    <!-- Teléfono / WhatsApp -->
+                    <div class="relative register-field" style="opacity:0;transform:translateY(12px);">
+                        <i class="fa-brands fa-whatsapp absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 text-sm"></i>
+                        <input type="tel" id="reg-phone" class="glass-input !py-3 !pl-10 text-sm" placeholder="WhatsApp / Teléfono">
+                    </div>
+
+                    <!-- Contraseña con toggle -->
+                    <div class="relative register-field" style="opacity:0;transform:translateY(12px);">
+                        <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                        <input type="password" id="reg-password" class="glass-input !py-3 !pl-10 !pr-10 text-sm" placeholder="Contraseña (mín. 6 caracteres)" required>
+                        <button type="button" onclick="togglePwdVisibility('reg-password','eye-reg')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition">
+                            <i id="eye-reg" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Código Promocional (opcional) -->
+                    <div class="relative register-field" style="opacity:0;transform:translateY(12px);">
+                        <i class="fa-solid fa-ticket absolute left-4 top-1/2 -translate-y-1/2 text-amber-500 text-xs"></i>
+                        <input type="text" id="reg-promo" class="glass-input !py-3 !pl-10 text-sm" placeholder="Código promocional (opcional)" style="border-color:rgba(251,191,36,.2);">
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-gray-600 font-semibold uppercase">Opcional</span>
+                    </div>
+
+                    <!-- Botón de registro -->
+                    <div class="register-field pt-1" style="opacity:0;transform:translateY(12px);">
+                        <button type="button" id="btn-register-submit" onclick="handleRegister()" class="btn-float w-full py-3.5 rounded-xl font-bold text-sm" style="background:linear-gradient(135deg,#38bdf8,#818cf8);color:#0f172a;box-shadow:0 0 30px rgba(56,189,248,.3);">
+                            <i class="fa-solid fa-rocket mr-2"></i>Crear Cuenta y Empezar
+                        </button>
+                    </div>
+
+                    <p class="text-[10px] text-gray-600 text-center leading-relaxed register-field" style="opacity:0;transform:translateY(8px);">
+                        Al registrarte aceptas nuestros <span class="text-sky-500/70">Términos de Uso</span> y <span class="text-sky-500/70">Política de Privacidad</span>.
+                    </p>
+
+                </div>
+
+                <button type="button" onclick="switchAuthTab('login')" class="text-xs text-gray-600 hover:text-sky-400 transition block w-full text-center mt-4 tracking-wide">¿Ya tienes cuenta? <span class="text-sky-400 font-semibold">Iniciar sesión</span></button>
+            </div>
+
+        </div><!-- /auth-card -->
+    </div><!-- /auth-screen -->
 
     <!-- Modal Registro (Deudas / Préstamos) -->
     <div id="record-modal" class="fixed inset-0 z-[100000] hidden bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
@@ -736,7 +823,7 @@
 
         /* ── DEEP LINK: ?action=register ──────────────────────────────────
          * Detecta si la landing envió al usuario aquí para registrarse.
-         * Si ?action=register → muestra auth-screen en modo registro.
+         * Si ?action=register → abre auth-screen en el tab de Crear Cuenta.
          * Si ?plan=entrepreneur → guarda el intent para usarlo post-registro.
          * ─────────────────────────────────────────────────────────────── */
         (function handleDeepLink() {
@@ -748,49 +835,47 @@
                 // Guardar intent de plan si viene con ?plan=
                 if (plan) sessionStorage.setItem('equo-plan-intent', plan);
 
-                // Esperar a que el DOM de auth esté disponible, luego mostrar modo registro
-                window.addEventListener('DOMContentLoaded', () => {
-                    const authScreen = document.getElementById('auth-screen');
-                    const registerBtn = document.querySelector('[data-i18n="registerBtn"]');
-
-                    if (authScreen) {
-                        authScreen.classList.remove('hidden');
-                        authScreen.style.display = 'flex';
-                    }
-
-                    // Mostrar visualmente que está en modo "registro" con un highlight suave
-                    if (registerBtn) {
-                        setTimeout(() => {
-                            registerBtn.style.color = '#38bdf8';
-                            registerBtn.style.fontWeight = '700';
-                            registerBtn.style.textDecoration = 'underline';
-                        }, 600);
-                    }
-
-                    // Focus en el campo email para UX fluida
-                    const emailInput = document.getElementById('auth-email');
-                    if (emailInput) setTimeout(() => emailInput.focus(), 700);
+                // Esperar a que el DOM esté listo
+                document.addEventListener('DOMContentLoaded', () => {
+                    // Abrir directamente el tab de registro
+                    // (onAuthStateChanged resuelve si hay sesión activa → va al dashboard)
+                    setTimeout(() => {
+                        if (typeof switchAuthTab === 'function') switchAuthTab('register');
+                    }, 350);
 
                     // Limpiar el parámetro de URL para no re-triggear en refresh
                     history.replaceState({}, '', window.location.pathname);
                 }, { once: true });
             }
         })();
+
         async function resolveAppStart() {
             if (!authReady) return;
             if (currentUser) {
-                $('auth-screen').classList.add('hidden');
+                // STRICT mutual exclusion: auth-screen SIEMPRE oculto cuando hay sesión
+                const as = $('auth-screen');
+                as.classList.add('hidden');
+                as.style.display = 'none';
                 await loadUserData(currentUser.uid, currentSystemYear);
                 // Verificar acceso ANTES de mostrar el dashboard
                 const hasAccess = await checkAccess(currentUser.uid);
-                if (!hasAccess) return; // checkAccess() ya mostró la pantalla de bloqueo
-                $('app-shell').classList.remove('hidden');
-                $('app-shell').style.display = 'flex';
+                if (!hasAccess) return; // checkAccess() ya mostró el expired-screen
+                const shell = $('app-shell');
+                shell.classList.remove('hidden');
+                shell.style.display = 'flex';
                 initApp();
             } else {
-                $('app-shell').classList.add('hidden');
-                $('auth-screen').classList.remove('hidden');
-                gsap.fromTo('#auth-screen', {opacity:0}, {opacity:1, duration:1});
+                // STRICT: app-shell SIEMPRE oculto cuando no hay sesión
+                const shell = $('app-shell');
+                shell.classList.add('hidden');
+                shell.style.display = 'none';
+                const as = $('auth-screen');
+                as.classList.remove('hidden');
+                as.style.display = 'flex';
+                as.style.flexDirection = 'column';
+                as.style.alignItems = 'center';
+                as.style.justifyContent = 'center';
+                gsap.fromTo('#auth-card', {opacity:0, y:30, scale:.97}, {opacity:1, y:0, scale:1, duration:.7, ease:'power3.out'});
                 appData = buildDefault();
             }
         }
@@ -874,25 +959,158 @@
             }
         };
 
-        async function handleAuth() { let em = $('auth-email').value, p = $('auth-password').value; try { await auth.signInWithEmailAndPassword(em, p); } catch(err) { $('auth-error').innerText = "Credenciales incorrectas."; $('auth-error').classList.remove('hidden'); } }
-        async function handleRegister() {
-            const e = $('auth-email').value, p = $('auth-password').value;
+        async function handleAuth() {
+            const em = $('auth-email').value.trim();
+            const p  = $('auth-password').value;
+            const errEl = $('auth-error');
+            errEl.classList.add('hidden');
+            const btn = $('btn-login-submit');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Entrando...'; }
             try {
-                const cred = await auth.createUserWithEmailAndPassword(e, p);
-                // Guardar perfil de trial completo desde el momento del registro
+                await auth.signInWithEmailAndPassword(em, p);
+            } catch(err) {
+                errEl.innerText = 'Credenciales incorrectas. Verifica email y contraseña.';
+                errEl.classList.remove('hidden');
+                if (btn) { btn.disabled = false; btn.innerHTML = 'Iniciar Sesión'; }
+            }
+        }
+
+        async function handleRegister() {
+            const name  = ($('reg-name')?.value   || '').trim();
+            const email = ($('reg-email')?.value  || '').trim();
+            const phone = ($('reg-phone')?.value  || '').trim();
+            const pass  = ($('reg-password')?.value || '').trim();
+            const promo = ($('reg-promo')?.value  || '').trim().toUpperCase();
+            const errEl = $('auth-error');
+            errEl.classList.add('hidden');
+
+            // Validaciones básicas
+            if (!email)          { errEl.innerText = 'El correo es obligatorio.'; errEl.classList.remove('hidden'); return; }
+            if (pass.length < 6) { errEl.innerText = 'La contraseña debe tener al menos 6 caracteres.'; errEl.classList.remove('hidden'); return; }
+
+            const btn = $('btn-register-submit');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Creando cuenta...'; }
+
+            try {
+                // 1. Crear cuenta en Firebase Auth
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+
+                // 2. Actualizar displayName en Firebase Auth
+                if (name) await cred.user.updateProfile({ displayName: name });
+
+                // 3. Calcular trial: exactamente 3 días desde ahora
                 const trialEndDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
-                await db.collection('users').doc(cred.user.uid).set({
-                    email:        e,
+
+                // 4. Construir perfil completo de Firestore
+                const profile = {
+                    email,
+                    name:         name   || '',
+                    profilePhone: phone  || '',
                     plan:         'trial',
                     planStatus:   'trial',
-                    isPaid:       false,          // fuente de verdad de pago
-                    trialEndDate,                  // fecha exacta de expiración
+                    isPaid:       false,
+                    trialEndDate,
                     registeredAt: new Date().toISOString(),
                     lastSeen:     new Date().toISOString()
-                }, { merge: true });
-            } catch(err) { $('auth-error').innerText = err.message; $('auth-error').classList.remove('hidden'); }
+                };
+
+                // 5. Código promocional (solo si fue ingresado)
+                if (promo) profile.promoCode = promo;
+
+                // 6. Guardar en Firestore (merge:true como siempre)
+                await db.collection('users').doc(cred.user.uid).set(profile, { merge: true });
+
+                // 7. Si llegó con ?plan=entrepreneur guardado en sessionStorage, mostrar toast de pago
+                const planIntent = sessionStorage.getItem('equo-plan-intent');
+                if (planIntent === 'entrepreneur') {
+                    sessionStorage.removeItem('equo-plan-intent');
+                    setTimeout(() => showToast('info', '¡Bienvenido!', 'Tu cuenta fue creada. Activa el Plan Entrepreneur para desbloquear todas las funciones.'), 2000);
+                }
+
+            } catch(err) {
+                const msg = err.code === 'auth/email-already-in-use'
+                    ? 'Este correo ya está registrado. Inicia sesión.'
+                    : err.message;
+                errEl.innerText = msg;
+                errEl.classList.remove('hidden');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rocket mr-2"></i>Crear Cuenta y Empezar'; }
+            }
         }
         function handleLogout() { auth.signOut(); location.reload(); }
+
+        /**
+         * switchAuthTab(tab)
+         * Alterna entre las vistas 'login' y 'register' con animaciones suaves.
+         */
+        function switchAuthTab(tab) {
+            const vLogin    = document.getElementById('view-login');
+            const vRegister = document.getElementById('view-register');
+            const tLogin    = document.getElementById('tab-login');
+            const tRegister = document.getElementById('tab-register');
+            const subtitle  = document.getElementById('auth-subtitle');
+
+            // Limpiar error
+            const errEl = document.getElementById('auth-error');
+            if (errEl) errEl.classList.add('hidden');
+
+            const activeTab   = 'background:linear-gradient(135deg,rgba(56,189,248,.2),rgba(129,140,248,.2));border:1px solid rgba(56,189,248,.3);color:#38bdf8;';
+            const inactiveTab = 'background:transparent;border:none;color:#6b7280;';
+
+            if (tab === 'register') {
+                // Ocultar login
+                vLogin.classList.add('hidden');
+                // Mostrar registro
+                vRegister.classList.remove('hidden');
+                // Estilos de tabs
+                tLogin.style.cssText    = inactiveTab;
+                tRegister.style.cssText = activeTab;
+                tRegister.style.color   = '#38bdf8';
+                if (subtitle) subtitle.textContent = 'Únete a EQUO — Es gratis';
+                // Animación stagger de los campos
+                if (typeof gsap !== 'undefined') {
+                    gsap.to('.register-field', {
+                        opacity: 1, y: 0, duration: .45,
+                        stagger: .07, ease: 'power3.out',
+                        delay: .05
+                    });
+                }
+                // Focus en nombre
+                const nameInput = document.getElementById('reg-name');
+                if (nameInput) setTimeout(() => nameInput.focus(), 300);
+
+            } else { // login
+                vRegister.classList.add('hidden');
+                vLogin.classList.remove('hidden');
+                tRegister.style.cssText = inactiveTab;
+                tLogin.style.cssText    = activeTab;
+                tLogin.style.color      = '#38bdf8';
+                if (subtitle) subtitle.textContent = 'Acceso Seguro';
+                // Reset campos de registro para próxima apertura
+                document.querySelectorAll('.register-field').forEach(el => {
+                    el.style.opacity   = '0';
+                    el.style.transform = 'translateY(12px)';
+                });
+                const emailInput = document.getElementById('auth-email');
+                if (emailInput) setTimeout(() => emailInput.focus(), 200);
+            }
+        }
+
+        /**
+         * togglePwdVisibility(inputId, iconId)
+         * Alterna entre texto y contraseña en un input.
+         */
+        function togglePwdVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon  = document.getElementById(iconId);
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash text-xs';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye text-xs';
+            }
+        }
 
         function showToast(type, title, msg) {
             let cols = { success: { b: 'border-emerald-500', iC: 'text-emerald-400', i: 'fa-check-circle', tC: 'text-emerald-300' }, warning: { b: 'border-yellow-500', iC: 'text-yellow-400', i: 'fa-bolt', tC: 'text-yellow-300' }, error: { b: 'border-red-500', iC: 'text-red-400', i: 'fa-triangle-exclamation', tC: 'text-red-300' }, info: { b: 'border-blue-500', iC: 'text-blue-400', i: 'fa-layer-group', tC: 'text-blue-300' } }[type];
