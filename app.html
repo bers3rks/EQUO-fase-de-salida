@@ -24,7 +24,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-functions-compat.js"></script>
+    <!-- firebase-functions-compat ya no es necesario: ahora usamos fetch() a /api/binance -->
     <!-- Firebase Init centralizado (expone window.db, window.auth, window.userRole) -->
     <script src="js/firebase-init.js"></script>
 
@@ -1565,8 +1565,8 @@
 
         // ═══════════════════════════════════════════════════════════════════
         // BINANCE PAY — Pasarela de pago real
-        // Llama a Firebase Cloud Functions para crear/verificar órdenes.
-        // Las claves API permanecen en el servidor (NUNCA en el cliente).
+        // Llama a /api/binance (Vercel Serverless Function) para crear/verificar
+        // órdenes. Las claves API permanecen en el servidor (NUNCA en el cliente).
         // ═══════════════════════════════════════════════════════════════════
 
         let _bpPollInterval = null;
@@ -1574,8 +1574,39 @@
         let _bpCurrentOrder = null; // { prepayId, merchantOrderId, plan }
 
         /**
+         * _getBearerToken()
+         * Obtiene el Firebase ID Token del usuario autenticado.
+         * El token se envía al servidor para que /api/binance autentique la petición.
+         */
+        async function _getBearerToken() {
+            const user = auth.currentUser;
+            if (!user) throw new Error('No hay sesión activa.');
+            return user.getIdToken();
+        }
+
+        /**
+         * _callBinanceApi(action, body)
+         * Wrapper genérico para llamar a /api/binance con el token de Firebase.
+         */
+        async function _callBinanceApi(action, body) {
+            const token = await _getBearerToken();
+            const res = await fetch(`/api/binance?action=${action}`, {
+                method:  'POST',
+                headers: {
+                    'Content-Type':  'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(body),
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+            return data;
+        }
+
+        /**
          * openBinanceModal(plan)
-         * Abre el modal de pago, llama a la Cloud Function createBinanceOrder
+         * Abre el modal de pago, llama a /api/binance?action=createOrder
          * y muestra el QR cuando la orden esté lista.
          * @param {string} plan - 'personal' | 'entrepreneur'
          */
@@ -1588,17 +1619,12 @@
             modal.classList.add('show');
 
             try {
-                // Obtener instancia de functions (firebase-functions-compat)
-                const functions = firebase.functions();
-
-                // Llamar a la Cloud Function (server-side, firma HMAC-SHA512 segura)
-                const createOrder = functions.httpsCallable('createBinanceOrder');
-                const result = await createOrder({ plan });
-                const order  = result.data;
+                // Llamar a la Vercel Serverless Function (firma HMAC-SHA512 en el servidor)
+                const order = await _callBinanceApi('createOrder', { plan });
 
                 // Guardar datos de la orden para el polling
                 _bpCurrentOrder = {
-                    prepayId:       order.prepayId,
+                    prepayId:        order.prepayId,
                     merchantOrderId: order.merchantOrderId,
                     plan,
                 };
@@ -1649,7 +1675,7 @@
 
         /**
          * _startBpPolling()
-         * Verifica el estado de la orden cada 3 segundos.
+         * Verifica el estado de la orden cada 3 segundos llamando a /api/binance.
          */
         function _startBpPolling() {
             _stopBpPolling(); // limpiar cualquier intervalo previo
@@ -1657,15 +1683,13 @@
             _bpPollInterval = setInterval(async () => {
                 if (!_bpCurrentOrder || !currentUser) return;
                 try {
-                    const functions   = firebase.functions();
-                    const queryPayment = functions.httpsCallable('queryBinancePayment');
-                    const result = await queryPayment({
+                    const result = await _callBinanceApi('queryPayment', {
                         prepayId:        _bpCurrentOrder.prepayId,
                         merchantOrderId: _bpCurrentOrder.merchantOrderId,
                         plan:            _bpCurrentOrder.plan,
                     });
 
-                    const { orderStatus, planActivated } = result.data;
+                    const { orderStatus, planActivated } = result;
 
                     // Actualizar texto de estado
                     const statusEl = document.getElementById('bp-poll-status');
