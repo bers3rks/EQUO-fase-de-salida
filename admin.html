@@ -51,6 +51,27 @@ tr:hover td { background:rgba(56,189,248,.02); }
 .adm-modal-overlay { position:fixed; inset:0; z-index:90000; background:rgba(0,0,0,.7); backdrop-filter:blur(12px); display:none; align-items:center; justify-content:center; }
 .adm-modal-overlay.open { display:flex; }
 .adm-modal { background:rgba(10,18,40,.97); border:1px solid rgba(255,255,255,.1); border-radius:1rem; padding:1.5rem; width:100%; max-width:380px; box-shadow:0 24px 60px rgba(0,0,0,.8); }
+/* Pagos Pendientes */
+.pending-card {
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  padding:.875rem 1.25rem;
+  background:rgba(52,211,153,.04);
+  border:1px solid rgba(52,211,153,.15);
+  border-radius:.75rem;
+  transition:all .25s;
+}
+.pending-card:hover { border-color:rgba(52,211,153,.35); box-shadow:0 0 20px rgba(52,211,153,.06); }
+.btn-approve {
+  flex-shrink:0;
+  font-size:10px; font-weight:700; padding:6px 14px;
+  border-radius:5px; border:1px solid rgba(52,211,153,.45);
+  color:#34d399; background:rgba(52,211,153,.1);
+  transition:all .2s; cursor:pointer; white-space:nowrap;
+}
+.btn-approve:hover { background:rgba(52,211,153,.22); border-color:rgba(52,211,153,.75); transform:scale(1.04); }
+.btn-approve:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+@keyframes pendingPulse { 0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.3)} 50%{box-shadow:0 0 0 6px rgba(52,211,153,0)} }
+.pending-new { animation:pendingPulse 1.4s ease 2; }
 </style>
 </head>
 <body>
@@ -109,6 +130,28 @@ tr:hover td { background:rgba(56,189,248,.02); }
       <div class="glass-card stat-card">
         <p class="text-[9px] font-bold uppercase tracking-widest text-gray-500"><i class="fa-solid fa-credit-card mr-1 text-emerald-400"></i>Planes Pagados</p>
         <p id="metric-paid" class="text-2xl font-extrabold text-emerald-300">—</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGOS PENDIENTES (onSnapshot en tiempo real) -->
+  <div class="px-6 max-w-[1300px] mx-auto w-full mt-4">
+    <div class="glass-card overflow-hidden fade-up" style="animation-delay:.05s">
+      <div class="flex items-center justify-between px-5 py-3 border-b" style="border-color:rgba(255,255,255,.05)">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-md flex items-center justify-center" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3)">
+            <i class="fa-solid fa-paper-plane text-emerald-400" style="font-size:10px"></i>
+          </div>
+          <p class="text-xs font-bold text-white">Pagos Pendientes</p>
+          <span id="pending-count-badge" class="hidden text-[9px] font-extrabold px-2 py-0.5 rounded-full"
+                style="background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.4);color:#34d399">0</span>
+        </div>
+        <p class="text-[9px] text-gray-600"><i class="fa-solid fa-circle text-emerald-500 mr-1" style="font-size:6px"></i>Actualización en tiempo real</p>
+      </div>
+      <div id="pending-list" class="px-4 py-3 flex flex-col gap-2">
+        <p class="text-[11px] text-gray-600 text-center py-4">
+          <i class="fa-solid fa-check-circle text-emerald-500/40 mr-1"></i>Sin solicitudes pendientes
+        </p>
       </div>
     </div>
   </div>
@@ -209,6 +252,7 @@ function bootAdmin(){
     document.getElementById('guard-screen').style.display='none';
     document.getElementById('admin-app').classList.remove('hidden');
     gsap.fromTo('#admin-app',{opacity:0},{opacity:1,duration:.6});
+    initPendingPayments(); // listener en tiempo real
     loadUsers();
   });
 }
@@ -216,6 +260,135 @@ function bootAdmin(){
 // Esperar a que firebase-init.js haya cargado las instancias
 if(window.db&&window.auth){ bootAdmin(); }
 else { window._onRoleReady=()=>bootAdmin(); bootAdmin(); }
+
+/* ── Pagos Pendientes — onSnapshot en tiempo real ── */
+let _pendingUnsub = null;
+
+function initPendingPayments() {
+  if (_pendingUnsub) _pendingUnsub(); // limpiar listener previo
+  const list  = document.getElementById('pending-list');
+  const badge = document.getElementById('pending-count-badge');
+
+  _pendingUnsub = db.collection('payment_requests')
+    .orderBy('requestedAt', 'desc')
+    .onSnapshot(snapshot => {
+      const docs = snapshot.docs;
+
+      // Badge con contador
+      if (docs.length > 0) {
+        badge.textContent = docs.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      // Renderizar lista
+      if (docs.length === 0) {
+        list.innerHTML = `<p class="text-[11px] text-gray-600 text-center py-4">
+          <i class="fa-solid fa-check-circle text-emerald-500/40 mr-1"></i>Sin solicitudes pendientes
+        </p>`;
+        return;
+      }
+
+      list.innerHTML = '';
+      docs.forEach(doc => {
+        const d   = doc.data();
+        const uid = doc.id;
+        const planLabels = { entrepreneur:'Emprendedor $19.99', personal:'Personal $9.99' };
+        const planLabel  = planLabels[d.plan] || d.plan || 'Emprendedor';
+        const planColor  = d.plan === 'personal' ? '#38bdf8' : '#818cf8';
+
+        // Formato de timestamp
+        let timeStr = '—';
+        if (d.requestedAt?.toDate) {
+          const dt = d.requestedAt.toDate();
+          timeStr = dt.toLocaleDateString('es', { day:'2-digit', month:'short' })
+                  + ' ' + dt.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+        }
+
+        const card = document.createElement('div');
+        card.id = `pcard-${uid}`;
+        card.className = 'pending-card pending-new';
+        card.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
+                 style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25)">
+              <i class="fa-solid fa-user text-emerald-400" style="font-size:11px"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="font-bold text-white text-[11px] truncate">${d.email}</p>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[9px] font-bold" style="color:${planColor}">
+                  <i class="fa-solid fa-bolt mr-0.5"></i>${planLabel}
+                </span>
+                <span class="text-[9px] text-gray-600">${timeStr}</span>
+              </div>
+            </div>
+          </div>
+          <button id="abtn-${uid}" onclick="approvePendingPayment('${uid}','${d.plan||'entrepreneur'}','${d.email}')"
+                  class="btn-approve">
+            <i class="fa-solid fa-check mr-1"></i>Aprobar
+          </button>`;
+
+        list.appendChild(card);
+      });
+    }, err => {
+      console.error('[Admin] onSnapshot error:', err.message);
+      toast('error', 'Error al escuchar pagos pendientes: ' + err.message);
+    });
+}
+
+/**
+ * approvePendingPayment(uid, plan, email)
+ * 1. Activa el plan en users/{uid}
+ * 2. Elimina la solicitud de payment_requests/{uid}
+ */
+async function approvePendingPayment(uid, plan, email) {
+  const btn = document.getElementById(`abtn-${uid}`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Aprobando...'; }
+
+  try {
+    const now    = new Date().toISOString();
+    const subEnd = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+
+    // Batch: actualizar users + borrar payment_requests
+    const batch = db.batch();
+
+    batch.set(db.collection('users').doc(uid), {
+      isPaid:              true,
+      plan,
+      planStatus:          plan,
+      selectedPlan:        plan,
+      trialEndDate:        null,
+      subscriptionDate:    now,
+      subscriptionEndDate: subEnd,
+      paidAt:              now,
+    }, { merge: true });
+
+    batch.delete(db.collection('payment_requests').doc(uid));
+
+    await batch.commit();
+
+    // Animación de salida de la tarjeta
+    const card = document.getElementById(`pcard-${uid}`);
+    if (card) {
+      card.style.transition = 'opacity .35s, transform .35s';
+      card.style.opacity    = '0';
+      card.style.transform  = 'translateX(20px)';
+      setTimeout(() => card.remove(), 360);
+    }
+
+    toast('success', `✅ Plan ${plan} activado para ${email}`);
+
+    // Refrescar la tabla de usuarios para ver el cambio reflejado
+    loadUsers();
+
+  } catch(e) {
+    console.error('[Admin] approvePendingPayment error:', e);
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i>Aprobar'; }
+    toast('error', 'Error al aprobar: ' + e.message);
+  }
+}
 
 /* ── Cargar usuarios ── */
 async function loadUsers(){

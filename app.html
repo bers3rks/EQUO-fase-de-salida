@@ -725,9 +725,33 @@
                     </a>
 
                     <!-- Estado del polling -->
-                    <div class="flex items-center justify-center gap-2 text-[10px] text-gray-700">
+                    <div class="flex items-center justify-center gap-2 text-[10px] text-gray-700 mb-4">
                         <div class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></div>
                         <span id="bp-poll-status">Verificando pago automáticamente...</span>
+                    </div>
+
+                    <!-- Separador -->
+                    <div class="flex items-center gap-2 my-1">
+                        <div class="flex-1 h-px" style="background:rgba(255,255,255,.05)"></div>
+                        <span class="text-[8px] font-bold uppercase tracking-widest text-gray-700">o si ya pagaste</span>
+                        <div class="flex-1 h-px" style="background:rgba(255,255,255,.05)"></div>
+                    </div>
+
+                    <!-- Botón notificación manual -->
+                    <button id="bp-notify-btn" onclick="enviarNotificacionPago()"
+                            class="w-full mt-3 py-2.5 text-xs font-bold flex items-center justify-center gap-2 transition-all"
+                            style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);color:#34d399;"
+                            onmouseover="this.style.background='rgba(52,211,153,.16)'"
+                            onmouseout="this.style.background='rgba(52,211,153,.08)'">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        Ya realicé el pago — Notificar al administrador
+                    </button>
+
+                    <!-- Mensaje de confirmación (oculto hasta enviar) -->
+                    <div id="bp-notify-sent" class="hidden mt-3 py-2.5 px-3 text-[11px] font-semibold text-emerald-400 text-center"
+                         style="background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.18)">
+                        <i class="fa-solid fa-circle-check mr-1.5"></i>
+                        Solicitud enviada. Tu cuenta será activada en breve.
                     </div>
                 </div>
 
@@ -1866,9 +1890,58 @@
             _stopBpPolling();
             _stopBpCountdown();
             _bpCurrentOrder = null;
+            // Resetear estado del botón de notificación manual
+            const notifyBtn  = document.getElementById('bp-notify-btn');
+            const notifySent = document.getElementById('bp-notify-sent');
+            if (notifyBtn)  { notifyBtn.disabled = false; notifyBtn.classList.remove('hidden'); }
+            if (notifySent) notifySent.classList.add('hidden');
             const modal = document.getElementById('binance-pay-modal');
             if (modal) modal.classList.remove('show');
         }
+
+        /**
+         * enviarNotificacionPago()
+         * Guarda una solicitud de pago manual en Firestore → colección payment_requests.
+         * El admin la verá en tiempo real y podrá aprobar con un solo clic.
+         */
+        async function enviarNotificacionPago() {
+            const user = auth.currentUser;
+            if (!user) return showToast('error', 'Error', 'Debes iniciar sesión primero.');
+
+            const btn  = document.getElementById('bp-notify-btn');
+            const sent = document.getElementById('bp-notify-sent');
+
+            // Estado: enviando
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Enviando...'; }
+
+            try {
+                const plan = _bpCurrentOrder?.plan || 'entrepreneur';
+                await db.collection('payment_requests').doc(user.uid).set({
+                    uid:       user.uid,
+                    email:     user.email || 'sin-email',
+                    plan,
+                    requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    status:    'pending',
+                });
+
+                // Mostrar confirmación, ocultar botón
+                if (btn)  btn.classList.add('hidden');
+                if (sent) sent.classList.remove('hidden');
+
+                // Detener el polling automático — el admin aprueba manualmente
+                _stopBpPolling();
+                _stopBpCountdown();
+
+                showToast('success', 'Solicitud enviada', 'El administrador activará tu cuenta en breve.');
+
+            } catch (e) {
+                console.error('[EQUO] enviarNotificacionPago error:', e);
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i>Ya realicé el pago — Notificar al administrador'; }
+                showToast('error', 'Error', 'No se pudo enviar la solicitud: ' + e.message);
+            }
+        }
+
+        window.enviarNotificacionPago = enviarNotificacionPago;
 
         async function loadUserData(uid, yr) {
             try {
