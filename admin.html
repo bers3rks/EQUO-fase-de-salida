@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EQUO | Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<style>
+:root { --t-primary:#38bdf8; --t-secondary:#818cf8; }
+body { font-family:'Outfit',sans-serif; background:#0a1128; color:#fff; min-height:100vh; margin:0; overflow-x:hidden; cursor:none !important; }
+* { cursor:none !important; }
+#adm-cursor { position:fixed; top:0; left:0; width:12px; height:12px; background:var(--t-primary); border-radius:50%; pointer-events:none; z-index:9999999; transform:translate(-50%,-50%); transition:width .2s,height .2s,background .2s; box-shadow:0 0 15px var(--t-primary); }
+#adm-cursor.h { width:32px; height:32px; background:rgba(56,189,248,.25); border:1px solid var(--t-primary); }
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(56,189,248,.4);border-radius:10px}
+.glass { background:rgba(255,255,255,.03); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,.07); border-radius:1rem; }
+.glass-card { background:rgba(255,255,255,.04); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.08); border-radius:.75rem; transition:all .3s; }
+.glass-card:hover { border-color:rgba(56,189,248,.25); box-shadow:0 0 20px rgba(56,189,248,.06); }
+.badge { display:inline-flex; align-items:center; gap:.25rem; font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px; }
+.badge-trial  { background:rgba(251,191,36,.15);  border:1px solid rgba(251,191,36,.4);  color:#fbbf24; }
+.badge-personal { background:rgba(56,189,248,.15); border:1px solid rgba(56,189,248,.4); color:#38bdf8; }
+.badge-entrepreneur { background:rgba(129,140,248,.15); border:1px solid rgba(129,140,248,.4); color:#818cf8; }
+.badge-free  { background:rgba(148,163,184,.12); border:1px solid rgba(148,163,184,.3); color:#94a3b8; }
+.badge-admin { background:rgba(239,68,68,.15);  border:1px solid rgba(239,68,68,.4);  color:#f87171; }
+.adm-btn { font-size:10px; font-weight:700; padding:4px 10px; border-radius:4px; border:1px solid; transition:all .2s; cursor:pointer; }
+.adm-btn:hover { transform:scale(1.04); }
+.btn-personal { border-color:rgba(56,189,248,.4); color:#38bdf8; background:rgba(56,189,248,.08); }
+.btn-entrepreneur { border-color:rgba(129,140,248,.4); color:#818cf8; background:rgba(129,140,248,.08); }
+.btn-trial { border-color:rgba(251,191,36,.4); color:#fbbf24; background:rgba(251,191,36,.08); }
+.btn-reset { border-color:rgba(239,68,68,.35); color:#f87171; background:rgba(239,68,68,.07); }
+.btn-mail  { border-color:rgba(52,211,153,.35); color:#34d399; background:rgba(52,211,153,.07); }
+.stat-card { display:flex; flex-direction:column; gap:.25rem; padding:1.25rem 1.5rem; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.fade-up { animation:fadeUp .5s ease forwards; }
+table { border-collapse:collapse; width:100%; }
+th { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#475569; padding:.75rem 1rem; text-align:left; border-bottom:1px solid rgba(255,255,255,.05); }
+td { font-size:11px; padding:.75rem 1rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:middle; }
+tr:hover td { background:rgba(56,189,248,.02); }
+.spinner { display:inline-block; width:20px; height:20px; border:2px solid rgba(56,189,248,.2); border-top-color:#38bdf8; border-radius:50%; animation:spin .6s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+/* Modal */
+.adm-modal-overlay { position:fixed; inset:0; z-index:90000; background:rgba(0,0,0,.7); backdrop-filter:blur(12px); display:none; align-items:center; justify-content:center; }
+.adm-modal-overlay.open { display:flex; }
+.adm-modal { background:rgba(10,18,40,.97); border:1px solid rgba(255,255,255,.1); border-radius:1rem; padding:1.5rem; width:100%; max-width:380px; box-shadow:0 24px 60px rgba(0,0,0,.8); }
+</style>
+</head>
+<body>
+<div id="adm-cursor"></div>
+
+<!-- GUARD SCREEN mientras verifica rol -->
+<div id="guard-screen" class="fixed inset-0 z-[99999] flex items-center justify-center" style="background:#0a1128">
+  <div class="text-center">
+    <div class="spinner mx-auto mb-4"></div>
+    <p class="text-sky-400 text-sm font-semibold">Verificando acceso…</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="admin-app" class="hidden min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <div class="sticky top-0 z-50 px-6 pt-5 pb-3 max-w-[1300px] mx-auto w-full">
+    <div class="glass flex items-center justify-between px-5 py-3">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center">
+          <i class="fa-solid fa-shield-halved text-rose-400 text-xs"></i>
+        </div>
+        <div>
+          <p class="font-extrabold text-white text-sm tracking-wide">EQUO <span class="text-rose-400">Admin</span></p>
+          <p class="text-[9px] text-gray-500 font-semibold uppercase tracking-widest">Panel de Administración</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="loadUsers()" class="adm-btn btn-personal flex items-center gap-1.5"><i class="fa-solid fa-rotate-right text-[9px]"></i> Actualizar</button>
+        <button onclick="window.location.href='index.html'" class="adm-btn btn-reset flex items-center gap-1.5"><i class="fa-solid fa-arrow-left text-[9px]"></i> Dashboard</button>
+        <button onclick="firebase.auth().signOut().then(()=>location.href='index.html')" class="adm-btn btn-reset"><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MÉTRICAS -->
+  <div class="px-6 max-w-[1300px] mx-auto w-full mt-2">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 fade-up">
+      <div class="glass-card stat-card">
+        <p class="text-[9px] font-bold uppercase tracking-widest text-gray-500"><i class="fa-solid fa-users mr-1 text-sky-400"></i>Total Usuarios</p>
+        <p id="metric-total" class="text-2xl font-extrabold text-white">—</p>
+      </div>
+      <div class="glass-card stat-card">
+        <p class="text-[9px] font-bold uppercase tracking-widest text-gray-500"><i class="fa-solid fa-circle-check mr-1 text-emerald-400"></i>Activos Hoy</p>
+        <p id="metric-active" class="text-2xl font-extrabold text-emerald-400">—</p>
+      </div>
+      <div class="glass-card stat-card">
+        <p class="text-[9px] font-bold uppercase tracking-widest text-gray-500"><i class="fa-solid fa-hourglass-half mr-1 text-amber-400"></i>En Prueba</p>
+        <p id="metric-trial" class="text-2xl font-extrabold text-amber-400">—</p>
+      </div>
+      <div class="glass-card stat-card">
+        <p class="text-[9px] font-bold uppercase tracking-widest text-gray-500"><i class="fa-solid fa-briefcase mr-1 text-violet-400"></i>Entrepreneur</p>
+        <p id="metric-ent" class="text-2xl font-extrabold text-violet-400">—</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="px-6 pb-10 max-w-[1300px] mx-auto w-full mt-4 flex-1">
+    <div class="glass-card overflow-hidden fade-up" style="animation-delay:.1s">
+      <div class="flex items-center justify-between px-5 py-3 border-b" style="border-color:rgba(255,255,255,.05)">
+        <p class="text-xs font-bold text-white"><i class="fa-solid fa-table-list text-sky-400 mr-2"></i>Usuarios de Firestore</p>
+        <div id="table-status" class="flex items-center gap-2 text-[10px] text-gray-500"></div>
+      </div>
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>UID / Email</th>
+              <th>Plan</th>
+              <th>Último acceso</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="4" class="text-center py-12"><div class="spinner mx-auto"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMACIÓN -->
+<div id="confirm-modal" class="adm-modal-overlay" onclick="if(event.target===this)closeConfirm()">
+  <div class="adm-modal">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+        <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xs"></i>
+      </div>
+      <p class="font-bold text-white text-sm">Confirmar acción</p>
+    </div>
+    <p id="confirm-msg" class="text-xs text-gray-300 mb-5 leading-relaxed"></p>
+    <div class="flex gap-2 justify-end">
+      <button onclick="closeConfirm()" class="adm-btn" style="border-color:rgba(255,255,255,.1);color:#94a3b8">Cancelar</button>
+      <button id="confirm-ok" class="adm-btn btn-trial">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="adm-toast" class="fixed bottom-5 right-5 z-[999999] flex flex-col gap-2 pointer-events-none"></div>
+
+<script>
+/* ── Cursor ── */
+const cur = document.getElementById('adm-cursor');
+let mx=0,my=0,cx=0,cy=0;
+window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function lerpCur(){cx+=(mx-cx)*.15;cy+=(my-cy)*.15;cur.style.left=cx+'px';cur.style.top=cy+'px';requestAnimationFrame(lerpCur);})();
+document.addEventListener('mouseover',e=>{if(e.target.closest('button,a,input,td'))cur.classList.add('h');});
+document.addEventListener('mouseout',e=>{if(e.target.closest('button,a,input,td'))cur.classList.remove('h');});
+
+/* ── Toast ── */
+function toast(type,msg){
+  const t=document.createElement('div');
+  const cols={success:'border-emerald-500 text-emerald-300',error:'border-red-500 text-red-300',info:'border-sky-500 text-sky-300'};
+  t.className=`pointer-events-auto glass-card border-l-4 ${cols[type]||cols.info} px-4 py-3 text-xs font-semibold max-w-xs`;
+  t.textContent=msg; document.getElementById('adm-toast').appendChild(t);
+  setTimeout(()=>t.remove(),4000);
+}
+
+/* ── Confirm modal ── */
+let _confirmCb=null;
+function confirm(msg,cb){
+  document.getElementById('confirm-msg').textContent=msg;
+  _confirmCb=cb;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirm(){document.getElementById('confirm-modal').classList.remove('open');_confirmCb=null;}
+document.getElementById('confirm-ok').onclick=()=>{if(_confirmCb)_confirmCb();closeConfirm();};
+
+/* ── Seguridad: verificar rol ANTES de mostrar nada ── */
+let db,auth;
+
+function bootAdmin(){
+  db   = window.db;
+  auth = window.auth;
+  if (!db||!auth){ setTimeout(bootAdmin,120); return; }
+
+  auth.onAuthStateChanged(async user=>{
+    if(!user){ location.href='index.html'; return; }
+    // Leer rol de Firestore (fuente de verdad, no localStorage)
+    try {
+      const snap=await db.collection('users').doc(user.uid).get();
+      const role=(snap.exists&&snap.data().role)||'user';
+      if(role!=='admin'){ location.href='index.html'; return; }
+    } catch(e){ location.href='index.html'; return; }
+
+    // Acceso OK
+    document.getElementById('guard-screen').style.display='none';
+    document.getElementById('admin-app').classList.remove('hidden');
+    gsap.fromTo('#admin-app',{opacity:0},{opacity:1,duration:.6});
+    loadUsers();
+  });
+}
+
+// Esperar a que firebase-init.js haya cargado las instancias
+if(window.db&&window.auth){ bootAdmin(); }
+else { window._onRoleReady=()=>bootAdmin(); bootAdmin(); }
+
+/* ── Cargar usuarios ── */
+async function loadUsers(){
+  const tbody=document.getElementById('users-tbody');
+  const status=document.getElementById('table-status');
+  tbody.innerHTML='<tr><td colspan="4" class="text-center py-10"><div class="spinner mx-auto"></div></td></tr>';
+  status.innerHTML='<div class="spinner" style="width:12px;height:12px;border-width:1.5px"></div> Cargando…';
+
+  try {
+    // Obtener todos los docs de la colección users (solo docs raíz = UIDs o uid_year_YYYY)
+    const snap=await db.collection('users').get();
+    const today=new Date().toISOString().slice(0,10);
+
+    // Agrupar: solo docs principales (sin _year_)
+    const docs=snap.docs.filter(d=>!d.id.includes('_year_'));
+
+    let totalTrial=0, totalEnt=0, totalActive=0;
+
+    if(docs.length===0){
+      tbody.innerHTML='<tr><td colspan="4" class="text-center py-10 text-gray-500 text-xs">No hay usuarios registrados.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML='';
+    docs.forEach(doc=>{
+      const d=doc.data();
+      const uid=doc.id;
+      const email=d.email||d.profileEmail||'—';
+      const plan=d.plan||'free';
+      const role=d.role||'user';
+      const lastSeen=d.lastSeen||(d.year?d.year+'':null);
+      const isToday=lastSeen&&lastSeen.startsWith(today);
+      if(isToday) totalActive++;
+      if(plan==='trial') totalTrial++;
+      if(plan==='entrepreneur') totalEnt++;
+
+      const planBadge={
+        personal: '<span class="badge badge-personal"><i class="fa-solid fa-user"></i> Personal</span>',
+        entrepreneur:'<span class="badge badge-entrepreneur"><i class="fa-solid fa-briefcase"></i> Entrepreneur</span>',
+        trial:'<span class="badge badge-trial"><i class="fa-solid fa-hourglass-half"></i> Prueba</span>',
+        free:'<span class="badge badge-free">Free</span>',
+      }[plan]||`<span class="badge badge-free">${plan}</span>`;
+
+      const roleBadge=role==='admin'?'<span class="badge badge-admin ml-1"><i class="fa-solid fa-shield-halved"></i> Admin</span>':'';
+
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td>
+          <p class="font-bold text-white text-[11px]">${email}${roleBadge}</p>
+          <p class="text-[9px] text-gray-600 font-mono mt-0.5">${uid.slice(0,20)}…</p>
+        </td>
+        <td>${planBadge}</td>
+        <td class="text-gray-500 text-[10px]">${lastSeen||'—'}</td>
+        <td>
+          <div class="flex flex-wrap gap-1.5">
+            <button onclick="setPlan('${uid}','personal')"    class="adm-btn btn-personal">Personal</button>
+            <button onclick="setPlan('${uid}','entrepreneur')" class="adm-btn btn-entrepreneur">Entrepreneur</button>
+            <button onclick="activateTrial('${uid}')"         class="adm-btn btn-trial"><i class="fa-solid fa-hourglass-half"></i> Prueba</button>
+            <button onclick="cancelPlan('${uid}')"            class="adm-btn btn-reset"><i class="fa-solid fa-ban"></i> Cancelar</button>
+            <button onclick="sendReset('${uid}','${email}')"  class="adm-btn btn-mail"><i class="fa-solid fa-key"></i> Reset</button>
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    // Métricas
+    document.getElementById('metric-total').textContent=docs.length;
+    document.getElementById('metric-active').textContent=totalActive;
+    document.getElementById('metric-trial').textContent=totalTrial;
+    document.getElementById('metric-ent').textContent=totalEnt;
+    status.innerHTML=`<i class="fa-solid fa-circle-check text-emerald-400"></i> ${docs.length} usuarios cargados`;
+
+  } catch(e){
+    tbody.innerHTML=`<tr><td colspan="4" class="text-center py-10 text-red-400 text-xs">Error al cargar: ${e.message}</td></tr>`;
+    status.innerHTML='<i class="fa-solid fa-triangle-exclamation text-red-400"></i> Error';
+    toast('error','Error al cargar usuarios: '+e.message);
+  }
+}
+
+/* ── Acciones ── */
+async function setPlan(uid,plan){
+  const labels={personal:'Personal ($9.99)',entrepreneur:'Entrepreneur ($19.99)'};
+  confirm(`Cambiar plan de este usuario a "${labels[plan]}"?`,async()=>{
+    try {
+      await db.collection('users').doc(uid).set({plan,planUpdated:new Date().toISOString()},{merge:true});
+      toast('success',`Plan actualizado a ${plan}`);
+      loadUsers();
+    } catch(e){ toast('error','Error: '+e.message); }
+  });
+}
+
+async function activateTrial(uid){
+  confirm('Activar período de prueba de 3 días para este usuario?',async()=>{
+    const trialEnd=new Date(Date.now()+3*24*60*60*1000).toISOString();
+    try {
+      await db.collection('users').doc(uid).set({plan:'trial',trialEnd,planUpdated:new Date().toISOString()},{merge:true});
+      toast('success','Prueba de 3 días activada');
+      loadUsers();
+    } catch(e){ toast('error','Error: '+e.message); }
+  });
+}
+
+async function cancelPlan(uid){
+  confirm('Cancelar suscripción de este usuario y revertir a plan Free?',async()=>{
+    try {
+      await db.collection('users').doc(uid).set({plan:'free',planUpdated:new Date().toISOString()},{merge:true});
+      toast('info','Suscripción cancelada — plan Free asignado');
+      loadUsers();
+    } catch(e){ toast('error','Error: '+e.message); }
+  });
+}
+
+async function sendReset(uid,email){
+  if(!email||email==='—'){toast('error','Email no disponible para este usuario');return;}
+  confirm(`Enviar correo de recuperación de contraseña a ${email}?`,async()=>{
+    try {
+      await auth.sendPasswordResetEmail(email);
+      toast('success','Correo de recuperación enviado a '+email);
+    } catch(e){ toast('error','Error: '+e.message); }
+  });
+}
+</script>
+</body>
+</html>
