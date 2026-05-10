@@ -11,6 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-functions-compat.js"></script>
 <script src="js/firebase-init.js"></script>
 <style>
 :root { --t-primary:#38bdf8; --t-secondary:#818cf8; }
@@ -35,6 +36,8 @@ body { font-family:'Outfit',sans-serif; background:#0a1128; color:#fff; min-heig
 .btn-trial { border-color:rgba(251,191,36,.4); color:#fbbf24; background:rgba(251,191,36,.08); }
 .btn-reset { border-color:rgba(239,68,68,.35); color:#f87171; background:rgba(239,68,68,.07); }
 .btn-mail  { border-color:rgba(52,211,153,.35); color:#34d399; background:rgba(52,211,153,.07); }
+.btn-delete { border-color:rgba(239,68,68,.5); color:#f87171; background:rgba(239,68,68,.07); padding:4px 7px; }
+.btn-delete:hover { background:rgba(239,68,68,.2); border-color:rgba(239,68,68,.8); }
 .stat-card { display:flex; flex-direction:column; gap:.25rem; padding:1.25rem 1.5rem; }
 @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 .fade-up { animation:fadeUp .5s ease forwards; }
@@ -123,7 +126,7 @@ tr:hover td { background:rgba(56,189,248,.02); }
             <tr>
               <th>Email / UID</th>
               <th>Plan</th>
-              <th>Trial / Expira</th>
+              <th>Vigencia</th>
               <th>Activo</th>
               <th>Acciones</th>
             </tr>
@@ -248,10 +251,29 @@ async function loadUsers(){
       const lastSeen = d.lastSeen || (d.year ? d.year+'' : null);
       const trialEnd = d.trialEndDate || d.trialEnd || null;
 
-      // 2. Calcular días restantes de trial
+      // 2. Calcular vigencia del plan
       let trialCell = '—';
+      const subDate  = d.subscriptionDate || d.paidAt || null;   // fecha de pago
+      const subEnd   = d.subscriptionEndDate || null;             // fecha de vencimiento (30d)
+
       if (plan === 'personal' || plan === 'entrepreneur') {
-        trialCell = '<span class="badge badge-personal"><i class="fa-solid fa-infinity"></i> Activo</span>';
+        // Plan pagado: calcular días restantes de los 30 de suscripción
+        const refEnd = subEnd
+          ? new Date(subEnd)
+          : (subDate ? new Date(new Date(subDate).getTime() + 30*24*60*60*1000) : null);
+
+        if (refEnd) {
+          const daysLeft = Math.ceil((refEnd - new Date()) / 86400000);
+          if (daysLeft > 7) {
+            trialCell = `<span class="badge badge-personal"><i class="fa-regular fa-calendar-check"></i> Faltan ${daysLeft}d</span>`;
+          } else if (daysLeft > 0) {
+            trialCell = `<span class="badge badge-trial" style="border-color:rgba(239,68,68,.5);color:#fb923c"><i class="fa-solid fa-triangle-exclamation"></i> Faltan ${daysLeft}d</span>`;
+          } else {
+            trialCell = `<span class="badge badge-free" style="border-color:rgba(239,68,68,.4);color:#f87171"><i class="fa-solid fa-lock"></i> Vencido</span>`;
+          }
+        } else {
+          trialCell = `<span class="badge badge-personal"><i class="fa-regular fa-calendar-check"></i> Activo</span>`;
+        }
       } else if (trialEnd) {
         const daysLeft = Math.ceil((new Date(trialEnd) - new Date()) / 86400000);
         if (daysLeft > 1) {
@@ -279,6 +301,7 @@ async function loadUsers(){
         entrepreneur: '<span class="badge badge-entrepreneur"><i class="fa-solid fa-briefcase"></i> Entrepreneur</span>',
         trial:        '<span class="badge badge-trial"><i class="fa-solid fa-hourglass-half"></i> Prueba</span>',
         free:         '<span class="badge badge-free">Free</span>',
+        expired:      '<span class="badge badge-free" style="border-color:rgba(239,68,68,.4);color:#f87171"><i class="fa-solid fa-lock"></i> Expirado</span>',
       }[plan] || `<span class="badge badge-free">${plan}</span>`;
 
       // 5. displayEmail usa roleBadge — declarado antes
@@ -289,6 +312,7 @@ async function loadUsers(){
       const lastSeenFmt = lastSeen ? lastSeen.slice(0,16).replace('T',' ') : '—';
 
       const tr=document.createElement('tr');
+      tr.id = `row-${uid}`;
       tr.innerHTML=`
         <td>${displayEmail}</td>
         <td>${planBadge}</td>
@@ -301,6 +325,7 @@ async function loadUsers(){
             <button onclick="activateTrial('${uid}')"         class="adm-btn btn-trial"><i class="fa-solid fa-hourglass-half"></i> Prueba</button>
             <button onclick="cancelPlan('${uid}')"            class="adm-btn btn-reset"><i class="fa-solid fa-ban"></i> Cancelar</button>
             <button onclick="sendReset('${uid}','${email||''}')" class="adm-btn btn-mail${!email?' opacity-40':''}"><i class="fa-solid fa-key"></i> Reset</button>
+            <button onclick="deleteUser('${uid}','${email||uid.slice(0,12)}')" class="adm-btn btn-delete" title="Eliminar usuario"><i class="fa-solid fa-trash"></i></button>
           </div>
         </td>`;
       tbody.appendChild(tr);
@@ -322,19 +347,24 @@ async function loadUsers(){
 }
 
 /* ── Acciones ── */
-async function setPlan(uid,plan){
-  const labels={personal:'Personal ($9.99)',entrepreneur:'Entrepreneur ($19.99)'};
-  confirm(`Cambiar plan de este usuario a "${labels[plan]}"?`,async()=>{
+async function setPlan(uid, plan) {
+  const labels = { personal:'Personal ($9.99)', entrepreneur:'Entrepreneur ($19.99)' };
+  confirm(`Cambiar plan de este usuario a "${labels[plan]}"?`, async () => {
     try {
+      const now = new Date().toISOString();
+      const subEnd = new Date(Date.now() + 30*24*60*60*1000).toISOString(); // 30 días exactos
       await db.collection('users').doc(uid).set({
         plan,
-        planStatus: plan,
-        isPaid: true,           // acceso garantizado — fuente de verdad
-        planUpdated: new Date().toISOString()
-      },{merge:true});
-      toast('success',`Plan actualizado a ${plan} ✓`);
+        planStatus:          plan,
+        isPaid:              true,
+        subscriptionDate:    now,
+        subscriptionEndDate: subEnd,
+        trialEndDate:        null,
+        planUpdated:         now
+      }, { merge: true });
+      toast('success', `Plan ${plan} activado — vence en 30 días ✓`);
       loadUsers();
-    } catch(e){ toast('error','Error: '+e.message); }
+    } catch(e) { toast('error','Error: '+e.message); }
   });
 }
 
@@ -355,29 +385,81 @@ async function activateTrial(uid){
   });
 }
 
-async function cancelPlan(uid){
-  confirm('Cancelar suscripción de este usuario y revertir a plan Free?',async()=>{
+async function cancelPlan(uid) {
+  confirm('Cancelar suscripción de este usuario y revertir a plan Free?', async () => {
     try {
       await db.collection('users').doc(uid).set({
-        plan:'free',
-        planStatus:'free',
-        isPaid: false,
-        planUpdated: new Date().toISOString()
-      },{merge:true});
-      toast('info','Suscripción cancelada — plan Free asignado');
+        plan:                'free',
+        planStatus:          'free',
+        isPaid:              false,
+        subscriptionDate:    null, // limpiar fecha de suscripción
+        subscriptionEndDate: null, // ⚠ crítico: evita conflictos de acceso
+        trialEndDate:        null, // limpiar trial para evitar acceso residual
+        planUpdated:         new Date().toISOString()
+      }, { merge: true });
+      toast('info', 'Suscripción cancelada — plan Free asignado');
       loadUsers();
-    } catch(e){ toast('error','Error: '+e.message); }
+    } catch(e) { toast('error', 'Error: ' + e.message); }
   });
 }
 
-async function sendReset(uid,email){
-  if(!email||email==='—'){toast('error','Email no disponible para este usuario');return;}
-  confirm(`Enviar correo de recuperación de contraseña a ${email}?`,async()=>{
+async function sendReset(uid, email) {
+  if (!email || email === '—') { toast('error','Email no disponible para este usuario'); return; }
+  confirm(`Enviar correo de recuperación de contraseña a ${email}?`, async () => {
     try {
       await auth.sendPasswordResetEmail(email);
-      toast('success','Correo de recuperación enviado a '+email);
-    } catch(e){ toast('error','Error: '+e.message); }
+      toast('success','Correo de recuperación enviado a ' + email);
+    } catch(e) { toast('error','Error: ' + e.message); }
   });
+}
+
+/**
+ * deleteUser(uid, label)
+ * Elimina el documento del usuario en Firestore.
+ * La eliminación de la cuenta en Firebase Auth requiere la Cloud Function
+ * 'adminDeleteUser' (server-side con Admin SDK). Por ahora limpia Firestore
+ * y revoca el acceso poniendo isPaid:false + planStatus:'deleted'.
+ */
+async function deleteUser(uid, label) {
+  confirm(
+    `⚠ ELIMINAR USUARIO: "${label}"\n\nSe eliminarán todos sus datos de Firestore y se revocará el acceso. Esta acción NO se puede deshacer.`,
+    async () => {
+      try {
+        const btn = document.querySelector(`#row-${uid} .btn-delete`);
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
+
+        // 1. Eliminar documento principal del usuario
+        await db.collection('users').doc(uid).delete();
+
+        // 2. Intentar llamar Cloud Function para eliminar la cuenta de Auth
+        //    (requiere deploy de la función adminDeleteUser)
+        try {
+          const deleteFn = firebase.functions().httpsCallable('adminDeleteUser');
+          await deleteFn({ uid });
+          toast('success', `Usuario ${label} eliminado completamente ✓`);
+        } catch (fnErr) {
+          // La función no está disponible aún — marcar como eliminado igualmente
+          console.warn('[Admin] adminDeleteUser CF no disponible:', fnErr.message);
+          toast('info', `Firestore limpiado. Auth requiere deploy de Cloud Functions.`);
+        }
+
+        // 3. Remover la fila de la tabla sin recargar todo
+        const row = document.getElementById(`row-${uid}`);
+        if (row) {
+          row.style.transition = 'opacity .3s, transform .3s';
+          row.style.opacity = '0';
+          row.style.transform = 'translateX(20px)';
+          setTimeout(() => row.remove(), 320);
+        }
+
+        // Actualizar métricas
+        loadUsers();
+
+      } catch(e) {
+        toast('error', 'Error al eliminar: ' + e.message);
+      }
+    }
+  );
 }
 </script>
 </body>

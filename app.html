@@ -215,6 +215,35 @@
         .glow-fail { filter: drop-shadow(0 0 4px rgba(248,113,113,0.8)); }
         .glow-pend { filter: drop-shadow(0 0 4px rgba(251,191,36,0.8)); }
 
+        /* Panel switch btn con candado (trial/no pagado) */
+        .panel-switch-btn { display:inline-flex; align-items:center; justify-content:center; gap:5px;
+            width:36px; height:36px; border-radius:999px; font-size:14px;
+            color:rgba(255,255,255,.5); background:transparent; border:none;
+            transition:all .2s; position:relative; }
+        .panel-switch-btn.active-panel { background:rgba(56,189,248,.15); color:#38bdf8;
+            box-shadow:0 0 12px rgba(56,189,248,.2); }
+        .panel-switch-btn.panel-locked { color:rgba(255,255,255,.3); cursor:not-allowed; }
+        .panel-switch-btn.panel-locked .lock-icon { display:inline !important; }
+        .panel-switch-btn .lock-icon { display:none; font-size:9px;
+            position:absolute; top:5px; right:5px; color:rgba(251,191,36,.8); }
+
+        /* Modal Upgrade — Liquid Crystal */
+        #upgrade-modal {
+            position:fixed; inset:0; z-index:100003;
+            display:none; align-items:center; justify-content:center;
+            background:rgba(4,8,20,.8); backdrop-filter:blur(20px);
+        }
+        #upgrade-modal.show { display:flex; }
+        .upgrade-card {
+            background:rgba(8,14,32,.97);
+            backdrop-filter:blur(48px); -webkit-backdrop-filter:blur(48px);
+            border:1px solid rgba(255,255,255,.07);
+            border-radius:0;
+            width:100%; max-width:400px; overflow:hidden;
+            box-shadow:0 0 0 1px rgba(129,140,248,.08), 0 40px 100px rgba(0,0,0,.9);
+            animation:bpSlide .4s cubic-bezier(.175,.885,.32,1.275) forwards;
+        }
+
         /* =========================================
            LIGHT MODE ENGINE - LIQUID CRYSTAL
         ========================================= */
@@ -451,6 +480,91 @@
          MODAL BINANCE PAY — Pasarela de pago real (QR + polling)
          Se abre desde el payment-wall o desde los botones de compra
     ================================================================ -->
+    <!-- ================================================================
+         MODAL UPGRADE — Desbloquea el Poder Total (Plan Emprendedor)
+         Se muestra cuando un usuario trial intenta acceder a la Fase 2.
+    ================================================================ -->
+    <div id="upgrade-modal" onclick="if(event.target===this)closeUpgradeModal()">
+        <div class="upgrade-card">
+
+            <!-- Franja decorativa superior -->
+            <div style="height:3px;background:linear-gradient(90deg,#38bdf8,#818cf8,#38bdf8);background-size:200% 100%;animation:shimmer 2s linear infinite"></div>
+
+            <!-- Header -->
+            <div style="padding:1.5rem 1.5rem 0">
+                <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
+                    <div style="width:40px;height:40px;background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        <i class="fa-solid fa-lock-open text-violet-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <p style="font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(129,140,248,.7);text-transform:uppercase;margin-bottom:2px">Función Premium</p>
+                        <p style="font-size:18px;font-weight:800;color:#fff;line-height:1.2">Desbloquea el <span style="background:linear-gradient(135deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Poder Total</span></p>
+                    </div>
+                </div>
+                <p style="font-size:12px;color:#64748b;margin-bottom:1.25rem;line-height:1.5">La <strong style="color:#94a3b8">Fase de Negocios</strong> — Inventario, Deudas, Cerebro Financiero — es exclusiva del <strong style="color:#818cf8">Plan Emprendedor</strong>.</p>
+            </div>
+
+            <!-- Features -->
+            <div style="margin:0 1.5rem 1.25rem;padding:.875rem;background:rgba(129,140,248,.05);border:1px solid rgba(129,140,248,.12)">
+                <div style="display:flex;flex-direction:column;gap:.6rem">
+                    <div style="display:flex;align-items:center;gap:.6rem;font-size:11px;color:#94a3b8">
+                        <i class="fa-solid fa-check" style="color:#10b981;font-size:9px;width:12px"></i>
+                        Inventario inteligente con rotación y capital estancado
+                    </div>
+                    <div style="display:flex;align-items:center;gap:.6rem;font-size:11px;color:#94a3b8">
+                        <i class="fa-solid fa-check" style="color:#10b981;font-size:9px;width:12px"></i>
+                        Sistema de cobranzas con mora automática
+                    </div>
+                    <div style="display:flex;align-items:center;gap:.6rem;font-size:11px;color:#94a3b8">
+                        <i class="fa-solid fa-check" style="color:#10b981;font-size:9px;width:12px"></i>
+                        Cerebro Financiero 360° — ROI, utilidad neta, proyecciones
+                    </div>
+                    <div style="display:flex;align-items:center;gap:.6rem;font-size:11px;color:#94a3b8">
+                        <i class="fa-solid fa-check" style="color:#10b981;font-size:9px;width:12px"></i>
+                        Gestión multi-divisa USD / EUR / USDT
+                    </div>
+                </div>
+            </div>
+
+            <!-- Precio + CTAs -->
+            <div style="padding:0 1.5rem 1.5rem">
+                <div style="display:flex;align-items:baseline;gap:.35rem;margin-bottom:1rem">
+                    <span style="font-size:32px;font-weight:900;color:#fff;line-height:1">$19</span>
+                    <span style="font-size:14px;font-weight:700;color:#475569">.99</span>
+                    <span style="font-size:10px;color:#475569">/ mes · USDT</span>
+                </div>
+
+                <!-- CTA Principal -->
+                <button onclick="closeUpgradeModal(); openBinanceModal('entrepreneur');"
+                        style="width:100%;padding:14px;font-weight:700;font-size:13px;
+                               background:linear-gradient(135deg,#38bdf8,#818cf8);
+                               color:#0a0f1e;border:none;margin-bottom:.5rem;
+                               display:flex;align-items:center;justify-content:center;gap:.5rem;
+                               transition:filter .2s"
+                        onmouseover="this.style.filter='brightness(1.1)'"
+                        onmouseout="this.style.filter='brightness(1)'">
+                    <i class="fa-solid fa-bolt"></i>
+                    Pagar con Binance Pay — $19.99 USDT
+                </button>
+
+                <!-- CTA Secundario -->
+                <button onclick="closeUpgradeModal()"
+                        style="width:100%;padding:9px;font-size:11px;font-weight:600;
+                               background:transparent;border:1px solid rgba(255,255,255,.07);
+                               color:#475569;transition:color .2s"
+                        onmouseover="this.style.color='#94a3b8'"
+                        onmouseout="this.style.color='#475569'">
+                    Continuar con el plan actual
+                </button>
+            </div>
+
+        </div>
+    </div><!-- /upgrade-modal -->
+
+    <!-- ================================================================
+         MODAL BINANCE PAY — Pasarela de pago real (QR + polling)
+         Se abre desde el payment-wall o desde los botones de compra
+    ================================================================ -->
     <div id="binance-pay-modal">
         <div class="bp-card">
 
@@ -585,8 +699,12 @@
                 <button id="btn-panel-personal" onclick="switchPanel('personal')" class="panel-switch-btn active-panel" title="Panel Personal">
                     <i class="fa-solid fa-user"></i>
                 </button>
-                <button id="btn-panel-negocios" onclick="switchPanel('negocios')" class="panel-switch-btn" title="Panel de Negocios">
+                <button id="btn-panel-negocios"
+                        onclick="_negociosBtnClick()"
+                        class="panel-switch-btn"
+                        title="Panel de Negocios">
                     <i class="fa-solid fa-briefcase"></i>
+                    <i class="fa-solid fa-lock lock-icon"></i>
                 </button>
             </div>
 
@@ -1164,6 +1282,11 @@
                 const shell = $('app-shell');
                 shell.classList.remove('hidden');
                 shell.style.display = 'flex';
+                // Aplicar candado al Panel de Negocios según el plan del usuario
+                try {
+                    const userSnap = await db.collection('users').doc(currentUser.uid).get();
+                    if (userSnap.exists) applyPanelLock(userSnap.data());
+                } catch(e) { applyPanelLock({}); } // fallo silencioso: candado por defecto
                 initApp();
             } else {
                 // STRICT: app-shell SIEMPRE oculto cuando no hay sesión
@@ -1186,11 +1309,12 @@
          * Verifica acceso según el estado del plan del usuario.
          * Retorna true si puede entrar al dashboard, false si fue bloqueado.
          * Flujo:
-         *   admin           → siempre pasa
-         *   isPaid=true     → pasa (plan activo pagado)
-         *   pending_payment → muestra muro de PAGO EMPRENDEDOR
-         *   trial vigente   → pasa
-         *   trial expirado  → muestra muro de SUSCRIPCIÓN EXPIRADA
+         *   admin                      → siempre pasa
+         *   isPaid=true + sub vigente   → pasa (plan activo pagado)
+         *   isPaid=true + sub vencida   → revoca isPaid, muestra expired-screen
+         *   pending_payment             → muestra muro de PAGO EMPRENDEDOR
+         *   trial vigente               → pasa
+         *   trial expirado              → muestra expired-screen
          */
         async function checkAccess(uid) {
             try {
@@ -1201,13 +1325,36 @@
                 const planStatus  = data.planStatus  || plan;
                 const isPaid      = data.isPaid      === true;
                 const trialEnd    = data.trialEndDate || data.trialEnd || null;
+                const subEnd      = data.subscriptionEndDate || null; // fecha vencimiento suscripción pagada
                 const userName    = data.name        || data.email?.split('@')[0] || 'usuario';
+                const now         = new Date();
 
                 // 1. Admins: siempre acceso total
                 if (role === 'admin') return true;
 
-                // 2. Planes pagados activos (isPaid es la fuente de verdad)
-                if (isPaid && (plan === 'personal' || plan === 'entrepreneur')) return true;
+                // 2. Plan pagado (personal / entrepreneur)
+                if (isPaid && (plan === 'personal' || plan === 'entrepreneur')) {
+
+                    // 2a. Verificar si la suscripción ha vencido
+                    if (subEnd) {
+                        const endDate = new Date(subEnd);
+                        if (now > endDate) {
+                            // Suscripción VENCIDA — revocar acceso automáticamente
+                            console.warn(`[EQUO] Suscripción vencida para ${uid}. Revocando...`);
+                            await db.collection('users').doc(uid).set({
+                                isPaid:     false,
+                                planStatus: 'expired',
+                                planUpdated: now.toISOString()
+                            }, { merge: true });
+                            // Mostrar expired-screen
+                            const expiredScreen = document.getElementById('expired-screen');
+                            if (expiredScreen) expiredScreen.classList.add('show');
+                            return false;
+                        }
+                    }
+                    // 2b. Suscripción vigente (o sin fecha — legacy con isPaid:true)
+                    return true;
+                }
 
                 // 3. Pendiente de pago Emprendedor — mostrar muro de pago
                 if (planStatus === 'pending_payment') {
@@ -1218,7 +1365,6 @@
                 // 4. Trial: evaluar fecha
                 if (plan === 'trial' || plan === 'free') {
                     if (trialEnd) {
-                        const now = new Date();
                         const end = new Date(trialEnd);
                         if (now <= end) return true; // Trial vigente
                     } else {
@@ -1232,7 +1378,7 @@
                     }
                 }
 
-                // 5. Acceso denegado: trial expirado — mostrar muro de suscripción
+                // 5. Acceso denegado: trial o suscripción expirada
                 const expiredScreen = document.getElementById('expired-screen');
                 if (expiredScreen) expiredScreen.classList.add('show');
                 return false;
@@ -1462,6 +1608,8 @@
         /**
          * _confirmPaymentUI()
          * Animación de confirmación + desbloqueo del dashboard.
+         * También llama applyPanelLock() con los datos del nuevo plan
+         * para quitar el candádo del botón de Negocios al instante.
          */
         function _confirmPaymentUI() {
             _setBpView('success');
@@ -1470,6 +1618,11 @@
             // Ocultar el muro de pago si estaba visible
             const wall = document.getElementById('payment-wall');
             if (wall) wall.classList.remove('show');
+
+            // Quitar el candádo del Panel de Negocios inmediatamente
+            // Los datos del plan recabar son los del orden pagada (entrepreneur)
+            const activatedPlan = _bpCurrentOrder?.plan || 'entrepreneur';
+            applyPanelLock({ isPaid: true, plan: activatedPlan, planStatus: activatedPlan });
 
             // Cerrar modal y abrir dashboard tras 2.5s
             setTimeout(() => {
@@ -1482,6 +1635,61 @@
                 initApp();
                 showToast('success', '¡Plan Activado!', 'Bienvenido a EQUO. Tu suscripción está activa.');
             }, 2500);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // UPGRADE MODAL — Panel de Negocios bloqueado (trial / no pagado)
+        // ═══════════════════════════════════════════════════════════════════
+
+        /**
+         * applyPanelLock(userData)
+         * Lee el estado del plan y aplica (o quita) el candado al botón de Negocios.
+         * @param {{ plan:string, planStatus:string, isPaid:boolean }} userData
+         */
+        function applyPanelLock(userData) {
+            const btn = document.getElementById('btn-panel-negocios');
+            if (!btn) return;
+
+            const isPaid  = userData?.isPaid === true;
+            const plan    = userData?.plan || userData?.planStatus || 'trial';
+            const isAdmin = window.userRole === 'admin';
+
+            // Acceso total: admin o plan entrepreneur pagado
+            const hasFullAccess = isAdmin || (isPaid && plan === 'entrepreneur');
+
+            if (hasFullAccess) {
+                btn.classList.remove('panel-locked');
+                btn.title = 'Panel de Negocios';
+            } else {
+                btn.classList.add('panel-locked');
+                btn.title = 'Plan Emprendedor requerido — Haz clic para desbloquear';
+            }
+            window._negociosPanelLocked = !hasFullAccess;
+        }
+
+        /** Handler del botón Negocios: bloqueado → upgrade modal, libre → switchPanel */
+        function _negociosBtnClick() {
+            if (window._negociosPanelLocked) {
+                showUpgradeModal();
+            } else {
+                switchPanel('negocios');
+            }
+        }
+
+        function showUpgradeModal() {
+            const modal = document.getElementById('upgrade-modal');
+            if (!modal) return;
+            modal.classList.add('show');
+            // Shake suave en el botón
+            const btn = document.getElementById('btn-panel-negocios');
+            if (btn && window.gsap) {
+                gsap.fromTo(btn, { x: -4 }, { x: 4, yoyo: true, repeat: 3, duration: 0.07, ease: 'power1.inOut' });
+            }
+        }
+
+        function closeUpgradeModal() {
+            const modal = document.getElementById('upgrade-modal');
+            if (modal) modal.classList.remove('show');
         }
 
         /**
