@@ -263,13 +263,21 @@
             background: linear-gradient(to bottom, transparent, rgba(255,255,255,.1) 40%, rgba(255,255,255,.1) 60%, transparent);
             flex-shrink: 0;
         }
-        /* Candado */
-        .panel-switch-btn.panel-locked { color: rgba(255,255,255,.2); cursor: not-allowed; }
-        .panel-switch-btn.panel-locked .lock-icon { display: inline !important; }
+        /* Candado — reforzado */
+        .panel-switch-btn.panel-locked {
+            color: rgba(255,255,255,.2);
+            cursor: not-allowed;
+        }
+        /* Lock icon: SIEMPRE oculto por defecto, SIEMPRE visible cuando panel-locked */
         .panel-switch-btn .lock-icon {
-            display: none; font-size: 8px;
+            display: none !important;   /* oculto base — !important evita herencia */
+            font-size: 8px;
             position: absolute; top: 4px; right: 4px;
-            color: rgba(251,191,36,.9);
+            color: rgba(251,191,36,.95);
+            filter: drop-shadow(0 0 3px rgba(251,191,36,.6));
+        }
+        .panel-switch-btn.panel-locked .lock-icon {
+            display: block !important;  /* visible cuando bloqueado */
         }
 
         /* ── Light Mode overrides del Panel Switch ───────────────── */
@@ -1388,16 +1396,25 @@
                 as.style.display = 'none';
                 await loadUserData(currentUser.uid, currentSystemYear);
                 // Verificar acceso ANTES de mostrar el dashboard
+                // checkAccess devuelve true/false pero también necesitamos los datos
+                // para applyPanelLock — los obtenemos de Firestore una sola vez:
+                const userSnap = await db.collection('users').doc(currentUser.uid).get();
+                const userData = userSnap.exists ? userSnap.data() : {};
+
+                // Inyectar rol en window antes de cualquier verificación
+                if (userData.role) window.userRole = userData.role;
+
+                // Verificar acceso con los datos ya cargados
                 const hasAccess = await checkAccess(currentUser.uid);
                 if (!hasAccess) return; // checkAccess() ya mostró el expired-screen
+
                 const shell = $('app-shell');
                 shell.classList.remove('hidden');
                 shell.style.display = 'flex';
-                // Aplicar candado al Panel de Negocios según el plan del usuario
-                try {
-                    const userSnap = await db.collection('users').doc(currentUser.uid).get();
-                    if (userSnap.exists) applyPanelLock(userSnap.data());
-                } catch(e) { applyPanelLock({}); } // fallo silencioso: candado por defecto
+
+                // Aplicar candado inmediatamente con los datos ya cargados
+                // (sin segunda llamada a Firestore — más rápido y determinista)
+                applyPanelLock(userData);
                 initApp();
             } else {
                 // STRICT: app-shell SIEMPRE oculto cuando no hay sesión
@@ -1754,28 +1771,42 @@
 
         /**
          * applyPanelLock(userData)
-         * Lee el estado del plan y aplica (o quita) el candado al botón de Negocios.
-         * @param {{ plan:string, planStatus:string, isPaid:boolean }} userData
+         * SEGURIDAD: Determina si el botón de Negocios debe estar bloqueado.
+         *
+         * Regla explícita:
+         *   DESBLOQUEADO si: role === 'admin'
+         *                 O: planStatus === 'entrepreneur' Y isPaid === true
+         *   BLOQUEADO    en CUALQUIER otro caso (trial, personal, free, expired, pending)
+         *
+         * @param {{ role?:string, plan?:string, planStatus?:string, isPaid?:boolean }} userData
          */
         function applyPanelLock(userData) {
             const btn = document.getElementById('btn-panel-negocios');
             if (!btn) return;
 
-            const isPaid  = userData?.isPaid === true;
-            const plan    = userData?.plan || userData?.planStatus || 'trial';
-            const isAdmin = window.userRole === 'admin';
+            // Fuentes de verdad — prioridad: datos Firestore > window.userRole
+            const role       = userData?.role || window.userRole || 'user';
+            const planStatus = userData?.planStatus || userData?.plan || 'trial';
+            const isPaid     = userData?.isPaid === true;
 
-            // Acceso total: admin o plan entrepreneur pagado
-            const hasFullAccess = isAdmin || (isPaid && plan === 'entrepreneur');
+            // Condición explícita y determinista
+            const isAdmin         = role === 'user' ? false : (role === 'admin');
+            const isEntrepreneur  = (planStatus === 'entrepreneur') && isPaid;
+            const hasFullAccess   = isAdmin || isEntrepreneur;
+
+            console.log(`[EQUO Lock] role=${role} planStatus=${planStatus} isPaid=${isPaid} → locked=${!hasFullAccess}`);
 
             if (hasFullAccess) {
+                // Quitar bloqueo
                 btn.classList.remove('panel-locked');
                 btn.title = 'Panel de Negocios';
+                window._negociosPanelLocked = false;
             } else {
+                // BLOQUEAR — cualquier plan que no sea entrepreneur+pagado
                 btn.classList.add('panel-locked');
-                btn.title = 'Plan Emprendedor requerido — Haz clic para desbloquear';
+                btn.title = 'Plan Emprendedor requerido — Haz clic para ver los beneficios';
+                window._negociosPanelLocked = true;
             }
-            window._negociosPanelLocked = !hasFullAccess;
         }
 
         /** Handler del botón Negocios: bloqueado → upgrade modal, libre → switchPanel */
