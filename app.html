@@ -548,15 +548,7 @@
                 <div class="flex-1 h-px" style="background:rgba(255,255,255,.05)"></div>
             </div>
 
-            <!-- Botón simulación (solo testing) -->
-            <button id="btn-simulate-pay" onclick="simulatePayment()"
-                    class="w-full py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all"
-                    style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);color:#fbbf24;"
-                    onmouseover="this.style.background='rgba(245,158,11,.16)'"
-                    onmouseout="this.style.background='rgba(245,158,11,.08)'">
-                <i class="fa-solid fa-flask"></i>
-                Simular Pago Exitoso
-            </button>
+
 
             <!-- Cerrar sesión -->
             <button onclick="window.auth.signOut().then(()=>location.reload())" class="text-[11px] text-gray-700 hover:text-red-400 transition underline block w-full text-center mt-4">
@@ -1605,38 +1597,7 @@
             wall.classList.add('show');
         }
 
-        /**
-         * simulatePayment()
-         * SOLO PARA PRUEBAS DE DESARROLLO.
-         * Activa isPaid:true y planStatus:'entrepreneur' en Firestore
-         * para verificar que el dashboard se desbloquea correctamente.
-         */
-        async function simulatePayment() {
-            if (!currentUser) return;
-            const btn = document.getElementById('btn-simulate-pay');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Activando...'; }
-            try {
-                await db.collection('users').doc(currentUser.uid).set({
-                    isPaid:      true,
-                    plan:        'entrepreneur',
-                    planStatus:  'entrepreneur',
-                    paidAt:      new Date().toISOString()
-                }, { merge: true });
-                // Ocultar muro y recargar el dashboard
-                const wall = document.getElementById('payment-wall');
-                if (wall) wall.classList.remove('show');
-                showToast('success', '¡Pago Simulado!', 'Plan Entrepreneur activado. Bienvenido al dashboard.');
-                setTimeout(() => {
-                    const shell = $('app-shell');
-                    shell.classList.remove('hidden');
-                    shell.style.display = 'flex';
-                    initApp();
-                }, 1500);
-            } catch(e) {
-                showToast('error', 'Error', 'No se pudo simular el pago: ' + e.message);
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-flask mr-2"></i>Simular Pago Exitoso'; }
-            }
-        }
+
 
         // ═══════════════════════════════════════════════════════════════════
         // BINANCE PAY — Modo Manual (API en pausa)
@@ -1806,7 +1767,7 @@
             const isEntrepreneur  = (planStatus === 'entrepreneur') && isPaid;
             const hasFullAccess   = isAdmin || isEntrepreneur;
 
-            console.log(`[EQUO Lock] role=${role} planStatus=${planStatus} isPaid=${isPaid} → locked=${!hasFullAccess}`);
+
 
             if (hasFullAccess) {
                 // Quitar bloqueo
@@ -3114,7 +3075,7 @@ window._onRoleReady = function(role) {
             else                  adminSection.classList.add('hidden');
         }
     }
-    console.log(`[EQUO Settings] Rol recibido desde firebase-init: ${role}`);
+
 };
 
 </script>
