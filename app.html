@@ -215,17 +215,53 @@
         .glow-fail { filter: drop-shadow(0 0 4px rgba(248,113,113,0.8)); }
         .glow-pend { filter: drop-shadow(0 0 4px rgba(251,191,36,0.8)); }
 
-        /* Panel switch btn con candado (trial/no pagado) */
-        .panel-switch-btn { display:inline-flex; align-items:center; justify-content:center; gap:5px;
-            width:36px; height:36px; border-radius:999px; font-size:14px;
-            color:rgba(255,255,255,.5); background:transparent; border:none;
-            transition:all .2s; position:relative; }
-        .panel-switch-btn.active-panel { background:rgba(56,189,248,.15); color:#38bdf8;
-            box-shadow:0 0 12px rgba(56,189,248,.2); }
-        .panel-switch-btn.panel-locked { color:rgba(255,255,255,.3); cursor:not-allowed; }
-        .panel-switch-btn.panel-locked .lock-icon { display:inline !important; }
-        .panel-switch-btn .lock-icon { display:none; font-size:9px;
-            position:absolute; top:5px; right:5px; color:rgba(251,191,36,.8); }
+        /* Panel Switch — estilo industrial cuadrado */
+        .panel-switch-wrap {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(0,0,0,.45); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 6px; padding: 5px 6px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 4px 16px rgba(0,0,0,.4);
+        }
+        .panel-switch-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 38px; height: 34px;
+            border-radius: 4px;          /* cuadrado industrial */
+            font-size: 14px;
+            color: rgba(255,255,255,.4);
+            background: transparent; border: 1px solid transparent;
+            transition: all .22s cubic-bezier(.4,0,.2,1);
+            position: relative;
+        }
+        .panel-switch-btn:hover:not(.panel-locked) {
+            color: rgba(255,255,255,.75);
+            background: rgba(255,255,255,.06);
+            border-color: rgba(255,255,255,.1);
+        }
+        /* Activo: cristal esmerilado profundo + glow del ícono */
+        .panel-switch-btn.active-panel {
+            color: #38bdf8;
+            background: rgba(56,189,248,.12);
+            border-color: rgba(56,189,248,.35);
+            box-shadow:
+                inset 0 1px 0 rgba(56,189,248,.15),
+                0 0 0 1px rgba(56,189,248,.08),
+                0 0 14px -2px rgba(56,189,248,.45);
+        }
+        /* Separador vertical entre botones */
+        .panel-switch-divider {
+            width: 1px; height: 20px;
+            background: rgba(255,255,255,.08);
+            flex-shrink: 0;
+        }
+        /* Candado */
+        .panel-switch-btn.panel-locked { color: rgba(255,255,255,.25); cursor: not-allowed; }
+        .panel-switch-btn.panel-locked .lock-icon { display: inline !important; }
+        .panel-switch-btn .lock-icon {
+            display: none; font-size: 8px;
+            position: absolute; top: 4px; right: 4px;
+            color: rgba(251,191,36,.85);
+        }
 
         /* Modal Upgrade — Liquid Crystal */
         #upgrade-modal {
@@ -694,28 +730,62 @@
                 <div class="text-3xl font-extrabold tracking-tight anim-text-gradient font-['Outfit']">EQUO</div>
             </div>
 
-            <!-- ── SWITCH DE PANELES (entre logo y ticker) ──────────── -->
-            <div class="flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-1 py-1">
-                <button id="btn-panel-personal" onclick="switchPanel('personal')" class="panel-switch-btn active-panel" title="Panel Personal">
-                    <i class="fa-solid fa-user"></i>
+            <!-- ── SWITCH DE PANELES — industrial, cuadrado ──────────── -->
+            <div class="panel-switch-wrap">
+
+                <!-- Botón Personal -->
+                <button id="btn-panel-personal" onclick="switchPanel('personal')"
+                        class="panel-switch-btn active-panel"
+                        title="Panel Personal">
+                    <i class="fa-solid fa-user" style="font-size:13px"></i>
                 </button>
+
+                <!-- Separador vertical -->
+                <div class="panel-switch-divider"></div>
+
+                <!-- Botón Negocios -->
                 <button id="btn-panel-negocios"
                         onclick="_negociosBtnClick()"
                         class="panel-switch-btn"
                         title="Panel de Negocios">
-                    <i class="fa-solid fa-briefcase"></i>
+                    <i class="fa-solid fa-briefcase" style="font-size:13px"></i>
                     <i class="fa-solid fa-lock lock-icon"></i>
                 </button>
+
             </div>
 
-            <!-- Ticker FX Live -->
-            <div class="flex-1 flex justify-center items-center text-[11px] sm:text-xs font-semibold tracking-wide font-['Outfit'] bg-white/5 border border-white/10 px-4 py-2 rounded-full gap-2 sm:gap-3 shadow-[0_0_15px_rgba(0,0,0,0.2)]">
-                <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)] mr-1"></div>
-                <div class="flex items-center"><span class="text-gray-400 mr-1">USD:</span> <span id="tick-usd" class="text-white font-bold">--.--</span></div>
-                <span class="text-white/20">|</span>
-                <div class="flex items-center"><span class="text-gray-400 mr-1">EUR:</span> <span id="tick-eur" class="text-white font-bold">--.--</span></div>
-                <span class="text-white/20">|</span>
-                <div class="flex items-center"><span class="text-gray-400 mr-1">USDT:</span> <span id="tick-usdt" class="text-white font-bold">--.--</span></div>
+            <!-- Ticker FX Live — pastilla compacta centrada -->
+            <div class="flex items-center justify-center text-[11px] sm:text-xs font-semibold tracking-wide font-['Outfit'] gap-3 sm:gap-4 px-5 py-2.5"
+                 style="background:rgba(255,255,255,.04); backdrop-filter:blur(12px);
+                        border:1px solid rgba(255,255,255,.09);
+                        border-radius:6px;
+                        max-width:480px; width:100%;
+                        box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 4px 20px rgba(0,0,0,.3);">
+                <!-- Indicador live -->
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"
+                         style="box-shadow:0 0 6px rgba(52,211,153,.9)"></div>
+                    <span class="text-[9px] font-bold tracking-widest uppercase text-emerald-500/70">Live</span>
+                </div>
+                <!-- Separador -->
+                <div style="width:1px;height:16px;background:rgba(255,255,255,.08);flex-shrink:0"></div>
+                <!-- USD -->
+                <div class="flex items-center gap-1">
+                    <span class="text-gray-500 text-[10px] font-medium">USD</span>
+                    <span id="tick-usd" class="text-white font-bold">--.--</span>
+                </div>
+                <div style="width:1px;height:12px;background:rgba(255,255,255,.06);flex-shrink:0"></div>
+                <!-- EUR -->
+                <div class="flex items-center gap-1">
+                    <span class="text-gray-500 text-[10px] font-medium">EUR</span>
+                    <span id="tick-eur" class="text-white font-bold">--.--</span>
+                </div>
+                <div style="width:1px;height:12px;background:rgba(255,255,255,.06);flex-shrink:0"></div>
+                <!-- USDT -->
+                <div class="flex items-center gap-1">
+                    <span class="text-gray-500 text-[10px] font-medium">USDT</span>
+                    <span id="tick-usdt" class="text-white font-bold">--.--</span>
+                </div>
             </div>
 
             <!-- Herramientas -->
