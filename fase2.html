@@ -70,7 +70,7 @@
         <div id="biz-year-dropdown-menu" class="custom-dropdown-menu absolute top-full left-0 w-full mt-2 bg-slate-900/95 backdrop-blur-3xl border border-white/10 p-2 hidden flex-col gap-1 z-[999] rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.8)] max-h-[220px] overflow-y-auto"></div>
       </div>
     </div>
-    <div class="flex gap-4 border-b border-white/10 pb-1 overflow-x-auto justify-end flex-1">
+    <div class="hidden md:flex gap-4 border-b border-white/10 pb-1 overflow-x-auto justify-end flex-1">
       <button onclick="switchBizTab('inventory')" id="tab-btn-inventory" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-white border-b-2 border-sky-400 pb-2 px-3 transition-colors">Inventario</button>
       <button onclick="switchBizTab('sales')" id="tab-btn-sales" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-white pb-2 px-3 transition-colors">Ventas</button>
       <button onclick="switchBizTab('encargos')" id="tab-btn-encargos" class="biz-tab-btn whitespace-nowrap text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-white pb-2 px-3 transition-colors">Encargos</button>
@@ -948,62 +948,61 @@
 </div>
 
 <!-- ===== BOTTOM NAV MÓVIL ===== -->
-<!-- Visible solo en pantallas < md (768px). Se oculta en desktop con md:hidden -->
 <nav id="bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-[500000]">
 
-  <!-- Menú "Más" — se abre hacia arriba, fuera del flujo del nav -->
-  <div id="bnav-more-menu" class="bnav-hidden absolute bottom-full left-0 right-0 px-4 pb-2 pt-3">
+  <!-- Menú "Más": oculto por default con display:none, se abre hacia arriba -->
+  <div id="bnav-more-menu" style="display:none" class="absolute bottom-full left-0 right-0 px-3 pb-2 pt-3">
     <div class="grid grid-cols-4 gap-2">
-      <button onclick="bnavGo('encargos')" class="bnav-more-item flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 active:bg-white/10 transition-colors">
-        <i class="fa-solid fa-clock-rotate-left text-base text-slate-300"></i>
+      <button onclick="bnavGo('encargos')" class="flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 transition-colors">
+        <i class="fa-solid fa-clock-rotate-left text-sm text-slate-300"></i>
         <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-none">Encargos</span>
       </button>
-      <button onclick="bnavGo('cxc')" class="bnav-more-item flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 active:bg-white/10 transition-colors">
-        <i class="fa-solid fa-file-invoice-dollar text-base text-slate-300"></i>
+      <button onclick="bnavGo('cxc')" class="flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 transition-colors">
+        <i class="fa-solid fa-file-invoice-dollar text-sm text-slate-300"></i>
         <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-none">Cobrador</span>
       </button>
-      <button onclick="bnavGo('suppliers')" class="bnav-more-item flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 active:bg-white/10 transition-colors">
-        <i class="fa-solid fa-truck text-base text-slate-300"></i>
+      <button onclick="bnavGo('suppliers')" class="flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 transition-colors">
+        <i class="fa-solid fa-truck text-sm text-slate-300"></i>
         <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-none">Proveed.</span>
       </button>
-      <button onclick="bnavGo('analisis-avanzado')" class="bnav-more-item flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 active:bg-white/10 transition-colors">
-        <i class="fa-solid fa-chart-line text-base text-slate-300"></i>
+      <button onclick="bnavGo('analisis-avanzado')" class="flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 transition-colors">
+        <i class="fa-solid fa-chart-line text-sm text-slate-300"></i>
         <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-none">Análisis</span>
       </button>
     </div>
   </div>
 
   <!-- Barra de iconos principal -->
-  <div class="flex items-stretch h-[62px] px-1">
+  <div class="flex items-stretch h-[62px]" style="padding-bottom: env(safe-area-inset-bottom, 0px)">
 
     <button onclick="bnavGo('inventory')" id="bnav-btn-inventory"
-      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 pt-2 transition-colors active:bg-white/5">
-      <i class="bnav-icon fa-solid fa-boxes-stacked text-lg text-slate-400 transition-colors"></i>
-      <span class="bnav-label text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-none transition-colors">Inventario</span>
+      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 transition-colors">
+      <i class="bnav-icon fa-solid fa-boxes-stacked text-[18px] transition-colors" style="color: #94a3b8"></i>
+      <span class="bnav-label text-[9px] font-bold uppercase tracking-wide leading-none transition-colors" style="color: #64748b">Inventario</span>
     </button>
 
     <button onclick="bnavGo('sales')" id="bnav-btn-sales"
-      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 pt-2 transition-colors active:bg-white/5">
-      <i class="bnav-icon fa-solid fa-cart-plus text-lg text-slate-400 transition-colors"></i>
-      <span class="bnav-label text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-none transition-colors">Ventas</span>
+      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 transition-colors">
+      <i class="bnav-icon fa-solid fa-cart-plus text-[18px] transition-colors" style="color: #94a3b8"></i>
+      <span class="bnav-label text-[9px] font-bold uppercase tracking-wide leading-none transition-colors" style="color: #64748b">Ventas</span>
     </button>
 
     <button onclick="bnavGo('caja')" id="bnav-btn-caja"
-      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 pt-2 transition-colors active:bg-white/5">
-      <i class="bnav-icon fa-solid fa-cash-register text-lg text-slate-400 transition-colors"></i>
-      <span class="bnav-label text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-none transition-colors">Caja</span>
+      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 transition-colors">
+      <i class="bnav-icon fa-solid fa-cash-register text-[18px] transition-colors" style="color: #94a3b8"></i>
+      <span class="bnav-label text-[9px] font-bold uppercase tracking-wide leading-none transition-colors" style="color: #64748b">Caja</span>
     </button>
 
     <button onclick="bnavGo('prestamos')" id="bnav-btn-prestamos"
-      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 pt-2 transition-colors active:bg-white/5">
-      <i class="bnav-icon fa-solid fa-hand-holding-dollar text-lg text-slate-400 transition-colors"></i>
-      <span class="bnav-label text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-none transition-colors">Préstamos</span>
+      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 transition-colors">
+      <i class="bnav-icon fa-solid fa-hand-holding-dollar text-[18px] transition-colors" style="color: #94a3b8"></i>
+      <span class="bnav-label text-[9px] font-bold uppercase tracking-wide leading-none transition-colors" style="color: #64748b">Préstamos</span>
     </button>
 
     <button onclick="bnavToggleMore()" id="bnav-btn-more"
-      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 pt-2 transition-colors active:bg-white/5">
-      <i id="bnav-more-icon" class="bnav-icon fa-solid fa-ellipsis text-lg text-slate-400 transition-colors"></i>
-      <span class="bnav-label text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-none transition-colors">Más</span>
+      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 transition-colors">
+      <i id="bnav-more-icon" class="bnav-icon fa-solid fa-ellipsis text-[18px] transition-colors" style="color: #94a3b8"></i>
+      <span class="bnav-label text-[9px] font-bold uppercase tracking-wide leading-none transition-colors" style="color: #64748b">Más</span>
     </button>
 
   </div>
@@ -1012,58 +1011,89 @@
 <script>
 /* ── Bottom Nav Logic ── */
 (function () {
-    // Tabs que pertenecen al menú "Más"
-    const _moreTabs = new Set(['encargos', 'cxc', 'suppliers', 'analisis-avanzado']);
-    // Tabs que tienen botón directo
-    const _directTabs = ['inventory', 'sales', 'caja', 'prestamos'];
-    let _moreOpen = false;
+    var _moreTabs  = { 'encargos': 1, 'cxc': 1, 'suppliers': 1, 'analisis-avanzado': 1 };
+    var _directIds = ['inventory', 'sales', 'caja', 'prestamos'];
+    var _moreOpen  = false;
 
+    /* Navegar a un tab y cerrar el menú "Más" */
     window.bnavGo = function (tab) {
-        closeBnavMore();
-        if (typeof window.switchBizTab === 'function') window.switchBizTab(tab);
-        syncBnavActive(tab);
+        bnavCloseMore();
+        // switchBizTab se define en fase2-logic.js (DOMContentLoaded) — disponible al hacer clic
+        if (typeof window.switchBizTab === 'function') {
+            window.switchBizTab(tab);
+        }
+        bnavSetActive(tab);
     };
 
+    /* Toggle del menú Más */
     window.bnavToggleMore = function () {
-        _moreOpen ? closeBnavMore() : openBnavMore();
+        _moreOpen ? bnavCloseMore() : bnavOpenMore();
     };
 
-    function openBnavMore() {
+    function bnavOpenMore() {
         _moreOpen = true;
-        const menu = document.getElementById('bnav-more-menu');
-        const icon = document.getElementById('bnav-more-icon');
-        if (menu) menu.classList.remove('bnav-hidden');
+        var menu = document.getElementById('bnav-more-menu');
+        var icon = document.getElementById('bnav-more-icon');
+        if (menu) menu.style.display = 'block';
         if (icon) { icon.classList.remove('fa-ellipsis'); icon.classList.add('fa-xmark'); }
-        // Cerrar al tocar fuera del nav
-        setTimeout(() => document.addEventListener('touchstart', _outsideClose, { once: true }), 50);
+        // Cerrar al tocar cualquier punto fuera del nav (click + touch)
+        setTimeout(function () {
+            document.addEventListener('click', _outsideClose,      { once: true, capture: true });
+            document.addEventListener('touchend', _outsideClose, { once: true, capture: true });
+        }, 80);
     }
 
-    function closeBnavMore() {
+    function bnavCloseMore() {
         _moreOpen = false;
-        const menu = document.getElementById('bnav-more-menu');
-        const icon = document.getElementById('bnav-more-icon');
-        if (menu) menu.classList.add('bnav-hidden');
+        var menu = document.getElementById('bnav-more-menu');
+        var icon = document.getElementById('bnav-more-icon');
+        if (menu) menu.style.display = 'none';
         if (icon) { icon.classList.remove('fa-xmark'); icon.classList.add('fa-ellipsis'); }
     }
 
     function _outsideClose(e) {
-        if (!document.getElementById('bottom-nav').contains(e.target)) closeBnavMore();
+        var nav = document.getElementById('bottom-nav');
+        if (nav && !nav.contains(e.target)) bnavCloseMore();
     }
 
-    // Sincroniza el estado activo del bottom nav con el tab actual
+    /* Actualizar estado visual activo del bottom nav */
     window.syncBnavActive = function (tab) {
-        _directTabs.forEach(t => {
-            const btn = document.getElementById('bnav-btn-' + t);
-            if (btn) btn.classList.toggle('bnav-active', t === tab);
-        });
-        // Si el tab pertenece a "Más", marcar el botón Más como activo
-        const moreBtn = document.getElementById('bnav-btn-more');
-        if (moreBtn) moreBtn.classList.toggle('bnav-active', _moreTabs.has(tab));
+        bnavSetActive(tab);
     };
 
-    // Marcar el tab inicial (inventario está activo al cargar)
+    function bnavSetActive(tab) {
+        var activeColor = '#38bdf8';
+        var idleIconColor  = '#94a3b8';
+        var idleLabelColor = '#64748b';
+
+        _directIds.forEach(function (t) {
+            var btn   = document.getElementById('bnav-btn-' + t);
+            if (!btn) return;
+            var icon  = btn.querySelector('.bnav-icon');
+            var label = btn.querySelector('.bnav-label');
+            var isActive = (t === tab);
+            btn.classList.toggle('bnav-active', isActive);
+            if (icon)  icon.style.color  = isActive ? activeColor : idleIconColor;
+            if (label) label.style.color = isActive ? activeColor : idleLabelColor;
+        });
+
+        // Botón "Más": activo cuando el tab pertenece al menú secundario
+        var moreBtn   = document.getElementById('bnav-btn-more');
+        var moreIsActive = !!_moreTabs[tab];
+        if (moreBtn) {
+            moreBtn.classList.toggle('bnav-active', moreIsActive);
+            var mIcon  = moreBtn.querySelector('.bnav-icon:not(#bnav-more-icon), #bnav-more-icon');
+            var mLabel = moreBtn.querySelector('.bnav-label');
+            if (mIcon)  mIcon.style.color  = moreIsActive ? activeColor : idleIconColor;
+            if (mLabel) mLabel.style.color = moreIsActive ? activeColor : idleLabelColor;
+        }
+    }
+
+    /* Estado inicial: esperar a que fase2-logic.js haya inicializado el DOM */
     document.addEventListener('DOMContentLoaded', function () {
-        syncBnavActive('inventory');
+        // fase2-logic.js también usa DOMContentLoaded; usamos setTimeout(0)
+        // para asegurarnos de correr DESPUÉS de su listener (FIFO en mismo evento)
+        setTimeout(function () { bnavSetActive('inventory'); }, 0);
     });
 })();
 </script>
