@@ -32,13 +32,12 @@ const https  = require('https');
   vars.forEach((name) => {
     const val = process.env[name];
     if (!val) {
-      console.error(`[EQUO ENV] ❌ ${name} está UNDEFINED o vacía.`);
+      console.error(`[EQUO ENV] ${name} está UNDEFINED o vacía.`);
     } else {
-      // Muestra sólo los primeros 6 y últimos 4 caracteres por seguridad
       const masked = val.length > 10
         ? `${val.slice(0, 6)}...${val.slice(-4)}`
         : '******';
-      console.log(`[EQUO ENV] ✅ ${name} presente (${masked}) len=${val.length}`);
+      console.log(`[EQUO ENV] ${name} presente (${masked}) len=${val.length}`);
     }
   });
 })();
@@ -101,7 +100,7 @@ const PLANS = {
 /**
  * Genera un nonce alfanumérico de 32 caracteres.
  * Binance Pay exige: [A-Za-z0-9], máx 32 chars.
- * crypto.randomBytes(16).toString('hex') → exactamente 32 chars hex ✅
+ * crypto.randomBytes(16).toString('hex') → exactamente 32 chars hex
  */
 function generateNonce() {
   return crypto.randomBytes(16).toString('hex');
@@ -120,7 +119,7 @@ function generateNonce() {
  * El resultado debe ir en mayúsculas en el header BinancePay-Signature.
  */
 function buildBinanceSignature(timestamp, nonce, bodyPayload, secret) {
-  // ⚠️ El salto de línea final (\n) después del payload es OBLIGATORIO.
+  // El salto de línea final (\n) después del payload es OBLIGATORIO.
   const message = `${timestamp}\n${nonce}\n${bodyPayload}\n`;
 
   console.log('[EQUO Signature] Mensaje a firmar (primeros 120 chars):', message.slice(0, 120));
@@ -244,11 +243,10 @@ module.exports = async function handler(req, res) {
     return sendError(res, 401, 'No autenticado. Envía el Firebase ID Token en Authorization: Bearer <token>.');
   }
 
-  const idToken = authHeader.slice(7).trim(); // más robusto que split
+  const idToken = authHeader.slice(7).trim();
   let uid;
 
   try {
-    // Inicializar Firebase Admin antes de verificar el token
     const admin   = getAdmin();
     const decoded = await admin.auth().verifyIdToken(idToken);
     uid = decoded.uid;
@@ -278,7 +276,6 @@ async function handleCreateOrder(req, res, uid) {
   const planInfo        = PLANS[plan];
   const merchantOrderId = `EQUO-${uid.slice(0, 8)}-${Date.now()}`;
 
-  // VERCEL_URL incluye el hostname sin protocolo (ej: equo.vercel.app)
   const host = process.env.VERCEL_PROJECT_PRODUCTION_URL
     || process.env.VERCEL_URL
     || 'equo.app';
@@ -307,7 +304,7 @@ async function handleCreateOrder(req, res, uid) {
       return sendError(res, 502, `Binance Pay error: ${response.errorMessage || response.status}`);
     }
 
-    // Guardar orden en Firestore
+    // Guardar orden en Firestore — plan y uid quedan inmutables del lado servidor
     await getDb().collection('payments').doc(merchantOrderId).set({
       uid,
       plan,
@@ -340,7 +337,7 @@ async function handleCreateOrder(req, res, uid) {
 // Acción 2: queryPayment
 // ─────────────────────────────────────────────────────────────────────────────
 async function handleQueryPayment(req, res, uid) {
-  const { prepayId, merchantOrderId, plan } = req.body;
+  const { prepayId, merchantOrderId } = req.body;
 
   if (!prepayId || !merchantOrderId) {
     return sendError(res, 400, 'prepayId y merchantOrderId son requeridos.');
@@ -360,11 +357,40 @@ async function handleQueryPayment(req, res, uid) {
     const orderStatus = response.data?.status; // INITIAL | PENDING | PAID | CANCELED | ERROR
 
     if (orderStatus === 'PAID') {
-      const planKey = plan || 'entrepreneur';
-      const now     = new Date().toISOString();
-      const subEnd  = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
       const db = getDb();
+
+      // ── Verificación de propiedad del pago (anti-hijacking) ────────────────
+      // Leer la orden desde Firestore para validar que pertenece al uid
+      // que hace la petición y obtener el plan real (no confiar en el cliente).
+      const paymentDoc = await db.collection('payments').doc(merchantOrderId).get();
+
+      if (!paymentDoc.exists) {
+        console.error(`[EQUO Auth] Orden ${merchantOrderId} no encontrada en Firestore.`);
+        return sendError(res, 404, 'Orden de pago no encontrada.');
+      }
+
+      const paymentData = paymentDoc.data();
+
+      if (paymentData.uid !== uid) {
+        console.error(`[EQUO Auth] Intento de hijacking: uid=${uid} intentó activar orden de uid=${paymentData.uid}`);
+        return sendError(res, 403, 'Esta orden de pago no pertenece a tu cuenta.');
+      }
+
+      // Usar el plan registrado en Firestore, NO el enviado por el cliente
+      const planKey = paymentData.plan;
+      if (!PLANS[planKey]) {
+        console.error(`[EQUO] Plan inválido en orden Firestore: "${planKey}"`);
+        return sendError(res, 400, 'Plan inválido registrado en la orden.');
+      }
+
+      // Verificar que la orden no fue activada previamente (idempotencia)
+      if (paymentData.status === 'PAID') {
+        console.log(`[EQUO] Orden ${merchantOrderId} ya fue procesada anteriormente.`);
+        return sendJSON(res, 200, { orderStatus: 'PAID', planActivated: false, alreadyProcessed: true });
+      }
+
+      const now    = new Date().toISOString();
+      const subEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
       await db.collection('users').doc(uid).set({
         isPaid:              true,
@@ -383,7 +409,7 @@ async function handleQueryPayment(req, res, uid) {
         { merge: true }
       );
 
-      console.log(`[EQUO] ✅ Pago confirmado. uid=${uid} plan=${planKey}`);
+      console.log(`[EQUO] Pago confirmado. uid=${uid} plan=${planKey}`);
       return sendJSON(res, 200, { orderStatus: 'PAID', planActivated: true });
     }
 
