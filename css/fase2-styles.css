@@ -909,3 +909,63 @@
             color: #0f172a !important;
         }
         .light-mode .toast-card p.text-gray-200 { color: #334155 !important; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOUCH / MÓVIL: Deshabilitar cursor personalizado en dispositivos táctiles
+   Se usa (hover:none) + (pointer:coarse) para detectar pantallas táctiles
+   reales (excluye stylus de alta precisión).
+───────────────────────────────────────────────────────────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+    body  { cursor: auto !important; }
+    *     { cursor: auto !important; }
+    #premium-cursor { display: none !important; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BOTTOM NAV MÓVIL — estilos base
+───────────────────────────────────────────────────────────────────────────── */
+#bottom-nav {
+    background: rgba(10, 17, 40, 0.88);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    /* Safe area para notch y gesture bar de iOS/Android */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Botón de ítem activo */
+#bottom-nav .bnav-btn.bnav-active .bnav-icon { color: #38bdf8; }
+#bottom-nav .bnav-btn.bnav-active .bnav-label { color: #38bdf8; }
+#bottom-nav .bnav-btn.bnav-active { position: relative; }
+#bottom-nav .bnav-btn.bnav-active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 2px;
+    background: #38bdf8;
+    border-radius: 0 0 4px 4px;
+}
+
+/* Menú "Más" (se abre hacia arriba) */
+#bnav-more-menu {
+    background: rgba(10, 17, 40, 0.96);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 1rem 1rem 0 0;
+    transform-origin: bottom center;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+#bnav-more-menu.bnav-hidden {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+}
+
+/* Compensar la altura del bottom nav en el contenido */
+@media (max-width: 767px) {
+    #business-dashboard { padding-bottom: 80px !important; }
+}

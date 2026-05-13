@@ -360,6 +360,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Inyección de datos garantizada tras cambio de vista
         if (typeof window.renderDateSelectors === 'function') window.renderDateSelectors();
+
+        // Sincronizar estado activo del bottom nav móvil
+        if (typeof window.syncBnavActive === 'function') window.syncBnavActive(tab);
     };
 
     let _yearDDOpen = false;
@@ -2685,7 +2688,8 @@ document.addEventListener('DOMContentLoaded', function () {
        BLOQUE 9: Cursor Premium y Partículas
     ────────────────────────────────────────────── */
     const cursor = $('premium-cursor');
-    if (cursor) {
+    const _isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (cursor && !_isTouchDevice) {
         let mx = window.innerWidth / 2, my = window.innerHeight / 2, cx = mx, cy = my;
         window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
         function renderCursor() {

@@ -946,8 +946,128 @@
   </div>
 </div>
 
+<!-- ===== BOTTOM NAV MÓVIL ===== -->
+<!-- Visible solo en pantallas < md (768px). Se oculta en desktop con md:hidden -->
+<nav id="bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-[500000]">
+
+  <!-- Menú "Más" — se abre hacia arriba, fuera del flujo del nav -->
+  <div id="bnav-more-menu" class="bnav-hidden absolute bottom-full left-0 right-0 px-4 pb-2 pt-3">
+    <div class="grid grid-cols-4 gap-2">
+      <button onclick="bnavGo('encargos')" class="bnav-more-item flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 active:bg-white/10 transition-colors">
+        <i class="fa-solid fa-clock-rotate-left text-base text-slate-300"></i>
+        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-none">Encargos</span>
+      </button>
+      <button onclick="bnavGo('cxc')" class="bnav-more-item flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 active:bg-white/10 transition-colors">
+        <i class="fa-solid fa-file-invoice-dollar text-base text-slate-300"></i>
+        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-none">Cobrador</span>
+      </button>
+      <button onclick="bnavGo('suppliers')" class="bnav-more-item flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 active:bg-white/10 transition-colors">
+        <i class="fa-solid fa-truck text-base text-slate-300"></i>
+        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-none">Proveed.</span>
+      </button>
+      <button onclick="bnavGo('analisis-avanzado')" class="bnav-more-item flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 active:bg-white/10 transition-colors">
+        <i class="fa-solid fa-chart-line text-base text-slate-300"></i>
+        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-none">Análisis</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Barra de iconos principal -->
+  <div class="flex items-stretch h-[62px] px-1">
+
+    <button onclick="bnavGo('inventory')" id="bnav-btn-inventory"
+      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 pt-2 transition-colors active:bg-white/5">
+      <i class="bnav-icon fa-solid fa-boxes-stacked text-lg text-slate-400 transition-colors"></i>
+      <span class="bnav-label text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-none transition-colors">Inventario</span>
+    </button>
+
+    <button onclick="bnavGo('sales')" id="bnav-btn-sales"
+      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 pt-2 transition-colors active:bg-white/5">
+      <i class="bnav-icon fa-solid fa-cart-plus text-lg text-slate-400 transition-colors"></i>
+      <span class="bnav-label text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-none transition-colors">Ventas</span>
+    </button>
+
+    <button onclick="bnavGo('caja')" id="bnav-btn-caja"
+      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 pt-2 transition-colors active:bg-white/5">
+      <i class="bnav-icon fa-solid fa-cash-register text-lg text-slate-400 transition-colors"></i>
+      <span class="bnav-label text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-none transition-colors">Caja</span>
+    </button>
+
+    <button onclick="bnavGo('prestamos')" id="bnav-btn-prestamos"
+      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 pt-2 transition-colors active:bg-white/5">
+      <i class="bnav-icon fa-solid fa-hand-holding-dollar text-lg text-slate-400 transition-colors"></i>
+      <span class="bnav-label text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-none transition-colors">Préstamos</span>
+    </button>
+
+    <button onclick="bnavToggleMore()" id="bnav-btn-more"
+      class="bnav-btn flex-1 flex flex-col items-center justify-center gap-1 pt-2 transition-colors active:bg-white/5">
+      <i id="bnav-more-icon" class="bnav-icon fa-solid fa-ellipsis text-lg text-slate-400 transition-colors"></i>
+      <span class="bnav-label text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-none transition-colors">Más</span>
+    </button>
+
+  </div>
+</nav>
+
+<script>
+/* ── Bottom Nav Logic ── */
+(function () {
+    // Tabs que pertenecen al menú "Más"
+    const _moreTabs = new Set(['encargos', 'cxc', 'suppliers', 'analisis-avanzado']);
+    // Tabs que tienen botón directo
+    const _directTabs = ['inventory', 'sales', 'caja', 'prestamos'];
+    let _moreOpen = false;
+
+    window.bnavGo = function (tab) {
+        closeBnavMore();
+        if (typeof window.switchBizTab === 'function') window.switchBizTab(tab);
+        syncBnavActive(tab);
+    };
+
+    window.bnavToggleMore = function () {
+        _moreOpen ? closeBnavMore() : openBnavMore();
+    };
+
+    function openBnavMore() {
+        _moreOpen = true;
+        const menu = document.getElementById('bnav-more-menu');
+        const icon = document.getElementById('bnav-more-icon');
+        if (menu) menu.classList.remove('bnav-hidden');
+        if (icon) { icon.classList.remove('fa-ellipsis'); icon.classList.add('fa-xmark'); }
+        // Cerrar al tocar fuera del nav
+        setTimeout(() => document.addEventListener('touchstart', _outsideClose, { once: true }), 50);
+    }
+
+    function closeBnavMore() {
+        _moreOpen = false;
+        const menu = document.getElementById('bnav-more-menu');
+        const icon = document.getElementById('bnav-more-icon');
+        if (menu) menu.classList.add('bnav-hidden');
+        if (icon) { icon.classList.remove('fa-xmark'); icon.classList.add('fa-ellipsis'); }
+    }
+
+    function _outsideClose(e) {
+        if (!document.getElementById('bottom-nav').contains(e.target)) closeBnavMore();
+    }
+
+    // Sincroniza el estado activo del bottom nav con el tab actual
+    window.syncBnavActive = function (tab) {
+        _directTabs.forEach(t => {
+            const btn = document.getElementById('bnav-btn-' + t);
+            if (btn) btn.classList.toggle('bnav-active', t === tab);
+        });
+        // Si el tab pertenece a "Más", marcar el botón Más como activo
+        const moreBtn = document.getElementById('bnav-btn-more');
+        if (moreBtn) moreBtn.classList.toggle('bnav-active', _moreTabs.has(tab));
+    };
+
+    // Marcar el tab inicial (inventario está activo al cargar)
+    document.addEventListener('DOMContentLoaded', function () {
+        syncBnavActive('inventory');
+    });
+})();
+</script>
+
 <!-- SCRIPTS -->
-<!-- Helper global: selectCustomOption (necesario para dropdowns custom) -->
 <!-- Logica Fase 2 -->
 <script src="js/fase2-logic.js"></script>
 
