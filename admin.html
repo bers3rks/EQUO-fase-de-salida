@@ -21,8 +21,8 @@ body { font-family:'Outfit',sans-serif; background:#0a1128; color:#fff; min-heig
 #adm-cursor { position:fixed; top:0; left:0; width:12px; height:12px; background:var(--t-primary); border-radius:50%; pointer-events:none; z-index:9999999; transform:translate(-50%,-50%); transition:width .2s,height .2s,background .2s; box-shadow:0 0 15px var(--t-primary); }
 #adm-cursor.h { width:32px; height:32px; background:rgba(56,189,248,.25); border:1px solid var(--t-primary); }
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(56,189,248,.4);border-radius:10px}
-.glass { background:rgba(255,255,255,.03); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,.07); border-radius:1rem; }
-.glass-card { background:rgba(255,255,255,.04); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.08); border-radius:.75rem; transition:all .3s; }
+.glass { background:rgba(255,255,255,.03); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.07); border-radius:1rem; will-change:transform; transform:translateZ(0); }
+.glass-card { background:rgba(255,255,255,.04); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.08); border-radius:.75rem; transition:background-color .3s, border-color .3s, box-shadow .3s; will-change:transform; transform:translateZ(0); }
 .glass-card:hover { border-color:rgba(56,189,248,.25); box-shadow:0 0 20px rgba(56,189,248,.06); }
 .badge { display:inline-flex; align-items:center; gap:.25rem; font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px; }
 .badge-trial  { background:rgba(251,191,36,.15);  border:1px solid rgba(251,191,36,.4);  color:#fbbf24; }
