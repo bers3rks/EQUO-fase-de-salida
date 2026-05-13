@@ -138,18 +138,20 @@
 
         .glass-card {
             background: var(--glass-bg);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             border-radius: 1.25rem;
             box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5),
                         inset 0 1px 0 rgba(255, 255, 255, 0.04);
-            transition: all 0.4s ease;
+            /* Evitar transition:all que incluye propiedades costosas */
+            transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
         }
 
         .glass-login {
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(24px);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 2.5rem;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
@@ -958,4 +960,43 @@
 /* Compensar la altura del bottom nav en el contenido principal */
 @media (max-width: 767px) {
     #business-dashboard { padding-bottom: 80px !important; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PERFORMANCE — GPU acceleration y reducción de lag en móvil
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Promover botones animados al compositor GPU para evitar janks */
+.btn-float,
+.panel-switch-btn {
+    will-change: transform;
+}
+
+/* Secciones de negocio: usar content-visibility para renderizar solo lo visible */
+#biz-inventory-section,
+#biz-sales-section,
+#biz-caja-section,
+#biz-prestamos-section,
+#biz-suppliers-section,
+#biz-encargos-section,
+#biz-cxc-section,
+#biz-advanalysis-section {
+    contain: layout style;
+}
+
+/* En móvil: reducir aún más el blur de backdrop para fluidez */
+@media (max-width: 767px) {
+    .glass-card {
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+    }
+    .glass-login {
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+    }
+    /* Desactivar transiciones en mobile para reducir CPU */
+    .glass-card,
+    .btn-float {
+        transition: background-color 0.2s ease, border-color 0.2s ease !important;
+    }
 }

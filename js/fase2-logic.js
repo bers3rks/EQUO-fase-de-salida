@@ -225,6 +225,84 @@ document.addEventListener('DOMContentLoaded', function () {
             window._themeObserverFase2.observe(document.body, { attributes: true, attributeFilter: ['class'] });
         }
 
+        // ── Bottom Nav móvil: inicializar si aún no está definido ───────────
+        // (Los scripts de fase2.html son eliminados al inyectar via fetch en app.html,
+        //  así que estas funciones deben vivir aquí para garantizar su disponibilidad)
+        if (typeof window.bnavGo !== 'function') {
+            (function () {
+                var _moreTabs  = { encargos: 1, cxc: 1, suppliers: 1, 'analisis-avanzado': 1 };
+                var _directIds = ['inventory', 'sales', 'caja', 'prestamos'];
+                var _moreOpen  = false;
+
+                window.bnavGo = function (tab) {
+                    bnavCloseMore();
+                    if (typeof window.switchBizTab === 'function') window.switchBizTab(tab);
+                    bnavSetActive(tab);
+                };
+
+                window.bnavToggleMore = function () {
+                    _moreOpen ? bnavCloseMore() : bnavOpenMore();
+                };
+
+                window.syncBnavActive = function (tab) {
+                    bnavSetActive(tab);
+                };
+
+                function bnavOpenMore() {
+                    _moreOpen = true;
+                    var menu = document.getElementById('bnav-more-menu');
+                    var icon = document.getElementById('bnav-more-icon');
+                    if (menu) menu.style.display = 'block';
+                    if (icon) { icon.classList.remove('fa-ellipsis'); icon.classList.add('fa-xmark'); }
+                    setTimeout(function () {
+                        document.addEventListener('click',    _outsideClose, { once: true, capture: true });
+                        document.addEventListener('touchend', _outsideClose, { once: true, capture: true });
+                    }, 80);
+                }
+
+                function bnavCloseMore() {
+                    _moreOpen = false;
+                    var menu = document.getElementById('bnav-more-menu');
+                    var icon = document.getElementById('bnav-more-icon');
+                    if (menu) menu.style.display = 'none';
+                    if (icon) { icon.classList.remove('fa-xmark'); icon.classList.add('fa-ellipsis'); }
+                }
+
+                function _outsideClose(e) {
+                    var nav = document.getElementById('bottom-nav');
+                    if (nav && !nav.contains(e.target)) bnavCloseMore();
+                }
+
+                function bnavSetActive(tab) {
+                    var activeColor    = '#38bdf8';
+                    var idleIconColor  = '#94a3b8';
+                    var idleLabelColor = '#64748b';
+                    _directIds.forEach(function (t) {
+                        var btn = document.getElementById('bnav-btn-' + t);
+                        if (!btn) return;
+                        var icon  = btn.querySelector('.bnav-icon');
+                        var label = btn.querySelector('.bnav-label');
+                        var isActive = (t === tab);
+                        btn.classList.toggle('bnav-active', isActive);
+                        if (icon)  icon.style.color  = isActive ? activeColor : idleIconColor;
+                        if (label) label.style.color = isActive ? activeColor : idleLabelColor;
+                    });
+                    var moreBtn      = document.getElementById('bnav-btn-more');
+                    var moreIsActive = !!_moreTabs[tab];
+                    if (moreBtn) {
+                        moreBtn.classList.toggle('bnav-active', moreIsActive);
+                        var mIcon  = moreBtn.querySelector('#bnav-more-icon') || moreBtn.querySelector('.bnav-icon');
+                        var mLabel = moreBtn.querySelector('.bnav-label');
+                        if (mIcon)  mIcon.style.color  = moreIsActive ? activeColor : idleIconColor;
+                        if (mLabel) mLabel.style.color = moreIsActive ? activeColor : idleLabelColor;
+                    }
+                }
+
+                // Establecer estado inicial del nav
+                bnavSetActive('inventory');
+            })();
+        }
+
         console.log('[EQUO] initFase2() — Panel de Negocios inicializado ✓');
     };
 

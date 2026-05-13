@@ -118,8 +118,8 @@
         }
 
         /* Glassmorphism UI */
-        .glass-card { background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 1.25rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); transition: all 0.4s ease; }
-        .glass-login { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 1.25rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease; }
+        .glass-login { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
 
         /* ── Modal de Pago Binance Pay ────────────────────────────────── */
         #binance-pay-modal {
@@ -921,14 +921,14 @@
         <div id="panel-personal">
         <!-- Wrapper original que da proporciones: max-w, padding, gap -->
         <div class="flex-grow p-4 md:p-6 max-w-[1300px] mx-auto w-full flex flex-col gap-4 relative">
-        <div class="glass-card p-3 flex flex-col xl:flex-row gap-4 items-stretch justify-between relative z-[90] w-full">
+        <div class="glass-card p-3 flex flex-col xl:flex-row gap-4 items-stretch justify-between relative z-[200] w-full">
 
             <!-- Selectores de periodo: Año + Mes -->
             <div class="flex gap-2 w-full xl:w-auto shrink-0">
 
                 <!-- SELECTOR DE AÑO -->
                 <div class="relative w-[5.5rem]" id="year-dropdown-container">
-                    <button onclick="toggleYearDropdown()" class="glass-input flex justify-between items-center w-full !py-3 font-bold text-sky-400 hover:bg-white/5 transition-colors cursor-pointer border-white/20">
+                    <button onclick="toggleYearDropdown(event)" class="glass-input flex justify-between items-center w-full !py-3 font-bold text-sky-400 hover:bg-white/5 transition-colors cursor-pointer border-white/20">
                         <span id="current-year-text" class="text-sm tracking-wide">2026</span>
                         <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" id="year-drop-icon"></i>
                     </button>
@@ -937,7 +937,7 @@
 
                 <!-- SELECTOR DE MES -->
                 <div class="relative w-40" id="month-dropdown-container">
-                    <button onclick="toggleMonthDropdown()" class="glass-input flex justify-between items-center w-full !py-3 font-bold text-sky-400 hover:bg-white/5 transition-colors cursor-pointer border-white/20">
+                    <button onclick="toggleMonthDropdown(event)" class="glass-input flex justify-between items-center w-full !py-3 font-bold text-sky-400 hover:bg-white/5 transition-colors cursor-pointer border-white/20">
                         <span id="current-month-text" class="text-sm tracking-wide">Enero</span>
                         <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" id="month-drop-icon"></i>
                     </button>
@@ -1090,7 +1090,7 @@
 
         <!-- Card principal -->
         <div id="auth-card" class="relative z-10 w-full max-w-[400px] mx-auto my-8"
-             style="background:rgba(10,18,38,.92);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.08);border-radius:1.5rem;box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 0 1px rgba(56,189,248,.06);">
+             style="background:rgba(10,18,38,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:1.5rem;box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 0 1px rgba(56,189,248,.06);">
 
             <!-- Header de la tarjeta -->
             <div class="px-8 pt-8 pb-6 text-center">
@@ -1369,8 +1369,13 @@
         document.addEventListener('mouseout', e => { if(e.target.closest('button, input, select, label, .toast-card, a, i, .cursor-pointer, .cal-day')) cursor.classList.remove('hovering'); });
 
         const canvas = $('particles'), ctx = canvas.getContext('2d'); canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        let pArray = Array.from({length: 45}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*1.5 + 0.5, sx: (Math.random()-0.5)*0.2, sy: (Math.random()-1)*0.4 - 0.1 }));
+        // Reducir partículas en móvil para mejorar rendimiento
+        const isMobile = window.innerWidth < 768;
+        let pArray = Array.from({length: isMobile ? 12 : 25}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*1.5 + 0.5, sx: (Math.random()-0.5)*0.2, sy: (Math.random()-1)*0.4 - 0.1 }));
+        let _particlesActive = true;
+        document.addEventListener('visibilitychange', () => { _particlesActive = !document.hidden; if (_particlesActive) animParticles(); });
         function animParticles() {
+            if (!_particlesActive) return;
             ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle = document.body.classList.contains('light-mode') ? 'rgba(2, 132, 199, 0.25)' : 'rgba(56,189,248,0.25)';
             for(let p of pArray) { p.x += p.sx; p.y += p.sy; if(p.x < 0) p.x = canvas.width; if(p.x > canvas.width) p.x = 0; if(p.y < 0) p.y = canvas.height; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); }
             requestAnimationFrame(animParticles);
@@ -2162,13 +2167,13 @@
         /* ── AÑO DROPDOWN ──────────────────────────────────────────────────── */
         let yearDropdownOpen = false;
 
-        function toggleYearDropdown() {
+        function toggleYearDropdown(e) {
             yearDropdownOpen = !yearDropdownOpen;
             const menu = $('year-dropdown-menu'), icon = $('year-drop-icon');
             // Cerrar mes si está abierto
             if (dropdownOpen) {
-                $('month-dropdown-menu').classList.add('hidden', 'liquid-bounce');
-                $('month-dropdown-menu').classList.remove('flex');
+                $('month-dropdown-menu').classList.add('hidden');
+                $('month-dropdown-menu').classList.remove('flex', 'liquid-bounce');
                 $('month-drop-icon').style.transform = 'rotate(0deg)';
                 dropdownOpen = false;
             }
@@ -2180,7 +2185,7 @@
                 menu.classList.add('hidden'); menu.classList.remove('flex', 'liquid-bounce');
                 icon.style.transform = 'rotate(0deg)';
             }
-            event.stopPropagation();
+            if (e) e.stopPropagation();
         }
 
         function renderYearDropdown() {
@@ -2224,17 +2229,18 @@
 
         /* ── MES DROPDOWN ──────────────────────────────────────────────────── */
         let dropdownOpen = false;
-        function toggleMonthDropdown() {
+        function toggleMonthDropdown(e) {
             dropdownOpen = !dropdownOpen; const menu = $('month-dropdown-menu'), icon = $('month-drop-icon');
             // Cerrar año si está abierto
             if (yearDropdownOpen) {
-                $('year-dropdown-menu').classList.add('hidden'); $('year-dropdown-menu').classList.remove('flex', 'liquid-bounce');
+                $('year-dropdown-menu').classList.add('hidden');
+                $('year-dropdown-menu').classList.remove('flex', 'liquid-bounce');
                 $('year-drop-icon').style.transform = 'rotate(0deg)'; yearDropdownOpen = false;
             }
             document.querySelectorAll('.custom-dropdown-menu').forEach(d => { d.classList.add('hidden'); d.classList.remove('liquid-bounce'); });
-            if(dropdownOpen) { menu.classList.remove('hidden'); menu.classList.add('flex', 'liquid-bounce'); icon.style.transform = 'rotate(180deg)'; } 
-            else { menu.classList.remove('liquid-bounce'); menu.classList.add('hidden'); menu.classList.remove('flex'); icon.style.transform = 'rotate(0deg)'; }
-            event.stopPropagation();
+            if(dropdownOpen) { menu.classList.remove('hidden'); menu.classList.add('flex', 'liquid-bounce'); icon.style.transform = 'rotate(180deg)'; }
+            else { menu.classList.add('hidden'); menu.classList.remove('flex', 'liquid-bounce'); icon.style.transform = 'rotate(0deg)'; }
+            if (e) e.stopPropagation();
         }
         function selectMonth(idx) { switchMonth(idx); toggleMonthDropdown(); }
         
@@ -2643,7 +2649,7 @@
      MODAL DE AJUSTES — Liquid Crystal Glassmorphism
 ══════════════════════════════════════════════════════ -->
 <div id="settings-modal" class="fixed inset-0 z-[9999990] hidden bg-black/70 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)closeSettingsModal()" style="cursor:auto !important">
-  <div class="w-full max-w-[420px] flex flex-col gap-0 rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.8)] border border-white/10" onclick="event.stopPropagation()" style="background:rgba(10,18,40,0.95);backdrop-filter:blur(36px);animation:settingsIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards">
+  <div class="w-full max-w-[420px] flex flex-col gap-0 rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.8)] border border-white/10" onclick="event.stopPropagation()" style="background:rgba(10,18,40,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);animation:settingsIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards">
 
     <!-- Header del modal -->
     <div class="flex items-center justify-between px-5 py-4 border-b border-white/8" style="border-color:rgba(255,255,255,0.07)">
