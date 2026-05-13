@@ -387,7 +387,7 @@
 </div>
 
 <!-- Confirm premium -->
-<div id="premium-confirm-modal" class="fixed inset-0 z-[300000] hidden bg-black/70 backdrop-blur-md flex items-center justify-center p-4" onclick="event.stopPropagation();">
+<div id="premium-confirm-modal" class="fixed inset-0 z-[300000] hidden bg-black/70 backdrop-blur-md flex items-center justify-center p-4" onclick="if(event.target===this)window.closeCustomConfirm()">
   <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem] border border-sky-500/20 shadow-[0_0_30px_rgba(56,189,248,0.15)]">
     <h2 id="premium-confirm-title" class="text-xl font-extrabold mb-3 text-sky-400 flex items-center gap-2"><i class="fa-solid fa-circle-question"></i> <span>Confirmar</span></h2>
     <p id="premium-confirm-msg" class="text-xs text-gray-300 mb-6 font-medium leading-relaxed">¿Estás seguro?</p>
@@ -927,18 +927,6 @@
   <span id="tick-usdt">1</span>
 </div>
 
-<!-- Premium Confirm Modal -->
-<div id="premium-confirm-modal" class="fixed inset-0 z-[200000] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onclick="if(event.target===this)window.closeCustomConfirm()">
-  <div class="glass-card p-6 w-full max-w-sm relative rounded-[1.5rem] border border-red-500/20 text-center shadow-2xl" onclick="event.stopPropagation()">
-    <i class="fa-solid fa-triangle-exclamation text-4xl text-red-400 mb-4 drop-shadow-[0_0_15px_rgba(248,113,113,0.5)]"></i>
-    <h2 id="premium-confirm-title" class="text-xl font-extrabold mb-2 text-white uppercase tracking-wide">Confirmar Acción</h2>
-    <p id="premium-confirm-msg" class="text-xs text-gray-400 mb-6 px-2">¿Estás seguro de que deseas realizar esta acción? No se puede deshacer.</p>
-    <div class="flex gap-3">
-      <button onclick="window.closeCustomConfirm()" class="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-gray-300 font-bold hover:bg-white/10 transition-colors">Cancelar</button>
-      <button onclick="window.executeCustomConfirm()" class="flex-1 py-3 rounded-xl bg-red-500/20 border border-red-500/50 text-red-400 font-extrabold hover:bg-red-500/30 transition-colors shadow-[0_0_15px_rgba(248,113,113,0.3)]">Sí, Borrar</button>
-    </div>
-  </div>
-</div>
 
 <!-- Custom Abono Modal -->
 <div id="custom-abono-modal" class="fixed inset-0 z-[200000] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">

@@ -69,10 +69,11 @@ function binanceRequest(path, body) {
       path,
       method: 'POST',
       headers: {
-        'Content-Type':           'application/json',
-        'BinancePay-Timestamp':   timestamp,
-        'BinancePay-Nonce':       nonce,
-        'BinancePay-Signature':   signature,
+        'Content-Type':              'application/json',
+        'Content-Length':            Buffer.byteLength(payload, 'utf8'),
+        'BinancePay-Timestamp':      timestamp,
+        'BinancePay-Nonce':          nonce,
+        'BinancePay-Signature':      signature,
         'BinancePay-Certificate-SN': BINANCE_API_KEY,
       },
     };
@@ -197,27 +198,52 @@ exports.queryBinancePayment = onCall({ enforceAppCheck: false }, async (request)
     const orderStatus = response.data?.status; // 'INITIAL', 'PENDING', 'PAID', 'CANCELED', 'ERROR'
 
     if (orderStatus === 'PAID') {
-      // ✅ Pago confirmado — activar plan en Firestore
-      const planKey   = plan || 'entrepreneur';
-      const now       = new Date().toISOString();
-      const subEnd    = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 días exactos
+      // ── Verificación de propiedad del pago (anti-hijacking) ────────────────
+      // Leer la orden desde Firestore para validar que pertenece al uid
+      // que realiza la llamada y obtener el plan real registrado al crear la orden.
+      const paymentDoc = await db.collection('payments').doc(merchantOrderId).get();
+
+      if (!paymentDoc.exists) {
+        throw new HttpsError('not-found', 'Orden de pago no encontrada.');
+      }
+
+      const paymentData = paymentDoc.data();
+
+      if (paymentData.uid !== uid) {
+        console.error(`[EQUO Auth] Intento de hijacking: uid=${uid} intentó activar orden de uid=${paymentData.uid}`);
+        throw new HttpsError('permission-denied', 'Esta orden de pago no pertenece a tu cuenta.');
+      }
+
+      // Usar el plan guardado en Firestore al crear la orden, NO el valor del cliente
+      const planKey = paymentData.plan;
+      if (!PLANS[planKey]) {
+        throw new HttpsError('internal', `Plan inválido registrado en la orden: "${planKey}"`);
+      }
+
+      // Idempotencia: si ya fue activada anteriormente, no repetir el set
+      if (paymentData.status === 'PAID') {
+        return { orderStatus: 'PAID', planActivated: false, alreadyProcessed: true };
+      }
+
+      const now    = new Date().toISOString();
+      const subEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
       await db.collection('users').doc(uid).set({
         isPaid:              true,
         plan:                planKey,
         planStatus:          planKey,
         selectedPlan:        planKey,
-        trialEndDate:        null,    // eliminar restricción de prueba
-        subscriptionDate:    now,     // fecha de pago
-        subscriptionEndDate: subEnd,  // vencimiento en 30 días
+        trialEndDate:        null,
+        subscriptionDate:    now,
+        subscriptionEndDate: subEnd,
         paidAt:              now,
         lastPaymentId:       merchantOrderId,
       }, { merge: true });
 
-      // Actualizar registro de pago
-      await db.collection('payments').doc(merchantOrderId).set({
-        status: 'PAID', paidAt: now,
-      }, { merge: true });
+      await db.collection('payments').doc(merchantOrderId).set(
+        { status: 'PAID', paidAt: now },
+        { merge: true }
+      );
 
       return { orderStatus: 'PAID', planActivated: true };
     }
