@@ -27,12 +27,12 @@ body{font-family:'Outfit',sans-serif;background:#0f172a;color:#e2e8f0;overflow-x
 /* CURSOR */
 #cur-ring{position:fixed;width:44px;height:44px;border:1.5px solid rgba(56,189,248,.55);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .22s,height .22s,border-color .22s,background .22s;}
 #cur-dot{position:fixed;width:5px;height:5px;background:#38bdf8;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);}
-#ptx{position:fixed;inset:0;z-index:0;pointer-events:none;}
-.orb{position:fixed;border-radius:50%;filter:blur(70px);pointer-events:none;z-index:0;will-change:transform;}
+#ptx{position:fixed;inset:0;z-index:0;pointer-events:none;will-change:transform;transform:translateZ(0);}
+.orb{position:fixed;border-radius:50%;filter:blur(70px);pointer-events:none;z-index:0;will-change:transform;transform:translateZ(0);}
 
 /* GLASS */
-.glass{background:rgba(255,255,255,.04);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:1.5rem;}
-.glass-sm{background:rgba(255,255,255,.04);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.07);border-radius:.875rem;}
+.glass{background:rgba(255,255,255,.04);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:1.5rem;will-change:transform;transform:translateZ(0);}
+.glass-sm{background:rgba(255,255,255,.04);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.07);border-radius:.875rem;will-change:transform;transform:translateZ(0);}
 
 /* GRADIENT TEXT — FIX: 400% size + seamless loop */
 .anim-text-gradient{background:linear-gradient(90deg,#38bdf8,#818cf8,#e879f9,#818cf8,#38bdf8);background-size:400% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gf 6s linear infinite;}
@@ -80,7 +80,7 @@ body{font-family:'Outfit',sans-serif;background:#0f172a;color:#e2e8f0;overflow-x
 .pricing-glow:hover::before{opacity:1;}
 
 /* INVESTOR CARD — pulsing purple neon border */
-.investor-card{background:rgba(12,6,28,.75);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:1.5rem;position:relative;overflow:hidden;animation:investor-border 3s ease-in-out infinite;}
+.investor-card{background:rgba(12,6,28,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:1.5rem;position:relative;overflow:hidden;animation:investor-border 3s ease-in-out infinite;will-change:transform;transform:translateZ(0);}
 .investor-card::before{content:'';position:absolute;inset:0;border-radius:1.5rem;padding:1px;background:linear-gradient(135deg,rgba(232,121,249,.6),rgba(129,140,248,.4),rgba(232,121,249,.6));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:investor-border 3s ease-in-out infinite;}
 .investor-card::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(232,121,249,.1),transparent 65%);pointer-events:none;}
 
@@ -570,7 +570,7 @@ body{font-family:'Outfit',sans-serif;background:#0f172a;color:#e2e8f0;overflow-x
       <!-- PLAN EMPRENDEDOR — Escalabilidad y utilidades -->
       <div class="relative flex flex-col bento-card" style="min-height:620px;">
         <div class="absolute inset-0 rounded-3xl" style="padding:1px;background:linear-gradient(135deg,#38bdf8,#818cf8,#e879f9);z-index:0;border-radius:1.5rem;"></div>
-        <div class="relative z-10 flex flex-col h-full p-8" style="background:rgba(15,23,42,.88);backdrop-filter:blur(30px);border-radius:calc(1.5rem - 1px);">
+        <div class="relative z-10 flex flex-col h-full p-8" style="background:rgba(15,23,42,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:calc(1.5rem - 1px);will-change:transform;transform:translateZ(0);">
           <div class="flex items-center justify-between mb-6">
             <div class="badge badge-indigo">🏢 Emprendedor</div>
             <span class="text-xs font-bold px-3 py-1 rounded-full" style="background:linear-gradient(135deg,#38bdf8,#818cf8);color:#0f172a;">⭐ Más popular</span>
@@ -809,17 +809,21 @@ const cvs=document.getElementById('ptx');
 const ctx=cvs.getContext('2d');
 function resize(){cvs.width=innerWidth;cvs.height=innerHeight;}
 resize(); window.addEventListener('resize',resize);
-// Reducir partículas en móvil: menor carga en dispositivos de baja potencia
+// Partículas adaptativas: menos en móvil, throttle en desktop para evitar O(n²) a 60fps
 const _isMob=innerWidth<768;
-const pts=Array.from({length:_isMob?30:55},()=>({
+const pts=Array.from({length:_isMob?30:35},()=>({
   x:Math.random()*innerWidth, y:Math.random()*innerHeight,
   vx:(Math.random()-.5)*.35,  vy:(Math.random()-.5)*.35,
   r:Math.random()*1.4+.4,     a:Math.random()*.35+.1
 }));
-let _ptxActive=true;
-document.addEventListener('visibilitychange',()=>{ _ptxActive=!document.hidden; if(_ptxActive) draw(); });
-(function draw(){
+let _ptxActive=true, _lastPtx=0;
+document.addEventListener('visibilitychange',()=>{ _ptxActive=!document.hidden; if(_ptxActive) draw(0); });
+(function draw(ts){
   if(!_ptxActive) return;
+  // Desktop: cap at ~24fps para no saturar la CPU con conexiones O(n²)
+  const _interval=_isMob?16:42;
+  if(ts-_lastPtx<_interval){ requestAnimationFrame(draw); return; }
+  _lastPtx=ts;
   ctx.clearRect(0,0,cvs.width,cvs.height);
   pts.forEach(p=>{
     p.x+=p.vx; p.y+=p.vy;
@@ -828,14 +832,14 @@ document.addEventListener('visibilitychange',()=>{ _ptxActive=!document.hidden; 
     ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
     ctx.fillStyle=`rgba(56,189,248,${p.a})`; ctx.fill();
   });
-  // Conectar partículas solo en escritorio (operación O(n²), costosa en móvil)
+  // Conectar partículas solo en escritorio; distancia reducida 130→90 px (−52% pares)
   if(!_isMob) pts.forEach((a,i)=>pts.slice(i+1).forEach(b=>{
     const d=Math.hypot(a.x-b.x,a.y-b.y);
-    if(d<130){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
-      ctx.strokeStyle=`rgba(56,189,248,${.07*(1-d/130)})`;ctx.lineWidth=.5;ctx.stroke();}
+    if(d<90){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+      ctx.strokeStyle=`rgba(56,189,248,${.08*(1-d/90)})`;ctx.lineWidth=.5;ctx.stroke();}
   }));
   requestAnimationFrame(draw);
-})();
+})(0);
 
 // ── FIX 1: GSAP hero — wrapeado en window.load para eliminar flash ──
 // Los elementos hero NO tienen opacity:0 en CSS → visibles por defecto

@@ -87,7 +87,7 @@
         }
         #expired-screen.show { display: flex; }
         .expired-card {
-            background: rgba(15,23,42,.97); backdrop-filter: blur(32px);
+            background: rgba(15,23,42,.97); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); will-change: transform; transform: translateZ(0);
             border: 1px solid rgba(239,68,68,.2); border-radius: 1.5rem;
             padding: 2.5rem 2rem; max-width: 420px; width: 100%;
             box-shadow: 0 0 60px rgba(239,68,68,.1), 0 32px 80px rgba(0,0,0,.8);
@@ -105,7 +105,7 @@
         }
         #payment-wall.show { display: flex; }
         .payment-wall-card {
-            background: rgba(10,18,38,.96); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            background: rgba(10,18,38,.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); will-change: transform; transform: translateZ(0);
             border: 1px solid rgba(129,140,248,.2); border-radius: 1.5rem;
             padding: 2.5rem 2rem; max-width: 440px; width: 100%; position: relative; overflow: hidden;
             box-shadow: 0 0 80px rgba(129,140,248,.12), 0 32px 80px rgba(0,0,0,.85);
@@ -118,19 +118,21 @@
         }
 
         /* Glassmorphism UI */
-        .glass-card { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 1.25rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease; }
-        .glass-login { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 1.25rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease; will-change: transform; transform: translateZ(0); }
+        .glass-login { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); will-change: transform; transform: translateZ(0); }
+        /* Override backdrop-blur-3xl (Tailwind = 64px): demasiado costoso en desktop */
+        .backdrop-blur-3xl { backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; }
 
         /* ── Modal de Pago Binance Pay ────────────────────────────────── */
         #binance-pay-modal {
             position: fixed; inset: 0; z-index: 100002;
             display: none; align-items: center; justify-content: center;
-            background: rgba(4,8,20,.85); backdrop-filter: blur(18px);
+            background: rgba(4,8,20,.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
         }
         #binance-pay-modal.show { display: flex; }
         .bp-card {
             background: rgba(8,14,30,.97);
-            backdrop-filter: blur(48px); -webkit-backdrop-filter: blur(48px);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); will-change: transform; transform: translateZ(0);
             border: 1px solid rgba(255,255,255,.08);
             border-radius: 0; /* bordes cuadrados */
             width: 100%; max-width: 420px;
@@ -211,10 +213,10 @@
         .cal-day.empty { cursor: default; }
 
         /* Custom Selects Menu */
-        .custom-dropdown-menu { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; box-shadow: 0 15px 40px rgba(0,0,0,0.8); overflow: hidden; }
+        .custom-dropdown-menu { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; box-shadow: 0 15px 40px rgba(0,0,0,0.8); overflow: hidden; will-change: transform; transform: translateZ(0); }
         
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 100000; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
-        .toast-card { pointer-events: auto; background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.75rem; padding: 14px 16px; width: 320px; display: flex; gap: 12px; align-items: flex-start; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+        .toast-card { pointer-events: auto; background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.75rem; padding: 14px 16px; width: 320px; display: flex; gap: 12px; align-items: flex-start; box-shadow: 0 15px 35px rgba(0,0,0,0.6); will-change: transform; transform: translateZ(0); }
 
         /* Glow Vectorial de Iconos */
         .glow-success { filter: drop-shadow(0 0 4px rgba(52,211,153,0.8)); }
@@ -322,12 +324,12 @@
         #upgrade-modal {
             position:fixed; inset:0; z-index:100003;
             display:none; align-items:center; justify-content:center;
-            background:rgba(4,8,20,.8); backdrop-filter:blur(20px);
+            background:rgba(4,8,20,.8); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
         }
         #upgrade-modal.show { display:flex; }
         .upgrade-card {
             background:rgba(8,14,32,.97);
-            backdrop-filter:blur(48px); -webkit-backdrop-filter:blur(48px);
+            backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); will-change:transform; transform:translateZ(0);
             border:1px solid rgba(255,255,255,.07);
             border-radius:0;
             width:100%; max-width:400px; overflow:hidden;
@@ -395,7 +397,7 @@
 
         /* Flatpickr en MyEQUO (heredado de fase2) */
         .flatpickr-calendar { font-family: 'Outfit', sans-serif !important; background: rgba(15,23,42,0.97) !important;
-            backdrop-filter: blur(24px) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+            backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.1) !important;
             box-shadow: 0 20px 40px rgba(0,0,0,0.8) !important; border-radius: 1rem !important; z-index: 999999 !important; }
         .flatpickr-day.selected { background: rgba(14,165,233,0.3) !important; border-color: #38bdf8 !important; color: #38bdf8 !important; font-weight: bold; }
     </style>
@@ -404,7 +406,7 @@
 
     <!-- UI Background (Partículas) -->
     <div id="premium-cursor"></div>
-    <canvas id="particles"></canvas>
+    <canvas id="particles" style="will-change:transform;transform:translateZ(0);"></canvas>
     <div id="toast-container"></div>
 
     <!-- Pantalla de Suscripción Expirada — Liquid Crystal Wall -->
@@ -1090,7 +1092,7 @@
 
         <!-- Card principal -->
         <div id="auth-card" class="relative z-10 w-full max-w-[400px] mx-auto my-8"
-             style="background:rgba(10,18,38,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:1.5rem;box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 0 1px rgba(56,189,248,.06);">
+             style="background:rgba(10,18,38,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);border-radius:1.5rem;box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 0 1px rgba(56,189,248,.06);will-change:transform;transform:translateZ(0);">
 
             <!-- Header de la tarjeta -->
             <div class="px-8 pt-8 pb-6 text-center">
@@ -1372,15 +1374,18 @@
         // Reducir partículas en móvil para mejorar rendimiento
         const isMobile = window.innerWidth < 768;
         let pArray = Array.from({length: isMobile ? 12 : 25}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*1.5 + 0.5, sx: (Math.random()-0.5)*0.2, sy: (Math.random()-1)*0.4 - 0.1 }));
-        let _particlesActive = true;
-        document.addEventListener('visibilitychange', () => { _particlesActive = !document.hidden; if (_particlesActive) animParticles(); });
-        function animParticles() {
+        let _particlesActive = true, _lastPxFrame = 0;
+        document.addEventListener('visibilitychange', () => { _particlesActive = !document.hidden; if (_particlesActive) animParticles(0); });
+        function animParticles(ts) {
             if (!_particlesActive) return;
+            // Desktop: cap a ~30fps; en móvil ya tiene pocas partículas, correr a 60fps es fine
+            if (!isMobile && ts - _lastPxFrame < 33) { requestAnimationFrame(animParticles); return; }
+            _lastPxFrame = ts;
             ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle = document.body.classList.contains('light-mode') ? 'rgba(2, 132, 199, 0.25)' : 'rgba(56,189,248,0.25)';
             for(let p of pArray) { p.x += p.sx; p.y += p.sy; if(p.x < 0) p.x = canvas.width; if(p.x > canvas.width) p.x = 0; if(p.y < 0) p.y = canvas.height; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); }
             requestAnimationFrame(animParticles);
         }
-        animParticles(); window.addEventListener('resize', () => { canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+        animParticles(0); window.addEventListener('resize', () => { canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
 
         /* CIERRE INTELIGENTE (CLICK OUTSIDE GLOBAL) */
         document.addEventListener('click', (e) => {
@@ -2649,7 +2654,7 @@
      MODAL DE AJUSTES — Liquid Crystal Glassmorphism
 ══════════════════════════════════════════════════════ -->
 <div id="settings-modal" class="fixed inset-0 z-[9999990] hidden bg-black/70 backdrop-blur-xl flex items-center justify-center p-4" onclick="if(event.target===this)closeSettingsModal()" style="cursor:auto !important">
-  <div class="w-full max-w-[420px] flex flex-col gap-0 rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.8)] border border-white/10" onclick="event.stopPropagation()" style="background:rgba(10,18,40,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);animation:settingsIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards">
+  <div class="w-full max-w-[420px] flex flex-col gap-0 rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.8)] border border-white/10" onclick="event.stopPropagation()" style="background:rgba(10,18,40,0.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:settingsIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards;will-change:transform;transform:translateZ(0);">
 
     <!-- Header del modal -->
     <div class="flex items-center justify-between px-5 py-4 border-b border-white/8" style="border-color:rgba(255,255,255,0.07)">

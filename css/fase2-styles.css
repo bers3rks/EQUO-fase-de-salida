@@ -144,8 +144,9 @@
             border-radius: 1.25rem;
             box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5),
                         inset 0 1px 0 rgba(255, 255, 255, 0.04);
-            /* Evitar transition:all que incluye propiedades costosas */
             transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+            will-change: transform;
+            transform: translateZ(0);
         }
 
         .glass-login {
@@ -155,6 +156,8 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 2.5rem;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            will-change: transform;
+            transform: translateZ(0);
         }
 
         input[type="number"]::-webkit-inner-spin-button,
@@ -252,7 +255,10 @@
 
         .custom-dropdown-menu {
             background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(24px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            will-change: transform;
+            transform: translateZ(0);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 0.75rem;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
@@ -273,7 +279,8 @@
         .toast-card {
             pointer-events: auto;
             background: rgba(5, 5, 5, 0.9);
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 0.75rem;
             padding: 14px 16px;
@@ -441,8 +448,8 @@
 
         #business-dashboard .glass-card {
             background: rgba(8, 13, 28, 0.72) !important;
-            backdrop-filter: blur(28px) !important;
-            -webkit-backdrop-filter: blur(28px) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
             border: 1px solid rgba(56, 189, 248, 0.12) !important;
             box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.75),
                 inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
@@ -928,9 +935,11 @@
 ───────────────────────────────────────────────────────────────────────────── */
 #bottom-nav {
     background: rgba(10, 17, 40, 0.90);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 /* Indicador de tab activo: línea sky en la parte superior del botón */
@@ -950,8 +959,8 @@
 /* Menú "Más" — glass panel que sube desde el nav */
 #bnav-more-menu {
     background: rgba(8, 15, 38, 0.96);
-    backdrop-filter: blur(28px) saturate(160%);
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.10);
     border-bottom: none;
     border-radius: 1rem 1rem 0 0;
@@ -998,5 +1007,25 @@
     .glass-card,
     .btn-float {
         transition: background-color 0.2s ease, border-color 0.2s ease !important;
+    }
+}
+
+/* Desktop: optimizaciones de compositor GPU para pantallas grandes */
+@media (min-width: 768px) {
+    /* contain:paint evita que el navegador repinte secciones ocultas del panel de negocios */
+    #biz-inventory-section,
+    #biz-sales-section,
+    #biz-caja-section,
+    #biz-prestamos-section,
+    #biz-suppliers-section,
+    #biz-encargos-section,
+    #biz-cxc-section,
+    #biz-advanalysis-section {
+        contain: layout paint style;
+    }
+    /* Promover la barra lateral fija al compositor para no repintar con el scroll */
+    #sidebar {
+        will-change: transform;
+        transform: translateZ(0);
     }
 }
